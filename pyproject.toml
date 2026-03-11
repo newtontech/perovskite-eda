@@ -1,0 +1,24 @@
+[project]
+name = "perovskite-eda"
+version = "0.1.0"
+description = "Exploratory Data Analysis for Perovskite Solar Cells Database"
+authors = ["OpenClaw AI Assistant"]
+readme = "README.md"
+requires-python = ">=3.11"
+
+dependencies = [
+    "pandas>=2.0.0",
+    "openpyxl>=3.1.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+    "plotly>=5.15.0",
+    "wordcloud>=1.9.0",
+    "nltk>=3.8.0",
+    "spacy>=3.7.0",
+    "tqdm>=4.65.0",
+    "requests>=2.31.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
