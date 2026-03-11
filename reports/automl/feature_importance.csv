@@ -1,0 +1,9 @@
+Feature,Importance
+JV_default_Jsc,0.6393754550763845
+JV_default_FF,0.2651536417086201
+JV_default_Voc,0.0853758507259928
+Perovskite_thickness,0.004648081331465391
+Perovskite_band_gap,0.003464732370284997
+perovskite_type_encoded,0.000956044795009901
+Cell_architecture_encoded,0.0007722636144091678
+dimension_type_encoded,0.00025393037783306527
