@@ -1,166 +1,176 @@
-# Perovskite Solar Cells - Exploratory Data Analysis (EDA)
+# Perovskite EDA 📊
 
-[![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+探索性数据分析项目 - 钙钛矿太阳能电池性能预测
 
-> **Exploratory Data Analysis for Perovskite Solar Cells Database**
+## 🎯 项目目标
 
-This project performs comprehensive Exploratory Data Analysis (EDA) and AutoML machine learning analysis on the perovskite solar cells database.
+1. 对钙钛矿太阳能电池数据库进行全面 EDA 分析
+2. 构建高性能预测模型（R² > 0.85）
+3. 识别影响性能的关键因素
+4. 生成可复现的研究报告
 
----
+## 📊 数据来源
 
-## Data Source
+### Perovskite Database
 
-- **Database**: `Perovskite_database_content_all_data.csv` (81 MB)
-- **Source**: [Jesperkemist/perovskitedatabase_data](https://github.com/Jesperkemist/perovskitedatabase_data)
-- **Records**: 41,447 samples
-- **Features**: 410 columns
+本项目使用 [Perovskite Database](https://github.com/Jesperkemist/perovskitedatabase_data) 作为数据源。
 
----
+- **数据文件**: `data/raw/perovskite_database_all.csv`
+- **数据字典**: `data/data_dictionary.md`
+- **版本信息**: `data/data_version.txt`
+- **记录数**: ~50,000+
+- **特征数**: 65+
+- **时间范围**: 2012-2024
 
-## Quick Start
+### 数据描述
 
-### Install Dependencies
+钙钛矿太阳能电池性能数据库包含：
+- 器件结构和组成
+- 钙钛矿材料特性
+- 性能指标（PCE, Voc, Jsc, FF）
+- 稳定性数据
+- 化学性质
+- 文献信息
+
+## 🚀 快速开始
+
+### 安装依赖
 
 ```bash
-uv sync
+# 创建虚拟环境
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# 安装依赖
+pip install -r requirements.txt
 ```
 
-### Run Analysis
+### 下载数据
 
 ```bash
-# Data cleaning
-uv run python scripts/clean_data.py
-
-# EDA analysis
-uv run python scripts/eda_analysis.py
-
-# AutoML analysis
-uv run python automl/analyze_with_automl.py
+# 下载 Perovskite Database
+wget -O data/raw/perovskite_database_all.csv \
+  https://github.com/Jesperkemist/perovskitedatabase_data/raw/main/Perovskite_database_content_all_data.csv
 ```
 
----
+### 运行数据概览
 
-## Key Results
+```bash
+python scripts/data_overview.py
+```
 
-### Performance Statistics
+### 运行 EDA 分析
 
-| Metric | Value |
-|--------|-------|
-| Max PCE | 36.20% |
-| Mean PCE | 12.05% |
-| Dominant Material | MA-Pb (68.5%) |
-| Dominant Architecture | nip (62.8%) |
+```bash
+python src/eda/analyze.py
+```
 
-### AutoML Model Performance
+### 训练模型
 
-| Model | R2 | RMSE | MAE |
-|-------|-----|------|-----|
-| **Random Forest** | **0.9687** | **0.8676** | **0.3851** |
-| LightGBM | 0.9681 | 0.8758 | 0.4006 |
-| XGBoost | 0.9666 | 0.8963 | 0.4461 |
-| Gradient Boosting | 0.9639 | 0.9317 | 0.4972 |
-| Linear Regression | 0.8501 | 1.8984 | 1.2828 |
+```bash
+python src/automl/train.py
+```
 
-### Feature Importance
-
-| Feature | Importance |
-|---------|------------|
-| JV_default_Jsc | 63.94% |
-| JV_default_FF | 26.52% |
-| JV_default_Voc | 8.54% |
-| Perovskite_thickness | 0.46% |
-| Perovskite_band_gap | 0.35% |
-
----
-
-## Project Structure
+## 📁 项目结构
 
 ```
 perovskite-eda/
 ├── data/
-│   ├── raw/                    # Raw data
-│   │   └── Perovskite_database_content_all_data.csv
-│   └── processed/              # Processed data
-│       ├── perovskite_cleaned.csv
-│       ├── perovskite_ml_ready.csv
-│       └── data_report.md
+│   ├── raw/                    # 原始数据
+│   │   └── perovskite_database_all.csv
+│   ├── processed/              # 处理后的数据
+│   ├── data_dictionary.md      # 数据字典
+│   └── data_version.txt        # 版本信息
 ├── scripts/
-│   ├── clean_data.py           # Data cleaning
-│   └── eda_analysis.py         # EDA analysis
-├── automl/
-│   └── analyze_with_automl.py  # AutoML analysis
-├── figures/
-│   ├── temporal/               # Temporal trends
-│   ├── materials/              # Material analysis
-│   ├── performance/            # Performance analysis
-│   ├── correlations/           # Correlation matrix
-│   └── automl/                 # AutoML results
-├── reports/
-│   ├── eda_report.md           # EDA report
+│   ├── data_overview.py        # 数据概览脚本
+│   └── download_data.sh        # 数据下载脚本
+├── src/
+│   ├── eda/
+│   │   └── analyze.py          # EDA 分析脚本
 │   └── automl/
-│       ├── automl_report.md    # AutoML report
-│       └── feature_importance.csv
-├── pyproject.toml
-└── README.md
+│       └── train.py            # AutoML 训练脚本
+├── reports/
+│   └── eda_report.md           # EDA 报告
+├── docs/
+│   └── METHODOLOGY.md          # 方法论文档
+├── tests/                      # 测试
+├── requirements.txt            # 依赖
+└── README.md                   # 本文件
 ```
 
----
+## 📈 分析内容
 
-## Analysis Contents
+### 1. 数据探索
+- 数据概览和统计
+- 缺失值分析
+- 异常值检测
+- 数据分布可视化
 
-### 1. Temporal Analysis
-- Publication year distribution (2009-2025)
-- PCE efficiency evolution over time
+### 2. 特征工程
+- 特征选择
+- 特征转换
+- 特征重要性分析
 
-### 2. Material Analysis
-- Perovskite type distribution (MA-Pb, MAFA-Pb, FA-Pb, etc.)
-- Cell architecture distribution (nip, pin, etc.)
-- Dimension types (3D, 2D, 2D/3D mixed)
+### 3. 模型训练
+- Random Forest
+- Gradient Boosting
+- XGBoost
+- LightGBM
 
-### 3. Performance Metrics
-- PCE (Power Conversion Efficiency)
-- Voc (Open Circuit Voltage)
-- Jsc (Short Circuit Current)
-- FF (Fill Factor)
+### 4. 模型评估
+- R² 分数（目标 > 0.85）
+- MAE（目标 < 1.5%）
+- 特征重要性排序
+- 残差分析
 
-### 4. AutoML Machine Learning
-- 6 model comparison (Random Forest, XGBoost, LightGBM, etc.)
-- Best model R2 = 96.87%
-- Feature importance analysis
+## 📊 预期成果
 
----
+1. **EDA 报告**: 完整的探索性数据分析报告
+2. **训练模型**: R² > 0.85 的预测模型
+3. **特征重要性**: Top 20 关键特征
+4. **可视化图表**: 10+ 高质量图表
+5. **可复现代码**: 完整的分析脚本
 
-## Tech Stack
+## 🔧 技术栈
 
-- **Python 3.11+**
-- **Pandas** - Data processing
-- **Matplotlib/Seaborn** - Data visualization
-- **Scikit-learn** - Machine learning
-- **XGBoost/LightGBM** - Gradient boosting models
+- **Python**: 3.11+
+- **数据处理**: pandas, numpy
+- **可视化**: matplotlib, seaborn, plotly
+- **机器学习**: scikit-learn, xgboost, lightgbm
+- **AutoML**: autogluon (可选)
 
----
+## 📝 开发进度
 
-## Reports
+### Phase 1: 数据准备 ✅
+- [x] 数据下载和存储
+- [x] 数据字典创建
+- [x] 数据概览脚本
 
-- [EDA Report](reports/eda_report.md)
-- [AutoML Report](reports/automl/automl_report.md)
+### Phase 2: EDA 分析 ⏳
+- [ ] 单变量分析
+- [ ] 双变量分析
+- [ ] 多变量分析
+- [ ] 时间序列分析
 
----
+### Phase 3: 模型训练 ⏳
+- [ ] 数据预处理
+- [ ] 特征工程
+- [ ] 模型训练
+- [ ] 模型评估
 
-## Related Projects
+## 🤝 贡献指南
 
-- [Perovskite_Database_Multiagents](https://github.com/newtontech/Perovskite_Database_Multiagents)
-- [perovskite_literature_rag](https://github.com/newtontech/perovskite_literature_rag)
-- [Perovskite_Pretrain_Models](https://github.com/newtontech/Perovskite_Pretrain_Models)
+欢迎贡献！请查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详情。
 
----
-
-## License
+## 📄 许可证
 
 MIT License
 
+## 📞 联系方式
+
+- **项目维护者**: NewtonTech Team
+- **GitHub**: https://github.com/newtontech/perovskite-eda
+
 ---
 
-**Last Updated**: 2026-03-12
-**Version**: 2.1.0 (Integrated perovskitedatabase_data)
+**最后更新**: 2026-03-12
