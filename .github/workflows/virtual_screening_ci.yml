@@ -1,0 +1,47 @@
+name: Virtual Screening CI
+
+on:
+  push:
+    branches: [main, feature/virtual-screening]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install rdkit scikit-learn pandas numpy matplotlib seaborn pytest
+      
+      - name: Run virtual screening tests
+        run: |
+          cd virtual_screening
+          python -m pytest tests/ -v
+      
+      - name: Generate sample molecules
+        run: |
+          cd virtual_screening/generation
+          python rule_based_generation.py --n_molecules 100
+      
+      - name: Validate molecules
+        run: |
+          cd virtual_screening/generation
+          python molecule_validator.py
+      
+      - name: Upload results
+        uses: actions/upload-artifact@v3
+        with:
+          name: virtual-screening-results
+          path: |
+            virtual_sams.csv
+            validation_results.csv
