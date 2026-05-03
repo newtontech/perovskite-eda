@@ -1,0 +1,199 @@
+# Agentic Data Cleaning Action Space
+# 数据清洗操作空间定义 —— Agent可自由组合这些原子操作
+
+meta:
+  name: "PSC_Additive_Data_Cleaning_Space"
+  version: "1.0"
+  goal: "找到使下游ML模型性能(R²)最大化的数据筛选策略组合"
+  evaluation_metric: "5-Fold CV R² on Delta_PCE prediction (RF)"
+
+# ---------------------------------------------------------------------------
+# 原子筛选操作定义
+# 每个操作有多个可选level，Agent可选择使用哪个level
+# ---------------------------------------------------------------------------
+
+actions:
+
+  # Action 1: SMILES 有效性筛选
+  smiles_validity:
+    description: "验证SMILES是否可解析"
+    levels:
+      strict:
+        name: "RDKit_Strict"
+        rule: "Chem.MolFromSmiles(s) is not None"
+        rationale: "确保所有分子可计算描述符和指纹"
+      medium:
+        name: "NonEmpty"
+        rule: "smiles is not null and len(smiles) > 3"
+        rationale: "只要SMILES字符串非空即可，允许RDKit解析失败的分子"
+      loose:
+        name: "NoFilter"
+        rule: "None"
+        rationale: "不排除任何SMILES"
+
+  # Action 2: 基线PCE (PCE_without_modulator) 范围
+  baseline_pce_bounds:
+    description: "基线器件效率的合理范围"
+    levels:
+      strict:
+        name: "HighQuality_Devices"
+        bounds: [8.0, 20.0]
+        rationale: "只保留中-高质量器件，排除早期低效率数据和异常高效率模拟数据"
+      medium:
+        name: "Standard_Devices"
+        bounds: [5.0, 22.0]
+        rationale: "标准范围，覆盖大部分文献器件"
+      loose:
+        name: "AllValid_Devices"
+        bounds: [1.0, 28.0]
+        rationale: "宽松范围，仅排除极端异常值"
+      very_loose:
+        name: "Physical_Only"
+        bounds: [0.0, 30.0]
+        rationale: "仅物理限制"
+
+  # Action 3: 处理后PCE (PCE_with_modulator) 范围
+  treated_pce_bounds:
+    description: "处理后器件效率的合理范围"
+    levels:
+      strict:
+        name: "HighQuality_Treated"
+        bounds: [8.0, 25.0]
+      medium:
+        name: "Standard_Treated"
+        bounds: [5.0, 28.0]
+      loose:
+        name: "AllValid_Treated"
+        bounds: [1.0, 30.0]
+
+  # Action 4: Delta_PCE 范围
+  delta_pce_bounds:
+    description: "添加剂带来的效率变化范围"
+    levels:
+      strict:
+        name: "EffectiveOnly"
+        bounds: [0.0, 5.0]
+        rationale: "只保留正增益且增益合理的样本（有效添加剂）"
+      medium:
+        name: "ReasonableRange"
+        bounds: [-1.0, 8.0]
+        rationale: "允许小幅负值（测量误差），上限8%"
+      loose:
+        name: "WideRange"
+        bounds: [-3.0, 10.0]
+        rationale: "较宽范围，覆盖大部分添加剂效果"
+      very_loose:
+        name: "AllObserved"
+        bounds: [-5.0, 15.0]
+        rationale: "包含所有观察到的变化"
+
+  # Action 5: JV参数物理一致性
+  jv_consistency:
+    description: "Jsc/Voc/FF的物理合理范围"
+    levels:
+      strict:
+        name: "FullJV_Strict"
+        jsc_bounds: [10.0, 28.0]
+        voc_bounds: [0.8, 1.3]
+        ff_bounds: [0.55, 0.85]
+        rationale: "高质量器件的JV参数"
+      medium:
+        name: "FullJV_Standard"
+        jsc_bounds: [5.0, 30.0]
+        voc_bounds: [0.6, 1.4]
+        ff_bounds: [0.40, 0.90]
+      loose:
+        name: "PCE_Only"
+        rule: "None"
+        rationale: "不检查Jsc/Voc/FF，只用PCE筛选"
+
+  # Action 6: 分子描述符范围
+  descriptor_bounds:
+    description: "分子描述符的合理范围"
+    levels:
+      strict:
+        name: "DrugLike_Strict"
+        molecular_weight: [100, 600]
+        log_p: [-2, 5]
+        tpsa: [20, 150]
+        hbd: [0, 5]
+        hba: [0, 10]
+        rotatable_bonds: [0, 10]
+      medium:
+        name: "DrugLike_Standard"
+        molecular_weight: [50, 800]
+        log_p: [-3, 7]
+        tpsa: [0, 200]
+        hbd: [0, 8]
+        hba: [0, 15]
+        rotatable_bonds: [0, 20]
+      loose:
+        name: "NoFilter"
+        rule: "None"
+
+  # Action 7: 器件信息完整性
+  device_info_completeness:
+    description: "器件结构和钙钛矿组分信息的完整度"
+    levels:
+      strict:
+        name: "FullDeviceInfo"
+        required_cols: ["solar_cell_structure", "perovskite_composition", "interfacial_material_abbreviation"]
+        exclude_values: ["Unknown", "Unknown_perovskite_component", "NO_modulator_abbreviation"]
+        rationale: "必须有完整的器件结构、组分和添加剂信息"
+      medium:
+        name: "StructureAndComposition"
+        required_cols: ["solar_cell_structure", "perovskite_composition"]
+        exclude_values: ["Unknown", "Unknown_perovskite_component"]
+      loose:
+        name: "NoDeviceFilter"
+        rule: "None"
+
+  # Action 8: 去重策略
+  deduplication:
+    description: "重复样本的处理策略"
+    levels:
+      strict:
+        name: "Unique_Device"
+        subset: ["cas_number", "smiles", "jv_reverse_scan_pce_without_modulator"]
+        rationale: "相同分子+相同基线PCE = 同一器件，只保留一条"
+      medium:
+        name: "Unique_Molecule_Baseline"
+        subset: ["smiles", "jv_reverse_scan_pce_without_modulator"]
+      loose:
+        name: "Unique_SMILES"
+        subset: ["smiles"]
+        rationale: "同一分子只保留一次（取平均Delta_PCE）"
+      very_loose:
+        name: "NoDeduplication"
+        rule: "None"
+
+  # Action 9: 文献质量分层
+  literature_quality:
+    description: "基于文献来源的质量筛选"
+    levels:
+      strict:
+        name: "PeerReviewed_Only"
+        filters:
+          - "journal is not null"
+          - "doi is not null"
+        rationale: "只保留有期刊和DOI的同行评审文献"
+      medium:
+        name: "HasPublicationInfo"
+        filters:
+          - "title is not null"
+          - "publication_date is not null"
+      loose:
+        name: "NoLiteratureFilter"
+        rule: "None"
+
+  # Action 10: 基线PCE分层抽样
+  baseline_stratification:
+    description: "是否按基线PCE分层"
+    levels:
+      enabled:
+        name: "Stratified"
+        buckets: ["low: 0-10", "medium: 10-18", "high: 18+"]
+        rationale: "确保各基线层级样本均衡，避免模型偏向某一类器件"
+      disabled:
+        name: "NoStratification"
+        rule: "None"

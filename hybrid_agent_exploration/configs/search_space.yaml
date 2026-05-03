@@ -1,0 +1,176 @@
+# Search Space — 五层管线搜索空间定义（PSC聚焦版）
+# AI Agent 在此空间内自主决定探索方向
+
+layer1_data_sources:
+  S11_literature_data:
+    name: "文献与人工整理数据"
+    available: true
+    primary: true
+    path: "/share/yhm/test/20260216_with_chemical_merge_fast/merged_llm_crossref_data_streaming_with_chemical_data_fast.xlsx"
+    samples: 5354
+    target: "delta_pce"
+
+  S12_perovskite_databases:
+    name: "钙钛矿公共数据库"
+    sources: ["Perovskite Database Project", "Materials Project", "NOMAD", "OQMD", "JARVIS"]
+    available: true
+
+  S13_text_mining:
+    name: "文本挖掘数据"
+    sources: ["NLP from papers", "fabrication details", "device stack extraction"]
+    available: true
+    pipeline: "Perovskite_Database_Multiagents"
+
+  S14_computational:
+    name: "计算数据"
+    sources: ["DFT/MD", "SCAPS/drift-diffusion", "high-throughput calculation"]
+    available: false  # 需要 CP2K/Gaussian/VASP
+
+  S15_chemical_libraries:
+    name: "化学分子库"
+    sources: ["PubChem", "ChEMBL", "ZINC"]
+    available: true
+
+  S16_purchasable:
+    name: "可购买分子库"
+    sources: ["Sigma-Aldrich", "TCI", "Aladdin", "Enamine", "eMolecules", "Mcule"]
+    available: true
+
+  S17_automated_experiment:
+    name: "自动化实验数据"
+    sources: ["robotic synthesis", "self-driving lab logs"]
+    available: false
+
+
+layer2_representations:
+  F21_molecular_descriptors:
+    name: "分子描述符 (RDKit/Mordred/PaDEL)"
+    dimension: "200-1800+"
+    implemented: true
+
+  F22_molecular_fingerprints:
+    name: "分子指纹 (Morgan/ECFP/MACCS/KRFP)"
+    dimension: "166-4860-bit"
+    implemented: true
+    variants:
+      ECFP4: {radius: 2, n_bits: 2048}
+      ECFP6: {radius: 3, n_bits: 2048}
+      MACCS: {n_bits: 166}
+      KRFP: {n_bits: 4860}
+      AP: {n_bits: 2048}
+      TT: {n_bits: 2048}
+
+  F23_dft_features:
+    name: "DFT/量化特征"
+    implemented: false
+    properties: ["HOMO", "LUMO", "band_gap", "dipole", "ESP", "adsorption_energy", "formation_energy"]
+
+  F24_perovskite_composition:
+    name: "钙钛矿组分特征"
+    implemented: false
+    features: ["A/B/X_composition", "ionic_radius", "tolerance_factor", "octahedral_factor", "electronegativity"]
+
+  F25_device_process:
+    name: "器件与工艺特征"
+    implemented: false
+    features: ["architecture", "transport_layers", "solvent", "annealing", "additive_concentration"]
+
+  F26_learned_representations:
+    name: "学习型表示"
+    implemented: false
+    methods: ["SMILES_token", "graph_embedding", "crystal_graph", "JTVAE_latent", "UniMol_3D"]
+    note: "前沿趋势: Co-PAS用JTVAE latent + PubChem 25万分子做添加剂筛选"
+
+  F27_image_spectral:
+    name: "图像/谱学表征"
+    implemented: false
+    sources: ["PL", "TRPL", "UV-vis", "XRD", "GIWAXS", "SEM", "AFM", "in_situ_PL"]
+
+
+layer3_models:
+  M31_classical_ml:
+    name: "经典ML"
+    models: ["Random Forest", "XGBoost", "LightGBM", "CatBoost", "SVR", "KNN", "Elastic Net", "Ridge", "Lasso"]
+    implemented: true
+    note: "多篇PSC文献验证RF/XGBoost最有效"
+
+  M32_deep_learning:
+    name: "深度学习"
+    models: ["MLP", "DNN", "CNN", "GNN", "MPNN", "CGCNN", "MEGNet"]
+    implemented: false
+
+  M33_pretrained_molecular:
+    name: "预训练分子模型"
+    models: ["Uni-Mol", "MolCLR", "ChemBERTa", "MolFormer"]
+    implemented: false
+    note: "迁移学习, 适合小数据集"
+
+  M34_generative:
+    name: "生成模型"
+    models: ["VAE", "JTVAE", "diffusion", "flow", "scaffold-constrained generation"]
+    implemented: false
+    note: "逆向设计, Science 2024 HTM"
+
+  M35_active_learning:
+    name: "主动学习与代理模型"
+    models: ["Gaussian process", "Bayesian optimization", "multi-objective BO", "active learning"]
+    implemented: false
+    note: "实验闭环核心"
+
+  M36_transfer_multitask:
+    name: "迁移与多任务"
+    models: ["transfer learning", "multi-task", "domain adaptation", "few-shot"]
+    implemented: false
+
+
+layer4_evaluation:
+  E41_task_types:
+    regression_targets: ["PCE", "band_gap", "lifetime", "Voc", "Jsc", "FF"]
+    classification_targets: ["stable/unstable", "valid/invalid"]
+    ranking: ["top-k candidates"]
+
+  E42_data_split:
+    methods: ["random_split", "scaffold_split", "composition_split", "temporal_split", "external_test"]
+    recommended: "scaffold_split"
+    note: "scaffold split比random split更严格评估泛化性"
+
+  E43_cross_validation:
+    methods: ["5-fold", "10-fold", "nested_CV", "repeated_seeds", "leave-one-family-out"]
+    recommended: "nested_CV"
+
+  E44_hyperparameter:
+    methods: ["Optuna/TPE", "Bayesian_optimization", "grid_search", "random_search"]
+    recommended: "Optuna/TPE"
+
+  E45_model_reliability:
+    metrics_regression: ["R2", "RMSE", "MAE"]
+    metrics_classification: ["AUROC", "F1", "hit_rate"]
+    uncertainty: ["GPR", "ensemble", "MC_dropout"]
+    interpretation: ["SHAP", "feature_importance"]
+    note: "uncertainty对实验闭环至关重要"
+
+
+layer5_deployment:
+  D51_prediction_targets:
+    name: "预测目标"
+    targets: ["PCE", "Voc", "Jsc", "FF", "stability", "band_gap", "defect_passivation", "interface_alignment"]
+
+  D52_screening_libraries:
+    name: "虚拟筛选库"
+    open: ["PubChem", "ZINC", "ChEMBL"]
+    purchasable: ["Sigma-Aldrich", "TCI", "Aladdin", "Enamine", "eMolecules", "Mcule"]
+
+  D53_output_candidates:
+    name: "输出候选"
+    types: ["molecular_additives", "passivators", "HTM", "ETM", "SAM", "A/B/X_composition", "solvent_recipes"]
+
+  D54_closed_loop:
+    name: "实验与计算闭环"
+    steps: ["DFT_validation", "device_fabrication", "characterization", "stability_test", "data_feedback"]
+    references:
+      - "Science 2024: high-throughput synthesis + BO for HTM inverse design"
+      - "Nature 2026: ML + automated manufacturing for PSC closed-loop"
+
+  D55_agent_sdl:
+    name: "AI Agent / Self-Driving Lab"
+    loop: "plan → execute → evaluate → reflect → iterate"

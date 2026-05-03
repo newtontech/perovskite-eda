@@ -1,0 +1,69 @@
+# Data Sources Configuration
+
+primary:
+  name: "Literature Extraction (本项目)"
+  id: "S11_literature_data"
+  path: "/share/yhm/test/20260216_with_chemical_merge_fast/merged_llm_crossref_data_streaming_with_chemical_data_fast.xlsx"
+  format: "xlsx"
+  target_column: "delta_pce"
+  smiles_column: "smiles"
+
+  chemical_columns:
+    - cas_number
+    - pubchem_id
+    - smiles
+    - molecular_formula
+    - molecular_weight
+    - h_bond_donors
+    - h_bond_acceptors
+    - rotatable_bonds
+    - tpsa
+    - log_p
+
+  jv_columns:
+    - jv_reverse_scan_pce_without_modulator
+    - jv_reverse_scan_j_sc_without_modulator
+    - jv_reverse_scan_v_oc_without_modulator
+    - jv_reverse_scan_ff_without_modulator
+    - jv_reverse_scan_pce
+    - jv_reverse_scan_j_sc
+    - jv_reverse_scan_v_oc
+    - jv_reverse_scan_ff
+    - jv_hysteresis_index_without_modulator
+    - jv_hysteresis_index
+
+  preprocessing:
+    dropna: true
+    outlier_method: "isolation_forest"
+    outlier_contamination: 0.05
+
+external_databases:
+  perovskite_db:
+    url: "https://perovskitedatabase.com"
+    format: "json"
+    auth: "none"
+
+  materials_project:
+    url: "https://nextgen.materialsproject.org"
+    api_key_env: "MP_API_KEY"
+
+  pubchem:
+    url: "https://pubchem.ncbi.nlm.nih.gov/rest/pug"
+    format: "json"
+    auth: "none"
+
+  chembl:
+    url: "https://www.ebi.ac.uk/chembl/api/data"
+    format: "json"
+    auth: "none"
+
+  zinc:
+    url: "https://zinc.docking.org"
+    format: "sdf"
+    auth: "none"
+
+  enamine:
+    url: "https://enamine.net"
+    format: "sdf"
+    auth: "api_key"
+    api_key_env: "ENAMINE_API_KEY"
