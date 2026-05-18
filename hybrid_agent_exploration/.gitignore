@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Node.js
+node_modules/
+
+# Data caches and large temporary files
+*.pkl
+data_cache.*
+*.h5
+*.hdf5
+
+# Experiment intermediate artifacts
+results/**/checkpoints/*.npy
+results/**/checkpoints/*.pkl
+results/**/*.png
+results/**/*.jpg
+results/**/*.jpeg
+results/**/*.html
+results/**/*.svg
+
+# Keep these in results/
+!results/**/leaderboard.csv
+!results/**/*.json
+!results/**/*.md
+
+# Report artifacts (only final PDFs are kept)
+reports/temp/
+reports/figures/temp/
+results/report_artifacts/
+results/reports/**/*.png
+results/reports/**/*.jpg
+results/reports/**/*.svg
+results/reports/**/*.html
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

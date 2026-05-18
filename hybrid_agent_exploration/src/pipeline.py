@@ -140,12 +140,15 @@ def compute_features(df: pd.DataFrame, smiles_col: str, method_id: str) -> np.nd
         return feat_df.fillna(0).values
 
     if method_id in ("F22_ecfp4", "F22_ecfp6", "F22_maccs", "F22_krfp",
-                      "F22_atom_pair", "F22_topological_torsion"):
+                      "F22_atom_pair", "F22_topological_torsion",
+                      "F22_morgan_256", "F22_morgan_512", "F22_morgan_1024"):
         from features.fingerprints import get_fingerprint
         mapping = {
             "F22_ecfp4": "F2_ecfp", "F22_ecfp6": "F2_ecfp6",
             "F22_maccs": "F3_maccs", "F22_krfp": "F4_krfp",
             "F22_atom_pair": "F5_atom_pair", "F22_topological_torsion": "F6_topological_torsion",
+            "F22_morgan_256": "F7_morgan_256", "F22_morgan_512": "F7_morgan_512",
+            "F22_morgan_1024": "F7_morgan_1024",
         }
         return get_fingerprint(mapping[method_id], df[smiles_col])
 
@@ -175,14 +178,69 @@ def get_model(method_id: str):
     raise ValueError(f"Model not implemented: {method_id}")
 
 
-def evaluate(model, X: np.ndarray, y: np.ndarray, method_id: str, n_splits: int = 5) -> dict:
+def _extract_feature_importances(model) -> np.ndarray | None:
+    """Extract feature importances if the model supports it."""
+    if hasattr(model, "feature_importances_"):
+        return np.array(model.feature_importances_)
+    if hasattr(model, "coef_"):
+        coef = model.coef_
+        if coef.ndim > 1:
+            coef = coef.flatten()
+        return np.abs(coef)
+    return None
+
+
+def evaluate(model, X: np.ndarray, y: np.ndarray, method_id: str, n_splits: int = 5,
+             df: pd.DataFrame = None, smiles_col: str = None) -> dict:
+    """Evaluate a model with rich artifact generation for reporting.
+
+    Returns a dict with standard metrics plus an '_artifacts' key containing
+    detailed data for figure generation (predictions, importances, SHAP, etc.).
+
+    Parameters
+    ----------
+    df : pd.DataFrame, optional
+        Original dataframe (needed for scaffold/temporal splits).
+    smiles_col : str, optional
+        SMILES column name (needed for scaffold split).
+    """
+    from sklearn.model_selection import KFold, GroupShuffleSplit
     scaler = StandardScaler()
     Xs = scaler.fit_transform(X)
+    artifacts = {}
 
     if method_id in ("E43_5fold_cv", "E43_10fold_cv"):
         n_splits = 5 if method_id == "E43_5fold_cv" else 10
-        scores = cross_val_score(model, Xs, y, cv=n_splits, scoring="r2")
-        return {"r2": float(scores.mean()), "r2_std": float(scores.std()), "strategy": method_id}
+        kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+        fold_scores = []
+        fold_preds = []
+        fold_trues = []
+        for train_idx, test_idx in kf.split(Xs):
+            model_fold = model.__class__(**model.get_params())
+            model_fold.fit(Xs[train_idx], y[train_idx])
+            fold_scores.append(model_fold.score(Xs[test_idx], y[test_idx]))
+            fold_preds.extend(model_fold.predict(Xs[test_idx]).tolist())
+            fold_trues.extend(y[test_idx].tolist() if hasattr(y, "tolist") else list(y[test_idx]))
+        scores = np.array(fold_scores)
+        # Fit on full data for feature importances and SHAP
+        model.fit(Xs, y)
+        artifacts = {
+            "y_true": fold_trues,
+            "y_pred": fold_preds,
+            "cv_scores_per_fold": scores.tolist(),
+            "feature_importances": _extract_feature_importances(model).tolist() if _extract_feature_importances(model) is not None else None,
+        }
+        # Auto-compute SHAP on a subset for CV mode too
+        try:
+            import shap
+            n_shap = min(50, len(Xs))
+            explainer = shap.Explainer(model, Xs[:min(200, len(Xs))])
+            sv = explainer(Xs[:n_shap])
+            artifacts["shap_values"] = sv.values.tolist() if hasattr(sv.values, "tolist") else sv.values
+            artifacts["shap_background"] = Xs[:min(200, len(Xs))].tolist()
+        except Exception:
+            pass
+        return {"r2": float(scores.mean()), "r2_std": float(scores.std()), "strategy": method_id, "_artifacts": artifacts}
 
     if method_id == "E42_random_split":
         X_train, X_test, y_train, y_test = train_test_split(Xs, y, test_size=0.2, random_state=42)
@@ -190,24 +248,46 @@ def evaluate(model, X: np.ndarray, y: np.ndarray, method_id: str, n_splits: int 
         r2 = model.score(X_test, y_test)
         y_pred = model.predict(X_test)
         rmse = float(np.sqrt(np.mean((y_test - y_pred) ** 2)))
-        return {"r2": float(r2), "rmse": rmse, "strategy": method_id}
+        mae = float(np.mean(np.abs(y_test - y_pred)))
+        from scipy.stats import pearsonr
+        pr, _ = pearsonr(y_test, y_pred)
+        artifacts = {
+            "y_true": y_test.tolist() if hasattr(y_test, "tolist") else list(y_test),
+            "y_pred": y_pred.tolist(),
+            "feature_importances": _extract_feature_importances(model).tolist() if _extract_feature_importances(model) is not None else None,
+        }
+        # Auto-compute SHAP for all models (not just E45_shap)
+        try:
+            import shap
+            n_shap = min(50, len(X_test))
+            explainer = shap.Explainer(model, X_train[:min(200, len(X_train))])
+            sv = explainer(X_test[:n_shap])
+            artifacts["shap_values"] = sv.values.tolist() if hasattr(sv.values, "tolist") else sv.values
+            artifacts["shap_background"] = X_train[:min(200, len(X_train))].tolist()
+        except Exception:
+            pass
+        return {"r2": float(r2), "rmse": rmse, "mae": mae, "pearson_r": float(pr), "strategy": method_id, "_artifacts": artifacts}
 
     if method_id == "E44_optuna":
         import optuna
         optuna.logging.set_verbosity(optuna.logging.WARNING)
-        return _optuna_tune(model, Xs, y, n_trials=50)
+        result = _optuna_tune(model, Xs, y, n_trials=50)
+        result["_artifacts"] = {}  # Optuna artifacts are params history; could be extended
+        return result
 
     if method_id == "E44_optuna_large":
         import optuna
         optuna.logging.set_verbosity(optuna.logging.WARNING)
-        return _optuna_tune(model, Xs, y, n_trials=200)
+        result = _optuna_tune(model, Xs, y, n_trials=200)
+        result["_artifacts"] = {}
+        return result
 
     if method_id == "E44_grid_search":
         from sklearn.model_selection import GridSearchCV
         param_grid = _get_param_grid(model)
         gs = GridSearchCV(model, param_grid, cv=3, scoring="r2", n_jobs=-1)
         gs.fit(Xs, y)
-        return {"r2": float(gs.best_score_), "best_params": str(gs.best_params_), "strategy": method_id}
+        return {"r2": float(gs.best_score_), "best_params": str(gs.best_params_), "strategy": method_id, "_artifacts": {}}
 
     if method_id == "E45_shap":
         X_train, X_test, y_train, y_test = train_test_split(Xs, y, test_size=0.2, random_state=42)
@@ -215,18 +295,178 @@ def evaluate(model, X: np.ndarray, y: np.ndarray, method_id: str, n_splits: int 
         r2 = model.score(X_test, y_test)
         y_pred = model.predict(X_test)
         rmse = float(np.sqrt(np.mean((y_test - y_pred) ** 2)))
+        mae = float(np.mean(np.abs(y_test - y_pred)))
+        from scipy.stats import pearsonr
+        pr, _ = pearsonr(y_test, y_pred)
+        shap_vals = None
+        top_feat = -1
         try:
             import shap
             explainer = shap.Explainer(model, X_train)
-            sv = explainer(X_test[:50])
+            sv = explainer(X_test[:min(50, len(X_test))])
+            shap_vals = sv.values.tolist() if hasattr(sv.values, "tolist") else sv.values
             top_feat = int(np.argmax(np.mean(np.abs(sv.values), axis=0)))
         except Exception:
-            top_feat = -1
-        return {"r2": float(r2), "rmse": rmse, "top_shap_feature": top_feat, "strategy": method_id}
+            pass
+        artifacts = {
+            "y_true": y_test.tolist() if hasattr(y_test, "tolist") else list(y_test),
+            "y_pred": y_pred.tolist(),
+            "feature_importances": _extract_feature_importances(model).tolist() if _extract_feature_importances(model) is not None else None,
+            "shap_values": shap_vals,
+            "shap_background": X_train[:min(100, len(X_train))].tolist(),
+        }
+        return {"r2": float(r2), "rmse": rmse, "mae": mae, "pearson_r": float(pr), "top_shap_feature": top_feat, "strategy": method_id, "_artifacts": artifacts}
+
+    # --- NEW: Scaffold-split validation ---
+    if method_id == "E42_scaffold_split":
+        if df is None or smiles_col is None or smiles_col not in df.columns:
+            # Fallback to random split if scaffold info unavailable
+            return evaluate(model, X, y, "E42_random_split", df=df, smiles_col=smiles_col)
+        from rdkit import Chem
+        from rdkit.Chem.Scaffolds import MurckoScaffold
+        scaffolds = []
+        for smi in df[smiles_col]:
+            try:
+                mol = Chem.MolFromSmiles(str(smi))
+                sc = MurckoScaffold.GetScaffoldForMol(mol) if mol else None
+                scaffolds.append(Chem.MolToSmiles(sc) if sc else "")
+            except Exception:
+                scaffolds.append("")
+        scaffolds = np.array(scaffolds)
+        valid_mask = scaffolds != ""
+        if valid_mask.sum() < 100:
+            return evaluate(model, X, y, "E42_random_split", df=df, smiles_col=smiles_col)
+        Xs_valid = Xs[valid_mask]
+        y_valid = y[valid_mask] if hasattr(y, "__getitem__") else np.array(y)[valid_mask]
+        groups = pd.Series(scaffolds[valid_mask]).astype("category").cat.codes.values
+        gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+        train_idx, test_idx = next(gss.split(Xs_valid, y_valid, groups=groups))
+        X_train, X_test = Xs_valid[train_idx], Xs_valid[test_idx]
+        y_train, y_test = y_valid[train_idx], y_valid[test_idx]
+        model.fit(X_train, y_train)
+        r2 = model.score(X_test, y_test)
+        y_pred = model.predict(X_test)
+        rmse = float(np.sqrt(np.mean((y_test - y_pred) ** 2)))
+        mae = float(np.mean(np.abs(y_test - y_pred)))
+        from scipy.stats import pearsonr
+        pr, _ = pearsonr(y_test, y_pred)
+        n_train_scaffolds = len(np.unique(groups[train_idx]))
+        n_test_scaffolds = len(np.unique(groups[test_idx]))
+        artifacts = {
+            "y_true": y_test.tolist() if hasattr(y_test, "tolist") else list(y_test),
+            "y_pred": y_pred.tolist(),
+            "feature_importances": _extract_feature_importances(model).tolist() if _extract_feature_importances(model) is not None else None,
+            "n_train_scaffolds": int(n_train_scaffolds),
+            "n_test_scaffolds": int(n_test_scaffolds),
+        }
+        try:
+            import shap
+            n_shap = min(50, len(X_test))
+            explainer = shap.Explainer(model, X_train[:min(200, len(X_train))])
+            sv = explainer(X_test[:n_shap])
+            artifacts["shap_values"] = sv.values.tolist() if hasattr(sv.values, "tolist") else sv.values
+            artifacts["shap_background"] = X_train[:min(200, len(X_train))].tolist()
+        except Exception:
+            pass
+        return {
+            "r2": float(r2), "rmse": rmse, "mae": mae, "pearson_r": float(pr),
+            "strategy": method_id, "_artifacts": artifacts,
+            "n_train": int(len(y_train)), "n_test": int(len(y_test)),
+        }
+
+    # --- NEW: Temporal-split validation ---
+    if method_id == "E42_temporal_split":
+        if df is None or "publication_date" not in df.columns:
+            return evaluate(model, X, y, "E42_random_split", df=df, smiles_col=smiles_col)
+        dates = pd.to_datetime(df["publication_date"], errors="coerce")
+        valid_mask = dates.notna()
+        if valid_mask.sum() < 100:
+            return evaluate(model, X, y, "E42_random_split", df=df, smiles_col=smiles_col)
+        sort_idx = np.argsort(dates[valid_mask].values)
+        Xs_valid = Xs[valid_mask][sort_idx]
+        y_valid = (y[valid_mask] if hasattr(y, "__getitem__") else np.array(y)[valid_mask])[sort_idx]
+        split_at = int(0.8 * len(y_valid))
+        X_train, X_test = Xs_valid[:split_at], Xs_valid[split_at:]
+        y_train, y_test = y_valid[:split_at], y_valid[split_at:]
+        model.fit(X_train, y_train)
+        r2 = model.score(X_test, y_test)
+        y_pred = model.predict(X_test)
+        rmse = float(np.sqrt(np.mean((y_test - y_pred) ** 2)))
+        mae = float(np.mean(np.abs(y_test - y_pred)))
+        from scipy.stats import pearsonr
+        pr, _ = pearsonr(y_test, y_pred)
+        train_date_range = f"{dates[valid_mask].iloc[sort_idx[0]]:%Y-%m} to {dates[valid_mask].iloc[sort_idx[split_at-1]]:%Y-%m}"
+        test_date_range = f"{dates[valid_mask].iloc[sort_idx[split_at]]:%Y-%m} to {dates[valid_mask].iloc[sort_idx[-1]]:%Y-%m}"
+        artifacts = {
+            "y_true": y_test.tolist() if hasattr(y_test, "tolist") else list(y_test),
+            "y_pred": y_pred.tolist(),
+            "feature_importances": _extract_feature_importances(model).tolist() if _extract_feature_importances(model) is not None else None,
+            "train_date_range": train_date_range,
+            "test_date_range": test_date_range,
+        }
+        try:
+            import shap
+            n_shap = min(50, len(X_test))
+            explainer = shap.Explainer(model, X_train[:min(200, len(X_train))])
+            sv = explainer(X_test[:n_shap])
+            artifacts["shap_values"] = sv.values.tolist() if hasattr(sv.values, "tolist") else sv.values
+            artifacts["shap_background"] = X_train[:min(200, len(X_train))].tolist()
+        except Exception:
+            pass
+        return {
+            "r2": float(r2), "rmse": rmse, "mae": mae, "pearson_r": float(pr),
+            "strategy": method_id, "_artifacts": artifacts,
+            "n_train": int(len(y_train)), "n_test": int(len(y_test)),
+        }
+
+    # --- NEW: Nested cross-validation ---
+    if method_id == "E43_nested_cv":
+        from sklearn.model_selection import GridSearchCV
+        param_grid = _get_param_grid(model)
+        outer_kf = KFold(n_splits=5, shuffle=True, random_state=42)
+        outer_scores = []
+        outer_preds = []
+        outer_trues = []
+        best_params_per_fold = []
+        for train_idx, test_idx in outer_kf.split(Xs):
+            X_train, X_test = Xs[train_idx], Xs[test_idx]
+            y_train, y_test = y[train_idx], y[test_idx]
+            inner_gs = GridSearchCV(
+                model.__class__(), param_grid, cv=3, scoring="r2", n_jobs=-1
+            )
+            inner_gs.fit(X_train, y_train)
+            best_model = inner_gs.best_estimator_
+            outer_scores.append(best_model.score(X_test, y_test))
+            outer_preds.extend(best_model.predict(X_test).tolist())
+            outer_trues.extend(y_test.tolist() if hasattr(y_test, "tolist") else list(y_test))
+            best_params_per_fold.append(str(inner_gs.best_params_))
+        scores = np.array(outer_scores)
+        # Fit on full data for feature importances and SHAP
+        model.fit(Xs, y)
+        artifacts = {
+            "y_true": outer_trues,
+            "y_pred": outer_preds,
+            "cv_scores_per_fold": scores.tolist(),
+            "best_params_per_fold": best_params_per_fold,
+            "feature_importances": _extract_feature_importances(model).tolist() if _extract_feature_importances(model) is not None else None,
+        }
+        try:
+            import shap
+            n_shap = min(50, len(Xs))
+            explainer = shap.Explainer(model, Xs[:min(200, len(Xs))])
+            sv = explainer(Xs[:n_shap])
+            artifacts["shap_values"] = sv.values.tolist() if hasattr(sv.values, "tolist") else sv.values
+            artifacts["shap_background"] = Xs[:min(200, len(Xs))].tolist()
+        except Exception:
+            pass
+        return {
+            "r2": float(scores.mean()), "r2_std": float(scores.std()),
+            "strategy": method_id, "_artifacts": artifacts,
+        }
 
     # Fallback: default 5-fold CV
     scores = cross_val_score(model, Xs, y, cv=n_splits, scoring="r2")
-    return {"r2": float(scores.mean()), "r2_std": float(scores.std()), "strategy": method_id}
+    return {"r2": float(scores.mean()), "r2_std": float(scores.std()), "strategy": method_id, "_artifacts": {}}
 
 
 def run_screening(model, X_train: np.ndarray, y_train: np.ndarray, 
@@ -319,12 +559,17 @@ def run_pipeline(pipeline_config: dict, registry: dict = None) -> dict:
         "metrics": {},
         "duration_sec": 0,
         "error": None,
+        "layer_timings": {},
     }
+    layer_timings = {}
     try:
         # Layer 1: Data loading + cleaning
+        t0 = time.time()
         df, y, smiles_col = load_data(cfg, registry)
+        layer_timings["layer1"] = round(time.time() - t0, 2)
         
         # Layer 2: Feature generation
+        t0 = time.time()
         l2_method = cfg.get(2) or cfg.get("layer2", {}).get("method_id", "F21_rdkit_basic")
         X = compute_features(df, smiles_col, l2_method)
         
@@ -333,16 +578,22 @@ def run_pipeline(pipeline_config: dict, registry: dict = None) -> dict:
         if baseline_as_feature and "jv_reverse_scan_pce_without_modulator" in df.columns:
             baseline = pd.to_numeric(df["jv_reverse_scan_pce_without_modulator"], errors="coerce").fillna(0).values.reshape(-1, 1)
             X = np.hstack([X, baseline])
+        layer_timings["layer2"] = round(time.time() - t0, 2)
         
         # Layer 3: Model
+        t0 = time.time()
         l3_method = cfg.get(3) or cfg.get("layer3", {}).get("method_id", "M31_random_forest")
         model = get_model(l3_method)
+        layer_timings["layer3"] = round(time.time() - t0, 2)
         
         # Layer 4: Evaluation
+        t0 = time.time()
         l4_method = cfg.get(4) or cfg.get("layer4", {}).get("method_id", "E43_5fold_cv")
-        metrics = evaluate(model, X, y.values if hasattr(y, "values") else y, l4_method)
+        metrics = evaluate(model, X, y.values if hasattr(y, "values") else y, l4_method, df=df, smiles_col=smiles_col)
+        layer_timings["layer4"] = round(time.time() - t0, 2)
         
         # Layer 5: Screening (optional)
+        t0 = time.time()
         l5_method = cfg.get(5) or cfg.get("layer5", {}).get("method_id")
         if l5_method and l5_method not in ("D54_report_only", None):
             # Simple placeholder: use a subset as "candidates"
@@ -351,6 +602,7 @@ def run_pipeline(pipeline_config: dict, registry: dict = None) -> dict:
             y_cand = y.values[:n_cand] if hasattr(y, "values") else y[:n_cand]
             screen_result = run_screening(model, X, y.values if hasattr(y, "values") else y, X_cand, l5_method)
             metrics["layer5"] = screen_result
+        layer_timings["layer5"] = round(time.time() - t0, 2)
         
         result["status"] = "success"
         result["metrics"] = metrics
@@ -361,4 +613,5 @@ def run_pipeline(pipeline_config: dict, registry: dict = None) -> dict:
         result["error"] = f"{type(e).__name__}: {str(e)}"
         result["traceback"] = traceback.format_exc()
     result["duration_sec"] = round(time.time() - start, 2)
+    result["layer_timings"] = layer_timings
     return result

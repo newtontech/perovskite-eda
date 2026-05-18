@@ -82,6 +82,19 @@ def _compute_topological_torsion(smiles_list, n_bits=2048):
     return np.array(fps)
 
 
+def _compute_morgan(smiles_list, radius=2, n_bits=2048):
+    """Morgan fingerprints (circular fingerprints) with configurable bit size."""
+    fps = []
+    for smi in smiles_list:
+        mol = _smiles_to_mol(smi)
+        if mol is None:
+            fps.append(np.zeros(n_bits))
+            continue
+        fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius, nBits=n_bits)
+        fps.append(np.array(fp))
+    return np.array(fps)
+
+
 FP_FUNCS = {
     "F2_ecfp": lambda smi: _compute_ecfp(smi, radius=2),
     "F2_ecfp6": lambda smi: _compute_ecfp(smi, radius=3),
@@ -89,6 +102,12 @@ FP_FUNCS = {
     "F4_krfp": _compute_krfp,
     "F5_atom_pair": _compute_atom_pair,
     "F6_topological_torsion": _compute_topological_torsion,
+    "F7_morgan_256": lambda smi: _compute_morgan(smi, radius=2, n_bits=256),
+    "F7_morgan_512": lambda smi: _compute_morgan(smi, radius=2, n_bits=512),
+    "F7_morgan_1024": lambda smi: _compute_morgan(smi, radius=2, n_bits=1024),
+    "F22_morgan_256": lambda smi: _compute_morgan(smi, radius=2, n_bits=256),
+    "F22_morgan_512": lambda smi: _compute_morgan(smi, radius=2, n_bits=512),
+    "F22_morgan_1024": lambda smi: _compute_morgan(smi, radius=2, n_bits=1024),
 }
 
 

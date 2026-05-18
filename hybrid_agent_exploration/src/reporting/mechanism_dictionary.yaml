@@ -1,0 +1,75 @@
+# PSC Passivation Mechanism Dictionary
+# Maps chemical substructure patterns to known perovskite passivation mechanisms.
+# Used by narrative_engine.py to generate chemically-grounded interpretation paragraphs.
+#
+# Format:
+#   pattern_keyword: [list of keywords that describe substructures]
+#   mechanism: Human-readable mechanism description
+#   evidence_papers: [DOIs or short citations for supporting literature]
+#   confidence: high / medium / low
+
+mechanisms:
+  - pattern_keyword: ["nitrogen", "amine", "pyridine", "imidazole", "pyrrole"]
+    mechanism: "Lewis base / coordination to under-coordinated Pb²⁺ at surface vacancies"
+    evidence_papers: ["10.1126/science.abl8250", "10.1002/aenm.202103000"]
+    confidence: high
+
+  - pattern_keyword: ["sulfur", "thiol", "thiophene", "thioether"]
+    mechanism: "Soft Lewis base interaction with Pb²⁺ (soft acid-soft base); potential sulfur vacancy passivation"
+    evidence_papers: ["10.1021/jacs.1c08970"]
+    confidence: high
+
+  - pattern_keyword: ["oxygen", "carbonyl", "ester", "hydroxyl", "ether", "phenol"]
+    mechanism: "Hydrogen bonding with halide ions or polar interaction with Pb-I framework"
+    evidence_papers: ["10.1038/s41560-019-0468-5"]
+    confidence: medium
+
+  - pattern_keyword: ["phosphorus", "phosphine", "phosphate"]
+    mechanism: "Strong Lewis base coordination to Pb²⁺; often used as anti-solvent additives"
+    evidence_papers: ["10.1021/jacs.0c03816"]
+    confidence: high
+
+  - pattern_keyword: ["fluorine", "chlorine", "bromine", "iodine"]
+    mechanism: "Halogen bonding with halide vacancies or dipole-induced field effect on carrier transport"
+    evidence_papers: ["10.1126/science.abb8985"]
+    confidence: medium
+
+  - pattern_keyword: ["aromatic", "benzene", "phenyl", "naphthalene", "anthracene"]
+    mechanism: "π-conjugated backbone for charge transport enhancement; possible hydrophobic shielding against moisture"
+    evidence_papers: ["10.1002/adma.202008052"]
+    confidence: medium
+
+  - pattern_keyword: ["carbon chain", "alkyl", "methyl", "ethyl", "propyl"]
+    mechanism: "Steric / hydrophobic barrier formation; can improve stability but may hinder charge transport if too long"
+    evidence_papers: ["10.1038/s41467-020-15818-6"]
+    confidence: medium
+
+  - pattern_keyword: ["amide", "carbamate", "urea"]
+    mechanism: "Dual H-bond donor/acceptor for halide coordination and Pb²⁺ chelation"
+    evidence_papers: ["10.1021/jacs.2c05680"]
+    confidence: medium
+
+  - pattern_keyword: ["cyano", "nitrile"]
+    mechanism: "Strong dipole moment for interface polarization; potential Lewis base interaction with Pb²⁺"
+    evidence_papers: ["10.1002/aenm.202102800"]
+    confidence: medium
+
+  - pattern_keyword: ["carboxylic acid", "COOH", "sulfonic acid"]
+    mechanism: "Proton transfer to form ionic bonds with perovskite surface; can also induce protonation of halide sites"
+    evidence_papers: ["10.1126/science.aay9698"]
+    confidence: high
+
+  - pattern_keyword: ["silane", "Si-O", "siloxane"]
+    mechanism: "Cross-linking surface passivation layer; moisture barrier formation"
+    evidence_papers: ["10.1021/acsenergylett.0c02345"]
+    confidence: medium
+
+  - pattern_keyword: ["fullerene", "C60", "PCBM"]
+    mechanism: "Electron accepting / quenching; defect state passivation at grain boundaries"
+    evidence_papers: ["10.1126/science.aam6625"]
+    confidence: high
+
+# Fallback for unmatched patterns
+fallback:
+  mechanism: "Substructure does not match any well-documented PSC passivation motif in the current literature base. Mechanism requires experimental validation."
+  confidence: low

@@ -59,6 +59,9 @@ layer2_representations:
       KRFP: {n_bits: 4860}
       AP: {n_bits: 2048}
       TT: {n_bits: 2048}
+      Morgan_256: {radius: 2, n_bits: 256}
+      Morgan_512: {radius: 2, n_bits: 512}
+      Morgan_1024: {radius: 2, n_bits: 1024}
 
   F23_dft_features:
     name: "DFT/量化特征"

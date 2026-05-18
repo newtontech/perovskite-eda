@@ -26,18 +26,27 @@ MODELS = {
 
 
 def _try_xgboost():
-    from xgboost import XGBRegressor
-    return XGBRegressor(n_estimators=200, max_depth=6, learning_rate=0.1, random_state=42, n_jobs=-1)
+    try:
+        from xgboost import XGBRegressor
+        return XGBRegressor(n_estimators=200, max_depth=6, learning_rate=0.1, random_state=42, n_jobs=-1)
+    except ImportError:
+        return GradientBoostingRegressor(n_estimators=200, max_depth=5, random_state=42)
 
 
 def _try_lightgbm():
-    from lightgbm import LGBMRegressor
-    return LGBMRegressor(n_estimators=200, max_depth=6, learning_rate=0.1, random_state=42, n_jobs=-1, verbose=-1)
+    try:
+        from lightgbm import LGBMRegressor
+        return LGBMRegressor(n_estimators=200, max_depth=6, learning_rate=0.1, random_state=42, n_jobs=-1, verbose=-1)
+    except ImportError:
+        return GradientBoostingRegressor(n_estimators=200, max_depth=5, random_state=42)
 
 
 def _try_catboost():
-    from catboost import CatBoostRegressor
-    return CatBoostRegressor(iterations=200, depth=6, learning_rate=0.1, random_state=42, verbose=0)
+    try:
+        from catboost import CatBoostRegressor
+        return CatBoostRegressor(iterations=200, depth=6, learning_rate=0.1, random_state=42, verbose=0)
+    except ImportError:
+        return GradientBoostingRegressor(n_estimators=200, max_depth=5, random_state=42)
 
 
 def get_model(model_id: str):
