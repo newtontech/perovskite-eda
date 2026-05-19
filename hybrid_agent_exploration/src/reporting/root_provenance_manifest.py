@@ -27,6 +27,7 @@ def generate_root_provenance_manifest(
     report_dir: str | Path,
     si_dir: str | Path,
     *,
+    candidate_library_dir: str | Path | None = None,
     output_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Build and write a root-level provenance manifest.
@@ -35,6 +36,8 @@ def generate_root_provenance_manifest(
         verified_discovery_artifact_dir: Directory containing workflow_manifest.json.
         report_dir: Directory containing main report artifacts.
         si_dir: Directory containing supplementary information artifacts.
+        candidate_library_dir: Optional directory containing candidate_library.csv,
+            source_summary.json, and provenance.json from CandidateLibraryBuilder.
         output_path: Optional explicit path. Defaults to the common parent of
             report_dir and si_dir plus ``provenance_manifest.json``.
 
@@ -45,6 +48,7 @@ def generate_root_provenance_manifest(
     discovery_root = Path(verified_discovery_artifact_dir)
     report_root = Path(report_dir)
     si_root = Path(si_dir)
+    candidate_root = Path(candidate_library_dir) if candidate_library_dir is not None else None
     output = Path(output_path) if output_path is not None else _default_output_path(report_root, si_root)
     root_dir = output.parent
 
@@ -90,6 +94,20 @@ def generate_root_provenance_manifest(
             )
         )
 
+    if candidate_root is not None:
+        for path in _iter_files(candidate_root):
+            artifact_id = f"candidate_library:{_artifact_id_from_path(path)}"
+            category = _category_for_candidate_library(path)
+            artifacts[category].append(
+                _artifact_record(
+                    artifact_id,
+                    path,
+                    root_dir=root_dir,
+                    source_root=candidate_root,
+                    declared_in="candidate_library_dir",
+                )
+            )
+
     manifest = {
         "schema_version": SCHEMA_VERSION,
         "generated_at": _now_iso(),
@@ -112,6 +130,8 @@ def generate_root_provenance_manifest(
         },
         "artifacts": {category: sorted(records, key=lambda item: item["id"]) for category, records in artifacts.items()},
     }
+    if candidate_root is not None:
+        manifest["roots"]["candidate_library_dir"] = _display_path(candidate_root, root_dir)
 
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -125,12 +145,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--verified-discovery-artifact-dir", required=True)
     parser.add_argument("--report-dir", required=True)
     parser.add_argument("--si-dir", required=True)
+    parser.add_argument("--candidate-library-dir")
     parser.add_argument("--output-path")
     args = parser.parse_args(argv)
     manifest = generate_root_provenance_manifest(
         args.verified_discovery_artifact_dir,
         args.report_dir,
         args.si_dir,
+        candidate_library_dir=args.candidate_library_dir,
         output_path=args.output_path,
     )
     output_path = args.output_path or _default_output_path(Path(args.report_dir), Path(args.si_dir))
@@ -170,6 +192,15 @@ def _category_for_report_sidecar(path: Path, *, default: str) -> str:
     if "audit" in name:
         return "audit"
     return default
+
+
+def _category_for_candidate_library(path: Path) -> str:
+    name = path.name.lower()
+    if name == "candidate_library.csv":
+        return "discovery"
+    if "provenance" in name or "summary" in name:
+        return "audit"
+    return "discovery"
 
 
 def _artifact_record(

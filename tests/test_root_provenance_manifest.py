@@ -41,8 +41,17 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
     _write(report_dir / "review_report.json", '{"review": {"passed": true}}\n')
     _write(si_dir / "supplementary_information.md", "# SI\n")
     _write(si_dir / "audit_summary.json", '{"passed": true}\n')
+    candidate_library_dir = tmp_path / "candidate_library"
+    _write(candidate_library_dir / "candidate_library.csv", "candidate_id,smiles\ncand-001,C\n")
+    _write(candidate_library_dir / "source_summary.json", '{"output_rows": 1}\n')
+    _write(candidate_library_dir / "provenance.json", '{"network_access": "not_used"}\n')
 
-    manifest = generate_root_provenance_manifest(discovery_dir, report_dir, si_dir)
+    manifest = generate_root_provenance_manifest(
+        discovery_dir,
+        report_dir,
+        si_dir,
+        candidate_library_dir=candidate_library_dir,
+    )
 
     output_path = tmp_path / "report_bundle" / "provenance_manifest.json"
     assert output_path.exists()
@@ -54,8 +63,16 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
 
     assert {item["id"] for item in manifest["artifacts"]["dataset"]} == {"verified_train_csv"}
     assert {item["id"] for item in manifest["artifacts"]["model"]} == {"model_manifest_json"}
-    assert {item["id"] for item in manifest["artifacts"]["discovery"]} == {"ranked_candidates_csv"}
-    assert {item["id"] for item in manifest["artifacts"]["audit"]} == {"discovery_audit_report_md", "audit_summary_json"}
+    assert {item["id"] for item in manifest["artifacts"]["discovery"]} == {
+        "candidate_library:candidate_library_csv",
+        "ranked_candidates_csv",
+    }
+    assert {item["id"] for item in manifest["artifacts"]["audit"]} == {
+        "candidate_library:provenance_json",
+        "candidate_library:source_summary_json",
+        "discovery_audit_report_md",
+        "audit_summary_json",
+    }
     assert {item["id"] for item in manifest["artifacts"]["report"]} == {"main_text_md"}
     assert {item["id"] for item in manifest["artifacts"]["SI"]} == {"supplementary_information_md"}
     assert {item["id"] for item in manifest["artifacts"]["claim"]} == {"claim_ledger_json"}
@@ -65,6 +82,7 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
     assert verified_train["exists"] is True
     assert verified_train["size_bytes"] == len("record_id,smiles\nrow-001,C\n")
     assert verified_train["sha256_16"]
+    assert manifest["roots"]["candidate_library_dir"] == str(candidate_library_dir)
 
 
 def test_root_provenance_manifest_records_missing_declared_outputs(tmp_path):
