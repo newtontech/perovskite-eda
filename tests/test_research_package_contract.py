@@ -101,6 +101,34 @@ def test_contract_verifies_complete_research_package_with_candidate_library(tmp_
     assert "source_completeness/source_completeness.json" in result["checks"]["required_artifacts"]["paths"]
 
 
+def test_contract_verifies_relative_package_dir_workflow_outputs(tmp_path, monkeypatch):
+    from run_research_package import run_research_package
+    from verify_research_package import verify_research_package
+
+    raw_csv = tmp_path / "raw_psc.csv"
+    candidate_csv = tmp_path / "candidate_source.csv"
+    _write_source_table(raw_csv)
+    _candidate_source().to_csv(candidate_csv, index=False)
+
+    package = run_research_package(
+        input_path=raw_csv,
+        output_dir=tmp_path / "research_package",
+        dataset_id="relative-package-fixture",
+        evidence_mode="source-columns",
+        candidate_source_path=candidate_csv,
+        candidate_source_name="fixture-vendor-source",
+        min_verified_rows=4,
+        top_k=1,
+    )
+
+    monkeypatch.chdir(tmp_path)
+
+    result = verify_research_package(Path(package.output_dir.name), require_candidate_library=True)
+
+    assert result["status"] == "passed"
+    assert result["summary"]["dataset_id"] == "relative-package-fixture"
+
+
 def test_contract_fails_when_required_candidate_library_is_absent(tmp_path):
     from run_research_package import run_research_package
     from verify_research_package import ResearchPackageContractError, verify_research_package
