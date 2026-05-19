@@ -222,30 +222,26 @@ def test_plan_registry_manifest_is_written_with_report_bundle(tmp_path):
     assert all(entry["status"] == "passed" for entry in plan_manifest["plans"])
 
 
-def test_plan_registry_strict_gate_fails_missing_scaffold_and_shap(tmp_path):
+def test_plan_registry_strict_gate_fails_missing_scaffold_and_shap():
     from reporting.plan_registry import PlanRegistryError, load_plan_registry
-    from reporting.top_journal_report import TopJournalReport
 
-    results = [
-        row for row in _sample_results()
-        if row["config"]["layer4"]["method_id"] == "E42_random_split"
-    ]
-    artifacts = {
-        "y_true": [0.0, 1.0, 2.0],
-        "y_pred": [0.1, 0.9, 1.8],
-        "feature_importances": [0.4, 0.3, 0.2],
-    }
     registry = load_plan_registry()
-
+    context = {
+        "successful_results": True,
+        "successful_runs": 4,
+        "prediction_arrays": True,
+        "main_figures": 5,
+        "figure_claims": 5,
+        "figures_in_context": True,
+        "claim_ledger": True,
+        "metric_claims": 3,
+        "references": 40,
+        "review_report": True,
+        "review_passed": True,
+        "audit_passed": True,
+    }
     try:
-        TopJournalReport(
-            results,
-            artifacts,
-            output_dir=tmp_path,
-            quality_target="top-journal",
-            plan_registry=registry,
-            enforce_plan_gates=True,
-        ).generate()
+        registry.require_passed(context)
     except PlanRegistryError as exc:
         message = str(exc)
     else:
