@@ -59,6 +59,13 @@ def test_cli_runs_source_column_verified_discovery_smoke(tmp_path):
     assert workflow_manifest.exists()
     manifest = json.loads(workflow_manifest.read_text(encoding="utf-8"))
     assert manifest["dataset_id"] == "cli-source-fixture"
+    assert manifest["evidence_mode"] == "source-columns"
+    assert manifest["verification_level"] == "source_columns_only"
+    assert manifest["publication_grade"] is False
+    assert manifest["source_columns_is_smoke_only"] is True
+    assert manifest["input_path"] == str(input_csv)
+    assert manifest["max_rows"] is None
+    assert "cache_dir" not in manifest
     assert manifest["verified_rows"] == 2
     assert manifest["quarantine_rows"] == 1
     assert manifest["ranked_candidates"] == 1
@@ -74,10 +81,19 @@ def test_cli_runs_source_column_verified_discovery_smoke(tmp_path):
 
 
 def test_cli_external_cached_mode_initializes_cache_paths(tmp_path):
-    from run_verified_discovery import build_authenticator
+    from run_verified_discovery import build_authenticator, default_cache_dir
 
-    cache_dir = tmp_path / "cache"
+    cache_dir = default_cache_dir("external-fixture")
     authenticator = build_authenticator("external-cached", pd.DataFrame(), cache_dir)
 
+    assert cache_dir.as_posix().endswith("hybrid_agent_exploration/.cache/verified_discovery/external-fixture/evidence_cache")
     assert authenticator.reference_verifier.cache_path == cache_dir / "reference_cache.json"
     assert authenticator.molecule_verifier.cache_path == cache_dir / "molecule_cache.json"
+
+
+def test_gitignore_excludes_verified_discovery_runtime_outputs():
+    gitignore = (Path(__file__).resolve().parents[1] / ".gitignore").read_text(encoding="utf-8")
+
+    assert "hybrid_agent_exploration/.cache/" in gitignore
+    assert "hybrid_agent_exploration/results/verified_discovery_runs/" in gitignore
+    assert "**/evidence_cache/" in gitignore
