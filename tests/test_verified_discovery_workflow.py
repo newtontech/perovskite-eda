@@ -72,6 +72,7 @@ def test_workflow_generates_training_and_candidate_discovery_artifacts(tmp_path)
         model=LinearRegression(),
         feature_fn=_feature_fn,
         top_k=2,
+        min_verified_rows=4,
     )
 
     assert artifacts.verified_train_csv.exists()
