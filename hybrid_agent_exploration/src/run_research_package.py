@@ -8,6 +8,7 @@ manifest into one reproducible artifact directory.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -21,6 +22,10 @@ from run_verified_discovery import build_authenticator, default_cache_dir, load_
 from screening.candidate_library_builder import CandidateLibraryBuilder
 from screening.verified_candidate_discovery import CANDIDATE_LIBRARY_CONTRACT_VERSION
 from screening.verified_discovery_workflow import VerifiedDiscoveryWorkflow
+
+
+PACKAGE_MANIFEST_SCHEMA_VERSION = "research-package-manifest-v1"
+FILE_HASH_BYTES_LIMIT = 1024 * 1024
 
 
 @dataclass(frozen=True)
@@ -130,20 +135,20 @@ def run_research_package(
     ).generate()
 
     root_manifest_path = output_root / "provenance_manifest.json"
-    generate_root_provenance_manifest(
-        verified_discovery_dir,
-        main_bundle.path.parent,
-        si_path.parent,
-        candidate_library_dir=candidate_library_dir,
-        output_path=root_manifest_path,
-    )
-
     package_manifest_path = output_root / "package_manifest.json"
     _write_json(
         _package_manifest(
             dataset_id=dataset_id,
             output_root=output_root,
             evidence_mode=evidence_mode,
+            input_path=Path(input_path),
+            candidate_source_path=Path(candidate_source_path) if candidate_source_path is not None else None,
+            candidate_source_name=candidate_source_name,
+            cache_dir=cache_root if evidence_mode == "external-cached" else None,
+            min_verified_rows=min_verified_rows,
+            top_k=top_k,
+            report_quality_target=report_quality_target,
+            verified_discovery_top_n=verified_discovery_top_n,
             discovery_artifacts=discovery_artifacts,
             candidate_library_dir=candidate_library_dir,
             candidate_library_rows=candidate_library_rows,
@@ -155,6 +160,14 @@ def run_research_package(
             candidate_pool_contract_version=CANDIDATE_LIBRARY_CONTRACT_VERSION,
         ),
         package_manifest_path,
+    )
+    generate_root_provenance_manifest(
+        verified_discovery_dir,
+        main_bundle.path.parent,
+        si_path.parent,
+        candidate_library_dir=candidate_library_dir,
+        package_manifest_path=package_manifest_path,
+        output_path=root_manifest_path,
     )
     return ResearchPackageArtifacts(
         output_dir=output_root,
@@ -224,6 +237,14 @@ def _package_manifest(
     dataset_id: str,
     output_root: Path,
     evidence_mode: str,
+    input_path: Path,
+    candidate_source_path: Path | None,
+    candidate_source_name: str | None,
+    cache_dir: Path | None,
+    min_verified_rows: int,
+    top_k: int,
+    report_quality_target: str,
+    verified_discovery_top_n: int | None,
     discovery_artifacts,
     candidate_library_dir: Path | None,
     candidate_library_rows: int | None,
@@ -236,9 +257,36 @@ def _package_manifest(
 ) -> dict[str, Any]:
     verification_level = _verification_level(evidence_mode)
     return {
+        "schema_version": PACKAGE_MANIFEST_SCHEMA_VERSION,
         "dataset_id": dataset_id,
         "generated_at": _now_iso(),
         "package_runner": "run_research_package",
+        "runner": {
+            "name": "run_research_package",
+            "args": {
+                "input": str(input_path),
+                "output_dir": str(output_root),
+                "dataset_id": dataset_id,
+                "evidence_mode": evidence_mode,
+                "candidate_source": str(candidate_source_path) if candidate_source_path is not None else None,
+                "candidate_source_name": candidate_source_name,
+                "cache_dir": str(cache_dir) if cache_dir is not None else None,
+                "max_rows": max_rows,
+                "min_verified_rows": min_verified_rows,
+                "top_k": top_k,
+                "report_quality_target": report_quality_target,
+                "verified_discovery_top_n": verified_discovery_top_n,
+            },
+        },
+        "input_hash_policy": {
+            "algorithm": "sha256",
+            "digest": "first_16_hex_chars",
+            "max_bytes_hashed_per_file": FILE_HASH_BYTES_LIMIT,
+        },
+        "inputs": {
+            "source_table": _file_facts(input_path),
+            "candidate_source": _file_facts(candidate_source_path) if candidate_source_path else None,
+        },
         "evidence_mode": evidence_mode,
         "verification_level": verification_level,
         "publication_grade": evidence_mode == "external-cached",
@@ -269,6 +317,23 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 def _write_json(payload: dict[str, Any], path: Path) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _file_facts(path: Path) -> dict[str, Any]:
+    exists = path.exists()
+    return {
+        "path": str(path),
+        "exists": exists,
+        "size_bytes": path.stat().st_size if exists and path.is_file() else None,
+        "sha256_16": _sha256_16(path) if exists and path.is_file() else None,
+    }
+
+
+def _sha256_16(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        digest.update(handle.read(FILE_HASH_BYTES_LIMIT))
+    return digest.hexdigest()[:16]
 
 
 def _relative(path: Path | None, root: Path) -> str | None:

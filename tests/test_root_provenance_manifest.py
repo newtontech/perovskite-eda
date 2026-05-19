@@ -45,12 +45,17 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
     _write(candidate_library_dir / "candidate_library.csv", "candidate_id,smiles\ncand-001,C\n")
     _write(candidate_library_dir / "source_summary.json", '{"output_rows": 1}\n')
     _write(candidate_library_dir / "provenance.json", '{"network_access": "not_used"}\n')
+    package_manifest = _write(
+        tmp_path / "package_manifest.json",
+        '{"schema_version": "research-package-manifest-v1"}\n',
+    )
 
     manifest = generate_root_provenance_manifest(
         discovery_dir,
         report_dir,
         si_dir,
         candidate_library_dir=candidate_library_dir,
+        package_manifest_path=package_manifest,
     )
 
     output_path = tmp_path / "report_bundle" / "provenance_manifest.json"
@@ -77,6 +82,8 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
     assert {item["id"] for item in manifest["artifacts"]["SI"]} == {"supplementary_information_md"}
     assert {item["id"] for item in manifest["artifacts"]["claim"]} == {"claim_ledger_json"}
     assert {item["id"] for item in manifest["artifacts"]["review"]} == {"review_report_json"}
+    assert {item["id"] for item in manifest["artifacts"]["package"]} == {"package_manifest_json"}
+    assert manifest["source_manifests"]["package_manifest_json"]["exists"] is True
 
     verified_train = manifest["artifacts"]["dataset"][0]
     assert verified_train["exists"] is True

@@ -19,7 +19,7 @@ from typing import Any
 MANIFEST_NAME = "provenance_manifest.json"
 SCHEMA_VERSION = "root-provenance-manifest-v1"
 HASH_BYTES_LIMIT = 1024 * 1024
-ARTIFACT_CATEGORIES = ("dataset", "model", "discovery", "report", "SI", "claim", "review", "audit")
+ARTIFACT_CATEGORIES = ("dataset", "model", "discovery", "report", "SI", "claim", "review", "audit", "package")
 
 
 def generate_root_provenance_manifest(
@@ -28,6 +28,7 @@ def generate_root_provenance_manifest(
     si_dir: str | Path,
     *,
     candidate_library_dir: str | Path | None = None,
+    package_manifest_path: str | Path | None = None,
     output_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Build and write a root-level provenance manifest.
@@ -38,6 +39,8 @@ def generate_root_provenance_manifest(
         si_dir: Directory containing supplementary information artifacts.
         candidate_library_dir: Optional directory containing candidate_library.csv,
             source_summary.json, and provenance.json from CandidateLibraryBuilder.
+        package_manifest_path: Optional top-level package_manifest.json emitted by
+            run_research_package.
         output_path: Optional explicit path. Defaults to the common parent of
             report_dir and si_dir plus ``provenance_manifest.json``.
 
@@ -49,6 +52,7 @@ def generate_root_provenance_manifest(
     report_root = Path(report_dir)
     si_root = Path(si_dir)
     candidate_root = Path(candidate_library_dir) if candidate_library_dir is not None else None
+    package_manifest = Path(package_manifest_path) if package_manifest_path is not None else None
     output = Path(output_path) if output_path is not None else _default_output_path(report_root, si_root)
     root_dir = output.parent
 
@@ -108,6 +112,17 @@ def generate_root_provenance_manifest(
                 )
             )
 
+    if package_manifest is not None:
+        artifacts["package"].append(
+            _artifact_record(
+                "package_manifest_json",
+                package_manifest,
+                root_dir=root_dir,
+                source_root=package_manifest.parent,
+                declared_in="package_manifest_path",
+            )
+        )
+
     manifest = {
         "schema_version": SCHEMA_VERSION,
         "generated_at": _now_iso(),
@@ -132,6 +147,8 @@ def generate_root_provenance_manifest(
     }
     if candidate_root is not None:
         manifest["roots"]["candidate_library_dir"] = _display_path(candidate_root, root_dir)
+    if package_manifest is not None:
+        manifest["source_manifests"]["package_manifest_json"] = _file_facts(package_manifest, root_dir=root_dir)
 
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -146,6 +163,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--report-dir", required=True)
     parser.add_argument("--si-dir", required=True)
     parser.add_argument("--candidate-library-dir")
+    parser.add_argument("--package-manifest-path")
     parser.add_argument("--output-path")
     args = parser.parse_args(argv)
     manifest = generate_root_provenance_manifest(
@@ -153,6 +171,7 @@ def main(argv: list[str] | None = None) -> int:
         args.report_dir,
         args.si_dir,
         candidate_library_dir=args.candidate_library_dir,
+        package_manifest_path=args.package_manifest_path,
         output_path=args.output_path,
     )
     output_path = args.output_path or _default_output_path(Path(args.report_dir), Path(args.si_dir))
