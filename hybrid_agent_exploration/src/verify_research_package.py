@@ -444,7 +444,7 @@ def _check_workflow_outputs(manifest: dict[str, Any], root: Path, errors: list[s
             errors.append(f"verified_discovery/workflow_manifest.json: outputs.{key} is required")
             continue
         _check_path(
-            root,
+            Path("."),
             discovery_root / str(value),
             kind="file",
             errors=errors,
