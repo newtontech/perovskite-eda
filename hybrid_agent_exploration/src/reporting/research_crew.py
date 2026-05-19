@@ -17,6 +17,16 @@ OVERCLAIM_PATTERNS = (
     "external validation was performed",
 )
 
+CANDIDATE_COUNT_PATTERN = re.compile(
+    r"\b(?P<count>\d{1,3}(?:,\d{3})+|\d+)\s+(?P<source>PubChem)\s+candidates?\b",
+    flags=re.IGNORECASE,
+)
+SAM_PCE_PATTERN = re.compile(
+    r"\b(?P<candidate>SAM-\d+)\b(?:(?!\n\n).){0,120}?"
+    r"(?P<pce>\d{1,2}(?:\.\d+)?)\s*%",
+    flags=re.IGNORECASE | re.DOTALL,
+)
+
 
 @dataclass
 class PlannerAgent:
@@ -130,6 +140,7 @@ class ClaimAuditorAgent:
                             "reason": "phrase exceeds the evidence supported by current metrics",
                         }
                     )
+        unsupported.extend(self._audit_candidate_discovery_claims(text, claim_ledger))
         missing_evidence = [
             item for item in claim_ledger
             if not item.get("evidence_id")
@@ -139,6 +150,83 @@ class ClaimAuditorAgent:
             "unsupported_claims": unsupported,
             "missing_evidence": missing_evidence,
         }
+
+    def _audit_candidate_discovery_claims(self, text: str, claim_ledger: list[dict]) -> list[dict[str, str]]:
+        unsupported: list[dict[str, str]] = []
+        for match in CANDIDATE_COUNT_PATTERN.finditer(text):
+            raw_count = match.group("count")
+            count = int(raw_count.replace(",", ""))
+            source = match.group("source")
+            if not self._has_candidate_count_evidence(claim_ledger, count, source):
+                unsupported.append(
+                    {
+                        "phrase": f"{raw_count} {source} candidates",
+                        "reason": "candidate-pool size claim lacks manifest-backed evidence",
+                    }
+                )
+
+        for match in SAM_PCE_PATTERN.finditer(text):
+            candidate = match.group("candidate").upper()
+            pce = float(match.group("pce"))
+            if not self._has_candidate_pce_evidence(claim_ledger, candidate, pce):
+                unsupported.append(
+                    {
+                        "phrase": f"{candidate} predicted PCE {pce:g}%",
+                        "reason": "candidate predicted-performance claim lacks manifest-backed evidence",
+                    }
+                )
+
+        return unsupported
+
+    @staticmethod
+    def _has_candidate_count_evidence(claim_ledger: list[dict], count: int, source: str) -> bool:
+        source_lower = source.lower()
+        for item in claim_ledger:
+            evidence_id = str(item.get("evidence_id", "")).lower()
+            if not any(token in evidence_id for token in ("manifest", "discovery", "candidate")):
+                continue
+            haystack = " ".join(
+                str(item.get(key, ""))
+                for key in ("claim", "source", "dataset", "candidate_source")
+            ).lower()
+            if source_lower not in haystack and source_lower not in evidence_id:
+                continue
+            if any(
+                ClaimAuditorAgent._numeric_matches(item.get(key), count)
+                for key in ("value", "count", "candidate_count", "n_candidates", "ranked_candidates")
+            ):
+                return True
+        return False
+
+    @staticmethod
+    def _has_candidate_pce_evidence(claim_ledger: list[dict], candidate: str, pce: float) -> bool:
+        candidate_lower = candidate.lower()
+        for item in claim_ledger:
+            evidence_id = str(item.get("evidence_id", "")).lower()
+            haystack = " ".join(
+                str(item.get(key, ""))
+                for key in ("claim", "candidate", "candidate_id", "name")
+            ).lower()
+            if candidate_lower not in haystack and candidate_lower not in evidence_id:
+                continue
+            if any(
+                ClaimAuditorAgent._numeric_matches(item.get(key), pce)
+                for key in ("value", "pce", "predicted_pce", "predicted_pce_percent")
+            ):
+                return True
+        return False
+
+    @staticmethod
+    def _numeric_matches(value: Any, expected: float | int) -> bool:
+        if value is None:
+            return False
+        if isinstance(value, dict):
+            return any(ClaimAuditorAgent._numeric_matches(item, expected) for item in value.values())
+        try:
+            observed = float(str(value).replace(",", "").rstrip("%"))
+        except (TypeError, ValueError):
+            return False
+        return abs(observed - float(expected)) < 1e-6
 
 
 @dataclass

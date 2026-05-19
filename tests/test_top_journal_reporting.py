@@ -285,6 +285,33 @@ def test_claim_auditor_flags_candidate_discovery_claims_without_manifest_evidenc
     assert findings["passed"] is False
 
 
+def test_claim_auditor_allows_candidate_discovery_claims_with_manifest_evidence():
+    from reporting.research_crew import ClaimAuditorAgent
+
+    text = (
+        "We screened 5,000 PubChem candidates and discovered SAM-1 "
+        "with a predicted PCE of 26.8%."
+    )
+    ledger = [
+        {
+            "claim": "Verified PubChem candidate pool size",
+            "evidence_id": "manifest:verified_discovery.pubchem_candidate_count",
+            "value": 5000,
+            "source": "PubChem verified discovery manifest",
+        },
+        {
+            "claim": "SAM-1 predicted PCE from verified discovery manifest",
+            "evidence_id": "manifest:verified_discovery.top_candidate.sam-1",
+            "candidate": "SAM-1",
+            "predicted_pce_percent": 26.8,
+        },
+    ]
+    findings = ClaimAuditorAgent(max_supported_r2=0.24).audit_text(text, ledger)
+
+    assert findings["unsupported_claims"] == []
+    assert findings["passed"] is True
+
+
 def test_quality_score_downgrades_failed_review_or_audit():
     from reporting.top_journal_report import TopJournalReport
 
