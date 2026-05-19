@@ -119,3 +119,25 @@ def test_builder_loads_csv_and_computes_delta_when_missing(tmp_path):
     verified = pd.read_csv(artifacts.verified_train_csv)
     assert verified["record_id"].tolist() == ["row-003"]
     assert verified.loc[0, "delta_pce"] == 2.5
+
+
+def test_builder_assigns_stable_record_ids_when_source_has_none(tmp_path):
+    from data.verified_dataset_builder import VerifiedDatasetBuilder
+
+    first = _record("row-001", "10.1021/acs.jpclett.6c00119")
+    second = _record("row-002", "", title="Missing DOI row")
+    for row in (first, second):
+        row.pop("record_id")
+
+    artifacts = VerifiedDatasetBuilder(_authenticator(), output_dir=tmp_path).build_from_dataframe(
+        pd.DataFrame([first, second]),
+        dataset_id="missing-record-id-fixture",
+    )
+
+    verified = pd.read_csv(artifacts.verified_train_csv)
+    quarantine = pd.read_csv(artifacts.quarantine_csv)
+    candidate_pool = pd.read_csv(artifacts.candidate_pool_csv)
+
+    assert verified["record_id"].tolist() == ["source_row_000001"]
+    assert quarantine["record_id"].tolist() == ["source_row_000002"]
+    assert candidate_pool["record_id"].tolist() == ["source_row_000001"]
