@@ -30,6 +30,7 @@ def test_canonical_research_package_targets_are_declared():
         "research-package",
         "research-package-smoke",
         "research-package-pdf",
+        "research-package-verify",
         "test-research-package",
     ):
         assert f".PHONY: {target}" in text or f" {target}" in text
@@ -83,6 +84,20 @@ def test_pdf_target_dry_run_checks_pandoc_and_exports_report_pdfs():
     assert "pandoc" in output
     assert "hybrid_agent_exploration/src/reporting/root_provenance_manifest.py" in output
     assert "--output-path /tmp/artifacts/provenance_manifest.json" in output
+
+
+def test_verify_target_dry_run_runs_contract_verifier_with_optional_gates():
+    output = _make_dry_run(
+        "research-package-verify",
+        ARTIFACT_DIR="/tmp/artifacts",
+        REQUIRE_CANDIDATE_LIBRARY="1",
+        REQUIRE_EVIDENCE_CACHE="1",
+    )
+
+    assert "hybrid_agent_exploration/src/verify_research_package.py" in output
+    assert "--package-dir /tmp/artifacts" in output
+    assert "--require-candidate-library" in output
+    assert "--require-evidence-cache" in output
 
 
 def test_test_research_package_target_runs_canonical_pytest_slice():

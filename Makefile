@@ -15,6 +15,7 @@ PANDOC_MAINFONT ?= DejaVu Serif
 
 RUN_RESEARCH_PACKAGE := hybrid_agent_exploration/src/run_research_package.py
 ROOT_PROVENANCE_MANIFEST := hybrid_agent_exploration/src/reporting/root_provenance_manifest.py
+VERIFY_RESEARCH_PACKAGE := hybrid_agent_exploration/src/verify_research_package.py
 VERIFIED_DISCOVERY_DIR := $(ARTIFACT_DIR)/verified_discovery
 REPORT_DIR := $(ARTIFACT_DIR)/report_bundle/main_text
 SI_DIR := $(ARTIFACT_DIR)/report_bundle/si
@@ -31,8 +32,10 @@ SI_RESOURCE_PATH := $(SI_DIR):$(ARTIFACT_DIR)
 
 CANDIDATE_SOURCE_ARGS := $(if $(CANDIDATE_SOURCE),--candidate-source $(CANDIDATE_SOURCE),)
 CANDIDATE_SOURCE_NAME_ARGS := $(if $(CANDIDATE_SOURCE_NAME),--candidate-source-name $(CANDIDATE_SOURCE_NAME),)
+VERIFY_CANDIDATE_LIBRARY_ARGS := $(if $(REQUIRE_CANDIDATE_LIBRARY),--require-candidate-library,)
+VERIFY_EVIDENCE_CACHE_ARGS := $(if $(REQUIRE_EVIDENCE_CACHE),--require-evidence-cache,)
 
-.PHONY: research-package research-package-smoke research-package-pdf test-research-package
+.PHONY: research-package research-package-smoke research-package-pdf research-package-verify test-research-package
 
 research-package:
 	$(PYTHON) $(RUN_RESEARCH_PACKAGE) \
@@ -76,6 +79,12 @@ research-package-pdf:
 		--output-path $(ROOT_PROVENANCE_JSON) \
 		$$candidate_library_args \
 		$$candidate_source_args
+
+research-package-verify:
+	$(PYTHON) $(VERIFY_RESEARCH_PACKAGE) \
+		--package-dir $(ARTIFACT_DIR) \
+		$(VERIFY_CANDIDATE_LIBRARY_ARGS) \
+		$(VERIFY_EVIDENCE_CACHE_ARGS)
 
 test-research-package:
 	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 $(PYTHON) -m pytest -q \
