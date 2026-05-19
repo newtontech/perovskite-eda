@@ -347,7 +347,7 @@ def _write_json_atomic(payload: dict[str, Any], path: Path) -> None:
             encoding="utf-8",
         )
         tmp_path.replace(path)
-    except Exception:
+    except BaseException:
         tmp_path.unlink(missing_ok=True)
         raise
 

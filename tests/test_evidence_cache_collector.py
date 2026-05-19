@@ -528,3 +528,28 @@ def test_report_write_failure_keeps_existing_json_readable(tmp_path, monkeypatch
         pass
 
     assert json.loads(report_path.read_text(encoding="utf-8")) == {"attempted_count": 1}
+
+
+def test_atomic_write_cleans_temp_file_after_keyboard_interrupt(tmp_path, monkeypatch):
+    from data.evidence_cache_collector import _write_cache
+
+    cache_path = tmp_path / "reference_cache.json"
+    cache_path.write_text(json.dumps({"existing": {"title": "safe"}}), encoding="utf-8")
+    temp_path = cache_path.with_name(f".{cache_path.name}.tmp")
+    original_write_text = Path.write_text
+
+    def interrupted_write_text(path, text, *args, **kwargs):
+        original_write_text(path, '{"partial"', *args, **kwargs)
+        raise KeyboardInterrupt()
+
+    monkeypatch.setattr(Path, "write_text", interrupted_write_text)
+
+    try:
+        _write_cache({"new": {"title": "unsafe"}}, cache_path)
+    except KeyboardInterrupt:
+        pass
+
+    assert json.loads(cache_path.read_text(encoding="utf-8")) == {
+        "existing": {"title": "safe"}
+    }
+    assert not temp_path.exists()
