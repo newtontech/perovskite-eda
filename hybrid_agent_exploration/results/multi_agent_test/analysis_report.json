@@ -1,0 +1,43 @@
+{
+  "overview": {
+    "total_agents": 4,
+    "successful": 4,
+    "failed": 0,
+    "best_r2": 0.2962125493212024,
+    "worst_r2": -0.0215822562324414,
+    "mean_r2": 0.10855013566318251
+  },
+  "top_10_layer_contributions": {
+    "L1": {
+      "agentic_veryloose": 3,
+      "traditional": 1
+    },
+    "L2": {
+      "F22_maccs": 3,
+      "F21_rdkit_basic": 1
+    },
+    "L3": {
+      "M31_random_forest": 1,
+      "M31_svr": 1,
+      "M31_knn": 1,
+      "M31_lightgbm": 1
+    },
+    "L4": {
+      "E42_random_split": 2,
+      "E45_shap": 1,
+      "E43_5fold_cv": 1
+    },
+    "L5": {
+      "D53_top_k": 2,
+      "D54_report_only": 2
+    }
+  },
+  "failure_analysis": {
+    "note": "No failures recorded"
+  },
+  "complexity_analysis": {
+    "n_features_vs_r2": 0.5805493683670226,
+    "n_features_vs_rmse": -0.9999997247953377,
+    "duration_vs_r2": 0.3793606845764246
+  }
+}

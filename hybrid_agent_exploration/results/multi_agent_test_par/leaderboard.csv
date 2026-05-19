@@ -1,0 +1,5 @@
+agent_id,status,duration_sec,n_samples,n_features,r2,r2_std,rmse,L1,L2,L3,L4,L5,target,baseline_feat,config_hash
+agent_002,success,73.56,4934,168,0.29621254932120245,0.0,2.239145536514646,agentic_veryloose,F22_maccs,M31_random_forest,E42_random_split,D53_top_k,delta_pce,True,4b5d76d806aa
+agent_003,success,60.04,4934,168,0.16098490413777566,0.0,2.444817526159651,agentic_veryloose,F22_maccs,M31_svr,E45_shap,D53_top_k,delta_pce,True,a5ffa914de11
+agent_004,success,24.12,2746,168,-0.0014146545738065175,0.0,3.105551463122413,traditional,F22_maccs,M31_knn,E42_random_split,D54_report_only,delta_pce,True,88f103027a2c
+agent_001,success,215.73,4934,13,-0.021582256232441432,0.04066740844191417,999.0,agentic_veryloose,F21_rdkit_basic,M31_lightgbm,E43_5fold_cv,D54_report_only,delta_pce,True,73596003434b

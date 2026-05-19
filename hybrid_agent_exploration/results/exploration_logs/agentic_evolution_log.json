@@ -1,0 +1,89 @@
+{
+  "best": {
+    "name": "Baseline_VeryLoose",
+    "r2": 0.2810551044554395,
+    "strategy": {
+      "smiles_validity": "NonEmpty",
+      "baseline_pce_bounds": "Physical_Only",
+      "treated_pce_bounds": "Physical_Only",
+      "delta_pce_bounds": "AllObserved",
+      "jv_consistency": "PCE_Only",
+      "device_info_completeness": "NoDeviceFilter",
+      "literature_quality": "NoLiteratureFilter",
+      "deduplication": "NoDeduplication",
+      "descriptor_bounds": "NoFilter"
+    }
+  },
+  "results": [
+    {
+      "Exp": 1,
+      "Strategy": "Baseline_VeryLoose",
+      "N": 4934,
+      "Ret%": "5.4",
+      "Delta_R2": "+0.0977",
+      "Delta_R2+Base": "+0.2811",
+      "Abs_R2": "+0.8334",
+      "RMSE": "2.595"
+    },
+    {
+      "Exp": 2,
+      "Strategy": "Tighten_SMILES",
+      "N": 4932,
+      "Ret%": "5.4",
+      "Delta_R2": "+0.0977",
+      "Delta_R2+Base": "+0.2811",
+      "Abs_R2": "+0.8334",
+      "RMSE": "2.595"
+    },
+    {
+      "Exp": 3,
+      "Strategy": "Tighten_Baseline_Standard",
+      "N": 4089,
+      "Ret%": "4.5",
+      "Delta_R2": "+0.0648",
+      "Delta_R2+Base": "+0.1780",
+      "Abs_R2": "+0.7619",
+      "RMSE": "2.242"
+    },
+    {
+      "Exp": 4,
+      "Strategy": "Tighten_Delta_Wide",
+      "N": 4705,
+      "Ret%": "5.2",
+      "Delta_R2": "+0.0745",
+      "Delta_R2+Base": "+0.1723",
+      "Abs_R2": "+0.8842",
+      "RMSE": "2.065"
+    },
+    {
+      "Exp": 5,
+      "Strategy": "Combo_SMILES_Baseline_Delta",
+      "N": 3657,
+      "Ret%": "4.0",
+      "Delta_R2": "+0.0259",
+      "Delta_R2+Base": "+0.1343",
+      "Abs_R2": "+0.8560",
+      "RMSE": "1.663"
+    },
+    {
+      "Exp": 6,
+      "Strategy": "Baseline_Plus_Descriptors",
+      "N": 3662,
+      "Ret%": "4.0",
+      "Delta_R2": "+0.0725",
+      "Delta_R2+Base": "+0.2644",
+      "Abs_R2": "+0.8340",
+      "RMSE": "2.619"
+    },
+    {
+      "Exp": 7,
+      "Strategy": "Tighten_Dedup_SMILES",
+      "N": 1175,
+      "Ret%": "1.3",
+      "Delta_R2": "-0.0742",
+      "Delta_R2+Base": "+0.0325",
+      "Abs_R2": "+0.8339",
+      "RMSE": "2.443"
+    }
+  ]
+}

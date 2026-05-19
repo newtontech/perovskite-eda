@@ -1,0 +1,80 @@
+================================================================================
+HYPERPARAMETER TUNING REPORT FOR QSPR DELTA_PCE PREDICTION
+================================================================================
+
+DATASET:
+  Samples: 5354
+  Features: 6
+  Train/Test: 4283/1071
+
+BEST HYPERPARAMETERS:
+--------------------------------------------------------------------------------
+
+Ridge:
+  alpha: 100
+
+Random Forest:
+  max_depth: 10
+  n_estimators: 200
+
+XGBoost:
+  learning_rate: 0.01
+  max_depth: 7
+  n_estimators: 200
+
+SVR:
+  C: 1
+  kernel: rbf
+
+
+MODEL PERFORMANCE:
+--------------------------------------------------------------------------------
+
+Random Forest:
+  CV R²:      0.1343
+  Train R²:   0.3005
+  Test R²:    0.1117
+  Test RMSE:  3.4178
+  Test MAE:   2.1781
+
+XGBoost:
+  CV R²:      0.1147
+  Train R²:   0.2084
+  Test R²:    0.1080
+  Test RMSE:  3.4249
+  Test MAE:   2.1691
+
+Ridge:
+  CV R²:      0.0054
+  Train R²:   0.0092
+  Test R²:    0.0161
+  Test RMSE:  3.5971
+  Test MAE:   2.2316
+
+SVR:
+  CV R²:      0.0192
+  Train R²:   0.0305
+  Test R²:    0.0149
+  Test RMSE:  3.5993
+  Test MAE:   2.2077
+
+
+KEY FINDINGS:
+--------------------------------------------------------------------------------
+Best model: Random Forest
+Best Test R²: 0.1117
+Best Test RMSE: 3.4178
+
+Overfitting analysis:
+  Ridge: gap = -0.0069 (Good overfitting)
+  Random Forest: gap = 0.1888 (Moderate overfitting)
+  XGBoost: gap = 0.1004 (Moderate overfitting)
+  SVR: gap = 0.0156 (Good overfitting)
+
+
+RECOMMENDATIONS:
+--------------------------------------------------------------------------------
+1. Use Random Forest for production
+2. Expected prediction error (RMSE): 3.4178
+3. Consider ensemble methods for improved performance
+4. Explore feature engineering with chemical domain knowledge

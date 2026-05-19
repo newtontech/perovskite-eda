@@ -1,0 +1,45 @@
+{
+  "timestamp": "2026-04-30T18:33:36.032117",
+  "data_path": "/share/yhm/test/20260216_with_chemical_merge_fast/merged_llm_crossref_data_streaming_with_chemical_data_fast.xlsx",
+  "synthetic_used": false,
+  "cleaning_strategy": "agentic",
+  "raw_shape": {
+    "rows": 91357,
+    "cols": 60
+  },
+  "clean_shape": {
+    "rows": 4934,
+    "cols": 63
+  },
+  "target_col": "Delta_PCE",
+  "cleaned_data_path": "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/cleaned_data.csv",
+  "artifacts": {
+    "raw_profile": {
+      "missing_summary": "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/raw_profile/raw_missing_summary.csv",
+      "missing_matrix_plot": "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/raw_profile/raw_missing_matrix.png",
+      "numeric_summary": "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/raw_profile/raw_numeric_summary.csv",
+      "correlation_matrix": "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/raw_profile/raw_correlation.csv",
+      "correlation_heatmap": "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/raw_profile/raw_correlation_heatmap.png",
+      "outlier_summary": "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/raw_profile/raw_outlier_summary.csv",
+      "distribution_plots": [
+        "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/raw_profile/dist_batch_1.png",
+        "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/raw_profile/dist_batch_2.png"
+      ],
+      "meta": "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/raw_profile/raw_profile_meta.json"
+    },
+    "clean_profile": {
+      "missing_summary": "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/clean_profile/clean_missing_summary.csv",
+      "missing_matrix_plot": "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/clean_profile/clean_missing_matrix.png",
+      "numeric_summary": "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/clean_profile/clean_numeric_summary.csv",
+      "correlation_matrix": "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/clean_profile/clean_correlation.csv",
+      "correlation_heatmap": "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/clean_profile/clean_correlation_heatmap.png",
+      "outlier_summary": "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/clean_profile/clean_outlier_summary.csv",
+      "distribution_plots": [
+        "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/clean_profile/dist_batch_1.png",
+        "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/clean_profile/dist_batch_2.png",
+        "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/clean_profile/dist_batch_3.png"
+      ],
+      "meta": "/share/yhm/test/AutoML_EDA/hybrid_agent_exploration/explorations/data_source_exploration/clean_profile/clean_profile_meta.json"
+    }
+  }
+}

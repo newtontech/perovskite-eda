@@ -1,0 +1,38 @@
+[
+  {
+    "agent_id": "agent_001",
+    "config": {
+      "layer1": {
+        "method_id": "agentic_veryloose",
+        "strategy": "agentic_veryloose"
+      },
+      "layer2": {
+        "method_id": "F21_rdkit_basic"
+      },
+      "layer3": {
+        "method_id": "M31_lightgbm"
+      },
+      "layer4": {
+        "n_splits": 5,
+        "method_id": "E43_5fold_cv"
+      },
+      "layer5": {
+        "method_id": "D54_report_only"
+      },
+      "target": "delta_pce",
+      "baseline_as_feature": true,
+      "_hash": "73596003434b"
+    },
+    "status": "success",
+    "metrics": {
+      "r2": -0.021582256232441432,
+      "r2_std": 0.04066740844191417,
+      "strategy": "E43_5fold_cv"
+    },
+    "n_samples": 4934,
+    "n_features": 13,
+    "duration_sec": 63.72,
+    "error": null,
+    "traceback": null
+  }
+]

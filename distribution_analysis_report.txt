@@ -1,0 +1,100 @@
+================================================================================
+COMPREHENSIVE DISTRIBUTION ANALYSIS REPORT FOR QSPR DATA
+================================================================================
+Generated: 2026-02-20 22:47:44
+
+1. DATA SUMMARY
+--------------------------------------------------------------------------------
+Total samples: 5354
+Samples with Delta_PCE: 5354
+Complete cases (all descriptors): 5354
+
+2. DELTA_PCE DISTRIBUTION
+--------------------------------------------------------------------------------
+Mean: 1.8925
+Median: 1.6000
+Std Dev: 3.4603
+Range: [-19.1900, 44.8000]
+Skewness: 1.0115
+Kurtosis: 11.9092
+
+Normality Tests:
+  Shapiro-Wilk: W=0.8572, p=2.1196e-55
+  D'Agostino-Pearson: χ²=1681.6876, p=0.0000e+00
+
+3. CHEMICAL DESCRIPTOR STATISTICS
+--------------------------------------------------------------------------------
+molecular_weight:
+  Mean: 258.5803, Median: 158.9700, Std: 308.6942
+  Skewness: 3.9577, Kurtosis: 28.7645
+  Range: [2.0160, 4514.0000]
+h_bond_donors:
+  Mean: 0.7284, Median: 0.0000, Std: 1.9872
+  Skewness: 12.4219, Kurtosis: 269.8435
+  Range: [0.0000, 62.0000]
+h_bond_acceptors:
+  Mean: 1.9539, Median: 1.0000, Std: 3.5524
+  Skewness: 6.6775, Kurtosis: 96.2857
+  Range: [0.0000, 88.0000]
+rotatable_bonds:
+  Mean: 2.4152, Median: 0.0000, Std: 6.1793
+  Skewness: 6.9832, Kurtosis: 97.5968
+  Range: [0.0000, 150.0000]
+tpsa:
+  Mean: 38.1489, Median: 26.0200, Std: 68.9648
+  Skewness: 10.2633, Kurtosis: 188.6833
+  Range: [0.0000, 1827.0700]
+log_p:
+  Mean: 1.5778, Median: 0.2386, Std: 6.0221
+  Skewness: 2.1837, Kurtosis: 6.4673
+  Range: [-21.5560, 41.4062]
+
+4. OUTLIER DETECTION SUMMARY
+--------------------------------------------------------------------------------
+IQR Method (1.5 × IQR):
+  molecular_weight: 554 outliers
+  h_bond_donors: 402 outliers
+  h_bond_acceptors: 465 outliers
+  rotatable_bonds: 628 outliers
+  tpsa: 262 outliers
+  log_p: 1021 outliers
+  Delta_PCE: 580 outliers
+
+Z-Score Method (|z| > 3):
+  molecular_weight: 170 outliers
+  h_bond_donors: 59 outliers
+  h_bond_acceptors: 59 outliers
+  rotatable_bonds: 104 outliers
+  tpsa: 56 outliers
+  log_p: 173 outliers
+  Delta_PCE: 121 outliers
+
+Isolation Forest: 534 outliers (10.0%)
+
+5. QUARTILE ANALYSIS - ANOVA RESULTS
+--------------------------------------------------------------------------------
+molecular_weight: F=3.9349, p=8.1273e-03 **
+h_bond_donors: F=2.8852, p=3.4332e-02 *
+h_bond_acceptors: F=3.7642, p=1.0296e-02 *
+rotatable_bonds: F=4.2016, p=5.6095e-03 **
+tpsa: F=2.1333, p=9.3827e-02 ns
+log_p: F=9.7049, p=2.1981e-06 ***
+
+6. OUTPUT FILES
+--------------------------------------------------------------------------------
+Figures:
+  figures/distribution_delta_pce_histogram_qq.png
+  figures/distribution_descriptors_histograms.png
+  figures/distribution_descriptors_box_violin.png
+  figures/distribution_log_transform_analysis.png
+  figures/outlier_detection_summary.png
+  figures/distribution_quartile_comparison.png
+  figures/distribution_quartile_delta_pce.png
+
+Tables:
+  tables/distribution_statistics.csv
+  tables/outlier_summary.csv
+  tables/quartile_statistics.csv
+  tables/anova_results.csv
+
+================================================================================

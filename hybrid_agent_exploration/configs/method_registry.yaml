@@ -1,0 +1,565 @@
+# Method Registry — 方法注册表
+# AI Agent 从此注册表中加权随机选择方法组合管线
+# 权重计算: effective_weight = weight * novelty_factor * availability_factor
+#   novelty_factor: 2025-2026 → 3.0, 2023-2024 → 2.0, older → 1.0
+#   availability_factor: implemented → 1.5, not → 0.3
+# 运行 scripts/update_registry.py 可从网络更新此表
+
+methods:
+  # ============================================================
+  # Layer 1: Data Sources
+  # ============================================================
+  S11_literature:
+    layer: 1
+    name: "文献提取数据 (本项目)"
+    weight: 2.0
+    novelty_year: 2024
+    implemented: true
+    psc_verified: true
+    loader: "primary_excel"
+    params:
+      path: "/share/yhm/test/20260216_with_chemical_merge_fast/merged_llm_crossref_data_streaming_with_chemical_data_fast.xlsx"
+      target: "delta_pce"
+      smiles_col: "smiles"
+
+  S12_perovskite_db:
+    layer: 1
+    name: "Perovskite Database Project"
+    weight: 1.5
+    novelty_year: 2022
+    implemented: false
+    psc_verified: true
+    loader: "perovskite_db_api"
+    params:
+      url: "https://perovskitedatabase.com"
+
+  S12_materials_project:
+    layer: 1
+    name: "Materials Project"
+    weight: 1.2
+    novelty_year: 2013
+    implemented: false
+    psc_verified: true
+    loader: "materials_project_api"
+
+  S12_nomad:
+    layer: 1
+    name: "NOMAD Repository"
+    weight: 1.2
+    novelty_year: 2020
+    implemented: false
+    psc_verified: false
+    loader: "nomad_api"
+
+  S15_pubchem:
+    layer: 1
+    name: "PubChem"
+    weight: 1.0
+    novelty_year: 2005
+    implemented: false
+    psc_verified: false
+    loader: "pubchem_api"
+
+  S15_chembl:
+    layer: 1
+    name: "ChEMBL"
+    weight: 1.3
+    novelty_year: 2010
+    implemented: false
+    psc_verified: false
+    loader: "chembl_api"
+
+  S15_zinc:
+    layer: 1
+    name: "ZINC Database"
+    weight: 1.0
+    novelty_year: 2005
+    implemented: false
+    psc_verified: false
+    loader: "zinc_api"
+
+  # ============================================================
+  # Layer 2: Features / Representations
+  # ============================================================
+  F21_rdkit_basic:
+    layer: 2
+    name: "RDKit Basic Descriptors (15)"
+    weight: 1.0
+    novelty_year: 2010
+    implemented: true
+    psc_verified: true
+    module: "features.rdkit_descriptors"
+    function: "compute_basic_descriptors"
+    params: {}
+
+  F21_rdkit_extended:
+    layer: 2
+    name: "RDKit Extended Descriptors (200+)"
+    weight: 1.2
+    novelty_year: 2010
+    implemented: false
+    psc_verified: true
+    module: "features.rdkit_descriptors"
+    function: "compute_extended_descriptors"
+    params: {}
+
+  F21_mordred:
+    layer: 2
+    name: "Mordred Descriptors (1800+)"
+    weight: 1.8
+    novelty_year: 2018
+    implemented: false
+    psc_verified: false
+    module: "features.mordred_features"
+    function: "compute_mordred"
+    params: {}
+
+  F22_ecfp4:
+    layer: 2
+    name: "ECFP4 (Morgan radius=2, 2048-bit)"
+    weight: 1.0
+    novelty_year: 2010
+    implemented: true
+    psc_verified: true
+    module: "features.fingerprints"
+    function: "compute_ecfp"
+    params: {radius: 2, n_bits: 2048}
+
+  F22_ecfp6:
+    layer: 2
+    name: "ECFP6 (Morgan radius=3, 2048-bit)"
+    weight: 1.1
+    novelty_year: 2010
+    implemented: true
+    psc_verified: true
+    module: "features.fingerprints"
+    function: "compute_ecfp"
+    params: {radius: 3, n_bits: 2048}
+
+  F22_maccs:
+    layer: 2
+    name: "MACCS Keys (166-bit)"
+    weight: 1.0
+    novelty_year: 2002
+    implemented: true
+    psc_verified: true
+    module: "features.fingerprints"
+    function: "compute_maccs"
+    params: {}
+
+  F22_krfp:
+    layer: 2
+    name: "Klekota-Roth Fingerprint (4860-bit)"
+    weight: 1.5
+    novelty_year: 2008
+    implemented: true
+    psc_verified: true
+    module: "features.fingerprints"
+    function: "compute_krfp"
+    params: {}
+
+  F22_atom_pair:
+    layer: 2
+    name: "Atom Pair Fingerprint (2048-bit)"
+    weight: 1.0
+    novelty_year: 2005
+    implemented: true
+    psc_verified: true
+    module: "features.fingerprints"
+    function: "compute_atom_pair"
+    params: {n_bits: 2048}
+
+  F22_topological_torsion:
+    layer: 2
+    name: "Topological Torsion (2048-bit)"
+    weight: 1.0
+    novelty_year: 2005
+    implemented: true
+    psc_verified: true
+    module: "features.fingerprints"
+    function: "compute_topological_torsion"
+    params: {n_bits: 2048}
+
+  F23_dft:
+    layer: 2
+    name: "DFT Descriptors (HOMO/LUMO/gap/dipole)"
+    weight: 2.5
+    novelty_year: 2020
+    implemented: false
+    psc_verified: true
+    module: "features.dft_features"
+    function: "compute_dft"
+    params: {}
+
+  F24_composition:
+    layer: 2
+    name: "Perovskite A/B/X Composition Features"
+    weight: 2.0
+    novelty_year: 2022
+    implemented: false
+    psc_verified: true
+    module: "features.perovskite_composition"
+    function: "compute_composition"
+    params: {}
+
+  F26_unimol:
+    layer: 2
+    name: "Uni-Mol 3D Embedding (512-dim)"
+    weight: 3.0
+    novelty_year: 2023
+    implemented: false
+    psc_verified: true
+    module: "features.learned_representations"
+    function: "compute_unimol"
+    params: {model: "unimol_base"}
+
+  F26_jtvae:
+    layer: 2
+    name: "JTVAE Latent"
+    weight: 3.0
+    novelty_year: 2018
+    implemented: false
+    psc_verified: true
+    module: "features.learned_representations"
+    function: "compute_jtvae"
+    params: {}
+
+  F26_graph_embedding:
+    layer: 2
+    name: "Molecular Graph Embedding (GNN)"
+    weight: 2.5
+    novelty_year: 2023
+    implemented: false
+    psc_verified: false
+    module: "features.learned_representations"
+    function: "compute_graph_embedding"
+    params: {}
+
+  F26_smiles_token:
+    layer: 2
+    name: "SMILES Token Embedding"
+    weight: 2.0
+    novelty_year: 2023
+    implemented: false
+    psc_verified: false
+    module: "features.learned_representations"
+    function: "compute_smiles_token"
+    params: {}
+
+  # ============================================================
+  # Layer 3: ML Models
+  # ============================================================
+  M31_random_forest:
+    layer: 3
+    name: "Random Forest"
+    weight: 1.0
+    novelty_year: 2001
+    implemented: true
+    psc_verified: true
+    module: "models.model_registry"
+    function: "get_model"
+    params: {method_id: "M1_random_forest"}
+
+  M31_xgboost:
+    layer: 3
+    name: "XGBoost"
+    weight: 1.5
+    novelty_year: 2016
+    implemented: true
+    psc_verified: true
+    module: "models.model_registry"
+    function: "get_model"
+    params: {method_id: "M2_xgboost"}
+
+  M31_lightgbm:
+    layer: 3
+    name: "LightGBM"
+    weight: 1.5
+    novelty_year: 2017
+    implemented: true
+    psc_verified: true
+    module: "models.model_registry"
+    function: "get_model"
+    params: {method_id: "M3_lightgbm"}
+
+  M31_catboost:
+    layer: 3
+    name: "CatBoost"
+    weight: 1.5
+    novelty_year: 2018
+    implemented: true
+    psc_verified: true
+    module: "models.model_registry"
+    function: "get_model"
+    params: {method_id: "M4_catboost"}
+
+  M31_gradient_boosting:
+    layer: 3
+    name: "Gradient Boosting (sklearn)"
+    weight: 1.2
+    novelty_year: 2001
+    implemented: true
+    psc_verified: true
+    module: "models.model_registry"
+    function: "get_model"
+    params: {method_id: "M5_gradient_boosting"}
+
+  M31_svr:
+    layer: 3
+    name: "SVR"
+    weight: 0.8
+    novelty_year: 1995
+    implemented: true
+    psc_verified: true
+    module: "models.model_registry"
+    function: "get_model"
+    params: {method_id: "M6_svr"}
+
+  M31_knn:
+    layer: 3
+    name: "KNN"
+    weight: 0.7
+    novelty_year: 1990
+    implemented: true
+    psc_verified: false
+    module: "models.model_registry"
+    function: "get_model"
+    params: {method_id: "M7_knn"}
+
+  M31_elastic_net:
+    layer: 3
+    name: "Elastic Net"
+    weight: 0.7
+    novelty_year: 2005
+    implemented: true
+    psc_verified: false
+    module: "models.model_registry"
+    function: "get_model"
+    params: {method_id: "M12_elastic_net"}
+
+  M31_ridge:
+    layer: 3
+    name: "Ridge Regression"
+    weight: 0.7
+    novelty_year: 1970
+    implemented: true
+    psc_verified: false
+    module: "models.model_registry"
+    function: "get_model"
+    params: {method_id: "M12_ridge"}
+
+  M31_lasso:
+    layer: 3
+    name: "Lasso Regression"
+    weight: 0.7
+    novelty_year: 1996
+    implemented: true
+    psc_verified: false
+    module: "models.model_registry"
+    function: "get_model"
+    params: {method_id: "M12_lasso"}
+
+  M32_mlp:
+    layer: 3
+    name: "MLP Neural Network"
+    weight: 2.0
+    novelty_year: 2020
+    implemented: false
+    psc_verified: false
+    module: "models.neural_networks"
+    function: "get_mlp"
+    params: {hidden_layers: [128, 64]}
+
+  M32_gnn:
+    layer: 3
+    name: "GNN / MPNN"
+    weight: 3.0
+    novelty_year: 2024
+    implemented: false
+    psc_verified: false
+    module: "models.deep_learning"
+    function: "get_gnn"
+
+  M33_unimol:
+    layer: 3
+    name: "Uni-Mol (fine-tune)"
+    weight: 3.0
+    novelty_year: 2023
+    implemented: false
+    psc_verified: true
+    module: "models.pretrained_molecular"
+    function: "get_unimol"
+
+  M33_chemberta:
+    layer: 3
+    name: "ChemBERTa"
+    weight: 3.0
+    novelty_year: 2024
+    implemented: false
+    psc_verified: false
+    module: "models.pretrained_molecular"
+    function: "get_chemberta"
+
+  M33_molformer:
+    layer: 3
+    name: "MolFormer"
+    weight: 2.5
+    novelty_year: 2024
+    implemented: false
+    psc_verified: false
+    module: "models.pretrained_molecular"
+    function: "get_molformer"
+
+  M35_gpr:
+    layer: 3
+    name: "Gaussian Process Regression"
+    weight: 2.0
+    novelty_year: 2010
+    implemented: false
+    psc_verified: false
+    module: "models.active_learning"
+    function: "get_gpr"
+
+  M35_bayesian_opt:
+    layer: 3
+    name: "Bayesian Optimization"
+    weight: 3.0
+    novelty_year: 2024
+    implemented: false
+    psc_verified: true
+    module: "models.active_learning"
+    function: "get_bayesian_opt"
+
+  # ============================================================
+  # Layer 4: Evaluation
+  # ============================================================
+  E42_random_split:
+    layer: 4
+    name: "Random Split (80/20)"
+    weight: 0.8
+    novelty_year: 2000
+    implemented: true
+    psc_verified: true
+    splitter: "random"
+    params: {test_size: 0.2}
+
+  E42_scaffold_split:
+    layer: 4
+    name: "Scaffold Split"
+    weight: 3.0
+    novelty_year: 2019
+    implemented: false
+    psc_verified: false
+    splitter: "scaffold"
+    params: {test_size: 0.2}
+
+  E43_5fold_cv:
+    layer: 4
+    name: "5-fold CV"
+    weight: 1.5
+    novelty_year: 2000
+    implemented: true
+    psc_verified: true
+    cv_strategy: "kfold"
+    params: {n_splits: 5}
+
+  E43_10fold_cv:
+    layer: 4
+    name: "10-fold CV"
+    weight: 1.2
+    novelty_year: 2000
+    implemented: true
+    psc_verified: true
+    cv_strategy: "kfold"
+    params: {n_splits: 10}
+
+  E43_nested_5fold:
+    layer: 4
+    name: "Nested 5-fold CV"
+    weight: 2.5
+    novelty_year: 2010
+    implemented: false
+    psc_verified: false
+    cv_strategy: "nested"
+    params: {outer_splits: 5, inner_splits: 5}
+
+  E44_optuna:
+    layer: 4
+    name: "Optuna TPE (50 trials)"
+    weight: 2.5
+    novelty_year: 2019
+    implemented: true
+    psc_verified: true
+    tuner: "optuna"
+    params: {n_trials: 50, sampler: "tpe"}
+
+  E44_optuna_large:
+    layer: 4
+    name: "Optuna TPE (200 trials)"
+    weight: 2.0
+    novelty_year: 2019
+    implemented: true
+    psc_verified: false
+    tuner: "optuna"
+    params: {n_trials: 200, sampler: "tpe"}
+
+  E44_grid_search:
+    layer: 4
+    name: "Grid Search"
+    weight: 0.8
+    novelty_year: 2000
+    implemented: true
+    psc_verified: false
+    tuner: "grid"
+    params: {}
+
+  E45_shap:
+    layer: 4
+    name: "SHAP Interpretation"
+    weight: 2.5
+    novelty_year: 2017
+    implemented: true
+    psc_verified: true
+    interpreter: "shap"
+    params: {}
+
+  # ============================================================
+  # Layer 5: Screening / Deployment
+  # ============================================================
+  D52_pubchem_screen:
+    layer: 5
+    name: "PubChem Virtual Screening"
+    weight: 1.0
+    novelty_year: 2005
+    implemented: false
+    psc_verified: false
+    screener: "pubchem"
+
+  D52_zinc_screen:
+    layer: 5
+    name: "ZINC Virtual Screening"
+    weight: 1.0
+    novelty_year: 2005
+    implemented: false
+    psc_verified: false
+    screener: "zinc"
+
+  D53_top_k:
+    layer: 5
+    name: "Top-K Candidates Output"
+    weight: 1.5
+    novelty_year: 2020
+    implemented: true
+    psc_verified: true
+    screener: "top_k"
+    params: {k: 20}
+
+  D54_report_only:
+    layer: 5
+    name: "Report + Save Model"
+    weight: 1.0
+    novelty_year: 2020
+    implemented: true
+    psc_verified: true
+    screener: "report"
+    params: {}
