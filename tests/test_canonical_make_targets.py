@@ -131,6 +131,7 @@ def test_cache_collect_target_dry_run_uses_preflight_requirements_and_budget():
     assert "--requirements-csv /tmp/artifacts/evidence_cache_preflight/evidence_cache_requirements.csv" in output
     assert "--dataset-id unit-dataset" in output
     assert "--max-requests 7" in output
+    assert "--progress-every 10" in output
     assert "--output-json /tmp/artifacts/evidence_cache_collection_report.json" in output
     assert "--cache-dir" not in output
     assert "--dry-run" not in output

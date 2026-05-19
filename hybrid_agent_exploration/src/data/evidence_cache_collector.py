@@ -17,6 +17,7 @@ REFERENCE_CACHE_FILE = "reference_cache.json"
 MOLECULE_CACHE_FILE = "molecule_cache.json"
 ReferenceResolver = Callable[[str], ReferenceEvidence | None]
 MoleculeResolver = Callable[[dict[str, Any]], MoleculeEvidence | None]
+ProgressCallback = Callable[[dict[str, Any]], None]
 
 
 @dataclass(frozen=True)
@@ -43,6 +44,8 @@ def collect_evidence_cache(
     retry_attempts: int = 1,
     include_smiles: bool = False,
     write_negative_cache: bool = False,
+    progress_every: int = 0,
+    progress_callback: ProgressCallback | None = None,
 ) -> dict[str, Any]:
     """Fill missing cache entries with a bounded, resumable collection run."""
 
@@ -50,6 +53,8 @@ def collect_evidence_cache(
         raise ValueError("max_requests must be >= 0")
     if retry_attempts < 1:
         raise ValueError("retry_attempts must be >= 1")
+    if progress_every < 0:
+        raise ValueError("progress_every must be >= 0")
     cache_root = Path(cache_dir)
     reference_cache_path = cache_root / REFERENCE_CACHE_FILE
     molecule_cache_path = cache_root / MOLECULE_CACHE_FILE
@@ -73,6 +78,7 @@ def collect_evidence_cache(
         "write_negative_cache": write_negative_cache,
         "planned_count": len(planned),
         "attempted_count": 0,
+        "remaining_planned_count": len(planned),
         "positive_written_count": 0,
         "negative_written_count": 0,
         "no_evidence_count": 0,
@@ -97,6 +103,7 @@ def collect_evidence_cache(
             evidence, error = _resolve_with_retry(lambda: reference_resolver(requirement.key), retry_attempts)
             if error is not None:
                 _record_error(summary, requirement, error)
+                _emit_progress(summary, progress_every=progress_every, progress_callback=progress_callback)
                 continue
             should_write_negative = write_negative_cache
             if evidence or should_write_negative:
@@ -107,6 +114,7 @@ def collect_evidence_cache(
             evidence, error = _resolve_with_retry(lambda: molecule_resolver(record), retry_attempts)
             if error is not None:
                 _record_error(summary, requirement, error)
+                _emit_progress(summary, progress_every=progress_every, progress_callback=progress_callback)
                 continue
             should_write_negative = write_negative_cache and not _is_smiles_requirement(requirement)
             if evidence or should_write_negative:
@@ -134,8 +142,11 @@ def collect_evidence_cache(
                 "record_ids": requirement.record_ids,
             }
         )
+        _update_progress(summary)
+        _emit_progress(summary, progress_every=progress_every, progress_callback=progress_callback)
 
     remaining = _select_missing(requirements, reference_cache=reference_cache, molecule_cache=molecule_cache)
+    summary["remaining_planned_count"] = 0
     summary["remaining_missing_count"] = len(remaining)
     summary["entity_type_counts"] = _entity_counts(summary["processed"])
     return summary
@@ -221,6 +232,38 @@ def _record_error(summary: dict[str, Any], requirement: CacheRequirement, error:
     summary["attempted_count"] += 1
     summary["error_count"] += 1
     summary["errors"].append({**_requirement_summary(requirement), "error": error})
+    _update_progress(summary)
+
+
+def _update_progress(summary: dict[str, Any]) -> None:
+    planned_count = int(summary["planned_count"])
+    attempted_count = int(summary["attempted_count"])
+    summary["remaining_planned_count"] = max(planned_count - attempted_count, 0)
+
+
+def _emit_progress(
+    summary: dict[str, Any],
+    *,
+    progress_every: int,
+    progress_callback: ProgressCallback | None,
+) -> None:
+    if progress_callback is None or progress_every <= 0:
+        return
+    attempted_count = int(summary["attempted_count"])
+    planned_count = int(summary["planned_count"])
+    if attempted_count <= 0:
+        return
+    if attempted_count % progress_every != 0 and attempted_count != planned_count:
+        return
+    progress_callback(_summary_snapshot(summary))
+
+
+def _summary_snapshot(summary: dict[str, Any]) -> dict[str, Any]:
+    snapshot = dict(summary)
+    snapshot["processed"] = list(summary["processed"])
+    snapshot["errors"] = list(summary["errors"])
+    snapshot["unsupported"] = list(summary["unsupported"])
+    return snapshot
 
 
 def _requirement_summary(requirement: CacheRequirement) -> dict[str, Any]:
