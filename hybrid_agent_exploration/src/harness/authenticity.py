@@ -410,7 +410,10 @@ class CrossrefReferenceVerifier:
         if not doi:
             return None
         url = f"https://api.crossref.org/works/{doi}"
-        response = requests.get(url, timeout=self.timeout)
+        try:
+            response = requests.get(url, timeout=self.timeout)
+        except requests.RequestException:
+            return None
         if response.status_code != 200:
             return None
         message = response.json().get("message", {})
@@ -441,7 +444,10 @@ class PubChemMoleculeVerifier:
             "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/"
             f"{cid}/property/CanonicalSMILES/JSON"
         )
-        response = requests.get(url, timeout=self.timeout)
+        try:
+            response = requests.get(url, timeout=self.timeout)
+        except requests.RequestException:
+            return None
         if response.status_code != 200:
             return None
         props = response.json().get("PropertyTable", {}).get("Properties", [])

@@ -22,6 +22,7 @@ from screening.verified_discovery_workflow import VerifiedDiscoveryWorkflow
 
 
 EVIDENCE_MODES = ("external-cached", "source-columns")
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 class SourceColumnReferenceVerifier:
@@ -95,6 +96,13 @@ def build_authenticator(
     raise ValueError(f"Unknown evidence mode: {evidence_mode}")
 
 
+def default_cache_dir(dataset_id: str) -> Path:
+    """Return the ignored default evidence-cache directory for a run."""
+
+    safe_dataset_id = "".join(ch if ch.isalnum() or ch in ("-", "_", ".") else "_" for ch in dataset_id)
+    return PROJECT_ROOT / ".cache" / "verified_discovery" / safe_dataset_id / "evidence_cache"
+
+
 def load_input(path: str | Path, *, max_rows: int | None = None) -> pd.DataFrame:
     """Load a CSV/XLSX input table for verified discovery."""
 
@@ -119,7 +127,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="external-cached",
         help="Evidence source. external-cached uses Crossref/PubChem with JSON caches; source-columns is a fast local smoke mode.",
     )
-    parser.add_argument("--cache-dir", help="Evidence cache directory; defaults to <output-dir>/evidence_cache.")
+    parser.add_argument(
+        "--cache-dir",
+        help="Evidence cache directory; defaults to hybrid_agent_exploration/.cache/verified_discovery/<dataset-id>/evidence_cache.",
+    )
     parser.add_argument("--top-k", type=int, default=100, help="Number of ranked candidates to emit.")
     parser.add_argument("--min-verified-rows", type=int, default=10, help="Minimum strict verified training rows.")
     parser.add_argument("--max-rows", type=int, help="Optional input row cap for smoke runs.")
@@ -130,8 +141,18 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     output_dir = Path(args.output_dir)
     df = load_input(args.input, max_rows=args.max_rows)
-    cache_dir = Path(args.cache_dir) if args.cache_dir else output_dir / "evidence_cache"
+    cache_dir = Path(args.cache_dir) if args.cache_dir else default_cache_dir(args.dataset_id)
     authenticator = build_authenticator(args.evidence_mode, df, cache_dir)
+    run_metadata = {
+        "evidence_mode": args.evidence_mode,
+        "verification_level": "external_cached" if args.evidence_mode == "external-cached" else "source_columns_only",
+        "publication_grade": args.evidence_mode == "external-cached",
+        "source_columns_is_smoke_only": args.evidence_mode == "source-columns",
+        "input_path": str(Path(args.input)),
+        "max_rows": args.max_rows,
+    }
+    if args.evidence_mode == "external-cached":
+        run_metadata["cache_dir"] = str(cache_dir)
     artifacts = VerifiedDiscoveryWorkflow(
         output_dir=output_dir,
         authenticator=authenticator,
@@ -140,6 +161,7 @@ def main(argv: list[str] | None = None) -> int:
         dataset_id=args.dataset_id,
         top_k=args.top_k,
         min_verified_rows=args.min_verified_rows,
+        run_metadata=run_metadata,
     )
     print(f"[verified-discovery] workflow_manifest={artifacts.workflow_manifest_json}")
     print(f"[verified-discovery] verified_rows={artifacts.verified_rows}")

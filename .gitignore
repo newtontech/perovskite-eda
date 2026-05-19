@@ -72,6 +72,8 @@ dashboard.html
 fingerprints/
 
 # ===== Exploration data caches =====
+hybrid_agent_exploration/.cache/
+**/evidence_cache/
 hybrid_agent_exploration/data_cache.*
 hybrid_agent_exploration/explorations/data_source_exploration/.cache/
 hybrid_agent_exploration/explorations/data_source_exploration/cleaned_data.csv
@@ -93,6 +95,8 @@ hybrid_agent_exploration/explorations/three_way_comparison_summary.csv
 hybrid_agent_exploration/explorations/three_way_comparison_agentic_summary.csv
 hybrid_agent_exploration/explorations/deployment_screening_exploration/ranking_*.csv
 hybrid_agent_exploration/explorations/evaluation_strategy_exploration/evaluation_comparison_summary.csv
+hybrid_agent_exploration/results/verified_discovery_runs/
+hybrid_agent_exploration/results/verified_discovery_smoke*/
 
 # ===== Article preview images (duplicates of figures/) =====
 hybrid_agent_exploration/article/preview-*.png

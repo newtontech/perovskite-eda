@@ -96,4 +96,5 @@ def test_gitignore_excludes_verified_discovery_runtime_outputs():
 
     assert "hybrid_agent_exploration/.cache/" in gitignore
     assert "hybrid_agent_exploration/results/verified_discovery_runs/" in gitignore
+    assert "hybrid_agent_exploration/results/verified_discovery_smoke*/" in gitignore
     assert "**/evidence_cache/" in gitignore
