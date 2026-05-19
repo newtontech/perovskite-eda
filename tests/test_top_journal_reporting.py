@@ -101,10 +101,29 @@ def _write_verified_discovery_artifact_dir(root: Path) -> Path:
     (artifact_dir / "discovery" / "ranked_candidates.csv").write_text(
         "\n".join(
             [
-                "rank,record_id,smiles,predicted_delta_pce,uncertainty,doi,verification_status",
-                "1,row-004,CCCC,1.25,0.10,10.1021/acs.jpclett.6c00122,verified",
-                "2,row-003,CCC,0.75,0.20,10.1021/acs.jpclett.6c00121,verified",
-                "3,row-002,CC,0.50,0.30,10.1021/acs.jpclett.6c00120,verified",
+                (
+                    "rank,record_id,candidate_id,smiles,predicted_delta_pce,uncertainty,doi,"
+                    "source_name,source_url,availability_status,synthesis_status,safety_status,"
+                    "candidate_score,score_components,verification_status"
+                ),
+                (
+                    '1,row-004,cand-peai,CCCC,1.25,0.10,10.1021/acs.jpclett.6c00122,'
+                    'psc-passivator-seed,https://pubchem.ncbi.nlm.nih.gov/compound/91972166,'
+                    'pubchem_listed,literature_reported,not_assessed,1.75,'
+                    '"{""candidate_score"": 1.75, ""availability_bonus"": 0.0}",verified'
+                ),
+                (
+                    '2,row-003,cand-hai,CCC,0.75,0.20,10.1021/acs.jpclett.6c00121,'
+                    'psc-passivator-seed,https://pubchem.ncbi.nlm.nih.gov/compound/19353580,'
+                    'pubchem_listed,literature_reported,not_assessed,1.05,'
+                    '"{""candidate_score"": 1.05, ""synthesis_bonus"": 0.15}",verified'
+                ),
+                (
+                    '3,row-002,cand-gt,CC,0.50,0.30,10.1021/acs.jpclett.6c00120,'
+                    'psc-passivator-seed,https://pubchem.ncbi.nlm.nih.gov/compound/65046,'
+                    'pubchem_listed,literature_reported,not_assessed,0.85,'
+                    '"{""candidate_score"": 0.85}",verified'
+                ),
             ]
         )
         + "\n",
@@ -202,6 +221,15 @@ def test_report_bundle_ingests_verified_discovery_provenance_without_manuscript_
     assert discovery["dataset_id"] == "verified-fixture"
     assert discovery["source_dir"] == str(artifact_dir)
     assert [row["record_id"] for row in discovery["top_candidates"]] == ["row-004", "row-003"]
+    first_candidate = discovery["top_candidates"][0]
+    assert first_candidate["candidate_id"] == "cand-peai"
+    assert first_candidate["source_name"] == "psc-passivator-seed"
+    assert first_candidate["source_url"] == "https://pubchem.ncbi.nlm.nih.gov/compound/91972166"
+    assert first_candidate["availability_status"] == "pubchem_listed"
+    assert first_candidate["synthesis_status"] == "literature_reported"
+    assert first_candidate["safety_status"] == "not_assessed"
+    assert first_candidate["candidate_score"] == 1.75
+    assert first_candidate["score_components"]["candidate_score"] == 1.75
     assert "row-002" not in json.dumps(discovery)
     assert discovery["quarantine_reason_summary"] == {
         "invalid_smiles": 1,
@@ -215,7 +243,8 @@ def test_report_bundle_ingests_verified_discovery_provenance_without_manuscript_
 
     si_text = si_path.read_text(encoding="utf-8")
     assert "## S9. Verified Discovery Provenance" in si_text
-    assert "| 1 | row-004 | `CCCC` | 1.250 | 0.100 | 10.1021/acs.jpclett.6c00122 |" in si_text
+    assert "| 1 | cand-peai | row-004 | `CCCC` | psc-passivator-seed | pubchem_listed | literature_reported | not_assessed | 1.250 | 1.750 | 0.100 | 10.1021/acs.jpclett.6c00122 |" in si_text
+    assert "https://pubchem.ncbi.nlm.nih.gov/compound/91972166" in si_text
     assert "row-002" not in si_text
     assert "- missing_doi: 2" in si_text
 
