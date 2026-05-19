@@ -26,6 +26,10 @@ from .narrative_engine import NarrativeEngine
 from .plan_registry import PlanRegistry, build_report_plan_context, load_plan_registry
 from .report_bundle import ReportBundle
 from .research_crew import ClaimAuditorAgent, ReviewerAgent
+from .verified_discovery_ingestion import (
+    format_verified_discovery_markdown,
+    load_verified_discovery_summary,
+)
 
 
 class TopJournalReport:
@@ -54,6 +58,7 @@ class TopJournalReport:
         self.fig_dir.mkdir(parents=True, exist_ok=True)
         self.selector = FigureSelector(self.artifacts)
         self.narrative = NarrativeEngine()
+        self.verified_discovery = load_verified_discovery_summary(self.artifacts)
 
     def generate(self) -> ReportBundle:
         """Generate the complete main-text report."""
@@ -677,6 +682,13 @@ class TopJournalReport:
             lines.append(f"![Figure {index}: {name}](figures/{rel})")
             lines.append("")
 
+        if self.verified_discovery:
+            lines.extend([
+                "### Verified Discovery Provenance",
+                format_verified_discovery_markdown(self.verified_discovery),
+                "",
+            ])
+
         lines.extend([
             "## 4. Limitations and Evidence Gaps",
             self._limitations(),
@@ -825,6 +837,21 @@ class TopJournalReport:
                 "evidence_id": f"figure:fig{index}",
                 "figure": str(Path("figures") / Path(path).name),
             })
+        if self.verified_discovery:
+            ledger.extend([
+                {
+                    "claim": "Number of top verified candidate records ingested into the report bundle",
+                    "evidence_id": "discovery:top_candidates.count",
+                    "value": len(self.verified_discovery.get("top_candidates", [])),
+                    "source": "discovery/ranked_candidates.csv",
+                },
+                {
+                    "claim": "Quarantine reason counts from verified discovery provenance",
+                    "evidence_id": "provenance:quarantine_reason_summary",
+                    "value": self.verified_discovery.get("quarantine_reason_summary", {}),
+                    "source": "dataset/quarantine.csv",
+                },
+            ])
         references = self._load_references()
         ledger.append({
             "claim": "Literature benchmark covers PSC, molecular ML, virtual screening, experimental validation, and database subfields",
@@ -869,6 +896,8 @@ class TopJournalReport:
         if plan_manifest is not None:
             manifest["plan_registry"] = plan_manifest
             manifest["agents"].insert(0, "PlanRegistryAgent")
+        if self.verified_discovery:
+            manifest["verified_discovery"] = self.verified_discovery
         return manifest
 
     def _quality_score(self, figure_count: int, review: dict[str, Any], audit: dict[str, Any]) -> float:
