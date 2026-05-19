@@ -90,6 +90,7 @@ class VerifiedDatasetBuilder:
         """Verify a dataframe and write the complete artifact bundle."""
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        df = _ensure_record_ids(df)
         records = df.to_dict(orient="records")
         split = self.authenticator.split_records(records)
 
@@ -131,6 +132,22 @@ def _load_table(path: Path) -> pd.DataFrame:
     if suffix in {".xlsx", ".xls"}:
         return pd.read_excel(path)
     raise ValueError(f"Unsupported input table format: {path.suffix}")
+
+
+def _ensure_record_ids(df: pd.DataFrame) -> pd.DataFrame:
+    output = df.copy()
+    if "record_id" not in output.columns:
+        output.insert(0, "record_id", [_source_record_id(idx) for idx in range(len(output))])
+        return output
+    record_ids = output["record_id"].map(_text)
+    missing = record_ids == ""
+    if missing.any():
+        output.loc[missing, "record_id"] = [_source_record_id(idx) for idx in output.index[missing]]
+    return output
+
+
+def _source_record_id(zero_based_index: int) -> str:
+    return f"source_row_{zero_based_index + 1:06d}"
 
 
 def _serialize_row(row: dict[str, Any]) -> dict[str, Any]:
