@@ -29,6 +29,8 @@ def generate_root_provenance_manifest(
     *,
     candidate_library_dir: str | Path | None = None,
     package_manifest_path: str | Path | None = None,
+    input_path: str | Path | None = None,
+    candidate_source_path: str | Path | None = None,
     output_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Build and write a root-level provenance manifest.
@@ -41,6 +43,9 @@ def generate_root_provenance_manifest(
             source_summary.json, and provenance.json from CandidateLibraryBuilder.
         package_manifest_path: Optional top-level package_manifest.json emitted by
             run_research_package.
+        input_path: Optional original PSC source table used by the package.
+        candidate_source_path: Optional original candidate-source table used by
+            CandidateLibraryBuilder.
         output_path: Optional explicit path. Defaults to the common parent of
             report_dir and si_dir plus ``provenance_manifest.json``.
 
@@ -53,6 +58,8 @@ def generate_root_provenance_manifest(
     si_root = Path(si_dir)
     candidate_root = Path(candidate_library_dir) if candidate_library_dir is not None else None
     package_manifest = Path(package_manifest_path) if package_manifest_path is not None else None
+    source_input = Path(input_path) if input_path is not None else None
+    candidate_source = Path(candidate_source_path) if candidate_source_path is not None else None
     output = Path(output_path) if output_path is not None else _default_output_path(report_root, si_root)
     root_dir = output.parent
 
@@ -135,6 +142,10 @@ def generate_root_provenance_manifest(
             "digest": "first_16_hex_chars",
             "max_bytes_hashed_per_file": HASH_BYTES_LIMIT,
         },
+        "source_input_hash_policy": {
+            "algorithm": "sha256",
+            "digest": "full_hex",
+        },
         "roots": {
             "verified_discovery_artifact_dir": _display_path(discovery_root, root_dir),
             "report_dir": _display_path(report_root, root_dir),
@@ -142,6 +153,10 @@ def generate_root_provenance_manifest(
         },
         "source_manifests": {
             "workflow_manifest_json": _file_facts(workflow_manifest_path, root_dir=root_dir),
+        },
+        "source_inputs": {
+            "input_table": _full_file_facts(source_input, root_dir=root_dir) if source_input is not None else None,
+            "candidate_source_table": _full_file_facts(candidate_source, root_dir=root_dir) if candidate_source is not None else None,
         },
         "artifacts": {category: sorted(records, key=lambda item: item["id"]) for category, records in artifacts.items()},
     }
@@ -164,6 +179,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--si-dir", required=True)
     parser.add_argument("--candidate-library-dir")
     parser.add_argument("--package-manifest-path")
+    parser.add_argument("--input-path")
+    parser.add_argument("--candidate-source-path")
     parser.add_argument("--output-path")
     args = parser.parse_args(argv)
     manifest = generate_root_provenance_manifest(
@@ -172,6 +189,8 @@ def main(argv: list[str] | None = None) -> int:
         args.si_dir,
         candidate_library_dir=args.candidate_library_dir,
         package_manifest_path=args.package_manifest_path,
+        input_path=args.input_path,
+        candidate_source_path=args.candidate_source_path,
         output_path=args.output_path,
     )
     output_path = args.output_path or _default_output_path(Path(args.report_dir), Path(args.si_dir))
@@ -251,11 +270,29 @@ def _file_facts(path: Path, *, root_dir: Path) -> dict[str, Any]:
     }
 
 
+def _full_file_facts(path: Path, *, root_dir: Path) -> dict[str, Any]:
+    exists = path.exists()
+    return {
+        "path": _display_path(path, root_dir),
+        "exists": exists,
+        "size_bytes": path.stat().st_size if exists and path.is_file() else None,
+        "sha256": _sha256(path) if exists and path.is_file() else None,
+    }
+
+
 def _sha256_16(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         digest.update(handle.read(HASH_BYTES_LIMIT))
     return digest.hexdigest()[:16]
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _resolve_artifact_path(root: Path, value: str) -> Path:

@@ -25,7 +25,10 @@ from screening.verified_discovery_workflow import VerifiedDiscoveryWorkflow
 
 
 PACKAGE_MANIFEST_SCHEMA_VERSION = "research-package-manifest-v1"
-FILE_HASH_BYTES_LIMIT = 1024 * 1024
+INPUT_HASH_POLICY = {
+    "algorithm": "sha256",
+    "digest": "full_hex",
+}
 
 
 @dataclass(frozen=True)
@@ -167,6 +170,8 @@ def run_research_package(
         si_path.parent,
         candidate_library_dir=candidate_library_dir,
         package_manifest_path=package_manifest_path,
+        input_path=input_path,
+        candidate_source_path=candidate_source_path,
         output_path=root_manifest_path,
     )
     return ResearchPackageArtifacts(
@@ -256,6 +261,24 @@ def _package_manifest(
     candidate_pool_contract_version: str,
 ) -> dict[str, Any]:
     verification_level = _verification_level(evidence_mode)
+    runner_args = {
+        "input": str(input_path),
+        "output_dir": str(output_root),
+        "dataset_id": dataset_id,
+        "evidence_mode": evidence_mode,
+        "candidate_source": str(candidate_source_path) if candidate_source_path is not None else None,
+        "candidate_source_name": candidate_source_name,
+        "cache_dir": str(cache_dir) if cache_dir is not None else None,
+        "max_rows": max_rows,
+        "min_verified_rows": min_verified_rows,
+        "top_k": top_k,
+        "report_quality_target": report_quality_target,
+        "verified_discovery_top_n": verified_discovery_top_n,
+    }
+    source_table_facts = _file_facts(input_path)
+    candidate_source_facts = _file_facts(candidate_source_path) if candidate_source_path else None
+    if candidate_source_facts is not None:
+        candidate_source_facts["source_name"] = candidate_source_name
     return {
         "schema_version": PACKAGE_MANIFEST_SCHEMA_VERSION,
         "dataset_id": dataset_id,
@@ -263,29 +286,13 @@ def _package_manifest(
         "package_runner": "run_research_package",
         "runner": {
             "name": "run_research_package",
-            "args": {
-                "input": str(input_path),
-                "output_dir": str(output_root),
-                "dataset_id": dataset_id,
-                "evidence_mode": evidence_mode,
-                "candidate_source": str(candidate_source_path) if candidate_source_path is not None else None,
-                "candidate_source_name": candidate_source_name,
-                "cache_dir": str(cache_dir) if cache_dir is not None else None,
-                "max_rows": max_rows,
-                "min_verified_rows": min_verified_rows,
-                "top_k": top_k,
-                "report_quality_target": report_quality_target,
-                "verified_discovery_top_n": verified_discovery_top_n,
-            },
+            "args": runner_args,
         },
-        "input_hash_policy": {
-            "algorithm": "sha256",
-            "digest": "first_16_hex_chars",
-            "max_bytes_hashed_per_file": FILE_HASH_BYTES_LIMIT,
-        },
+        "runner_args": runner_args,
+        "input_hash_policy": INPUT_HASH_POLICY,
         "inputs": {
-            "source_table": _file_facts(input_path),
-            "candidate_source": _file_facts(candidate_source_path) if candidate_source_path else None,
+            "source_table": source_table_facts,
+            "candidate_source": candidate_source_facts,
         },
         "evidence_mode": evidence_mode,
         "verification_level": verification_level,
@@ -325,15 +332,16 @@ def _file_facts(path: Path) -> dict[str, Any]:
         "path": str(path),
         "exists": exists,
         "size_bytes": path.stat().st_size if exists and path.is_file() else None,
-        "sha256_16": _sha256_16(path) if exists and path.is_file() else None,
+        "sha256": _sha256(path) if exists and path.is_file() else None,
     }
 
 
-def _sha256_16(path: Path) -> str:
+def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
-        digest.update(handle.read(FILE_HASH_BYTES_LIMIT))
-    return digest.hexdigest()[:16]
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _relative(path: Path | None, root: Path) -> str | None:
