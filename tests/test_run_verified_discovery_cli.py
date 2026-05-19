@@ -91,6 +91,100 @@ def test_cli_external_cached_mode_initializes_cache_paths(tmp_path):
     assert authenticator.molecule_verifier.cache_path == cache_dir / "molecule_cache.json"
 
 
+def test_cli_defaults_external_cached_subset_to_non_publication_grade(tmp_path, monkeypatch):
+    import run_verified_discovery as runner
+    from harness.authenticity import RealDataAuthenticator
+    from run_verified_discovery import SourceColumnMoleculeVerifier, SourceColumnReferenceVerifier
+
+    input_csv = tmp_path / "raw.csv"
+    output_dir = tmp_path / "out"
+    pd.DataFrame(
+        [
+            _record("row-001", "10.1021/acs.jpclett.6c00119", "C", 0.25),
+            _record("row-002", "10.1021/acs.jpclett.6c00120", "CC", 0.50),
+        ]
+    ).to_csv(input_csv, index=False)
+
+    def build_source_column_authenticator(evidence_mode, df, cache_dir):
+        return RealDataAuthenticator(
+            reference_verifier=SourceColumnReferenceVerifier(df),
+            molecule_verifier=SourceColumnMoleculeVerifier(),
+        )
+
+    monkeypatch.setattr(runner, "build_authenticator", build_source_column_authenticator)
+
+    exit_code = runner.main(
+        [
+            "--input",
+            str(input_csv),
+            "--output-dir",
+            str(output_dir),
+            "--dataset-id",
+            "external-subset-fixture",
+            "--evidence-mode",
+            "external-cached",
+            "--min-verified-rows",
+            "2",
+            "--top-k",
+            "1",
+        ]
+    )
+
+    assert exit_code == 0
+    manifest = json.loads((output_dir / "workflow_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["input_scope"] == "selected-subset"
+    assert manifest["publication_grade"] is False
+    assert manifest["publication_grade_reason"] == "input_scope is not full-source"
+
+
+def test_cli_full_source_external_cached_can_be_publication_grade(tmp_path, monkeypatch):
+    import run_verified_discovery as runner
+    from harness.authenticity import RealDataAuthenticator
+    from run_verified_discovery import SourceColumnMoleculeVerifier, SourceColumnReferenceVerifier
+
+    input_csv = tmp_path / "raw.csv"
+    output_dir = tmp_path / "out"
+    pd.DataFrame(
+        [
+            _record("row-001", "10.1021/acs.jpclett.6c00119", "C", 0.25),
+            _record("row-002", "10.1021/acs.jpclett.6c00120", "CC", 0.50),
+        ]
+    ).to_csv(input_csv, index=False)
+
+    def build_source_column_authenticator(evidence_mode, df, cache_dir):
+        return RealDataAuthenticator(
+            reference_verifier=SourceColumnReferenceVerifier(df),
+            molecule_verifier=SourceColumnMoleculeVerifier(),
+        )
+
+    monkeypatch.setattr(runner, "build_authenticator", build_source_column_authenticator)
+
+    exit_code = runner.main(
+        [
+            "--input",
+            str(input_csv),
+            "--output-dir",
+            str(output_dir),
+            "--dataset-id",
+            "external-full-source-fixture",
+            "--evidence-mode",
+            "external-cached",
+            "--input-scope",
+            "full-source",
+            "--min-verified-rows",
+            "2",
+            "--top-k",
+            "1",
+        ]
+    )
+
+    assert exit_code == 0
+    manifest = json.loads((output_dir / "workflow_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["input_scope"] == "full-source"
+    assert manifest["publication_grade"] is True
+    assert manifest["publication_grade_reason"] == "external-cached full-source input"
+
+
 def test_gitignore_excludes_verified_discovery_runtime_outputs():
     gitignore = (Path(__file__).resolve().parents[1] / ".gitignore").read_text(encoding="utf-8")
 
