@@ -24,14 +24,30 @@ def load_verified_discovery_summary(artifacts: dict[str, Any]) -> dict[str, Any]
     artifact_dir = Path(artifact_dir_value)
     top_n = _positive_int(artifacts.get(DISCOVERY_TOP_N_KEY), DEFAULT_TOP_N)
     workflow_manifest = _read_json(artifact_dir / "workflow_manifest.json")
-    doi_manifest = _read_json(artifact_dir / "dataset" / "doi_manifest.json")
+    doi_manifest_path = _manifest_output_path(
+        artifact_dir,
+        workflow_manifest,
+        "doi_manifest_json",
+        "dataset/doi_manifest.json",
+    )
+    ranked_candidates_path = _manifest_output_path(
+        artifact_dir,
+        workflow_manifest,
+        "ranked_candidates_csv",
+        "discovery/ranked_candidates.csv",
+    )
+    quarantine_path = _manifest_output_path(
+        artifact_dir,
+        workflow_manifest,
+        "quarantine_csv",
+        "dataset/quarantine.csv",
+    )
+    doi_manifest = _read_json(doi_manifest_path)
     top_candidates = _read_top_candidates(
-        artifact_dir / "discovery" / "ranked_candidates.csv",
+        ranked_candidates_path,
         top_n=top_n,
     )
-    quarantine_reason_summary = _read_quarantine_reason_summary(
-        artifact_dir / "dataset" / "quarantine.csv"
-    )
+    quarantine_reason_summary = _read_quarantine_reason_summary(quarantine_path)
 
     return {
         "source_dir": str(artifact_dir),
@@ -45,6 +61,12 @@ def load_verified_discovery_summary(artifacts: dict[str, Any]) -> dict[str, Any]
         "top_candidate_limit": top_n,
         "top_candidates": top_candidates,
         "quarantine_reason_summary": dict(sorted(quarantine_reason_summary.items())),
+        "artifacts": {
+            "workflow_manifest_json": "workflow_manifest.json",
+            "ranked_candidates_csv": _relative_to_artifact_dir(ranked_candidates_path, artifact_dir),
+            "doi_manifest_json": _relative_to_artifact_dir(doi_manifest_path, artifact_dir),
+            "quarantine_csv": _relative_to_artifact_dir(quarantine_path, artifact_dir),
+        },
     }
 
 
@@ -97,6 +119,27 @@ def _read_json(path: Path) -> dict[str, Any]:
     if not path.exists():
         raise FileNotFoundError(f"Verified discovery artifact missing: {path}")
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _manifest_output_path(
+    artifact_dir: Path,
+    workflow_manifest: dict[str, Any],
+    key: str,
+    fallback: str,
+) -> Path:
+    outputs = workflow_manifest.get("outputs", {})
+    value = outputs.get(key, fallback) if isinstance(outputs, dict) else fallback
+    path = Path(str(value))
+    if path.is_absolute():
+        return path
+    return artifact_dir / path
+
+
+def _relative_to_artifact_dir(path: Path, artifact_dir: Path) -> str:
+    try:
+        return path.relative_to(artifact_dir).as_posix()
+    except ValueError:
+        return str(path)
 
 
 def _read_top_candidates(path: Path, *, top_n: int) -> list[dict[str, Any]]:
