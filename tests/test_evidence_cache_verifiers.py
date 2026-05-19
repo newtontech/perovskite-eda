@@ -46,6 +46,38 @@ def test_pubchem_verifier_normalizes_excel_float_cid(monkeypatch):
     ]
 
 
+def test_pubchem_verifier_accepts_current_smiles_payloads(monkeypatch):
+    from harness import authenticity
+    from harness.authenticity import PubChemMoleculeVerifier
+
+    def make_get(prop_key):
+        class Response:
+            status_code = 200
+
+            def json(self):
+                return {
+                    "PropertyTable": {
+                        "Properties": [
+                            {"CID": 7843, prop_key: "CCCC"},
+                        ]
+                    }
+                }
+
+        return lambda url, timeout: Response()
+
+    for prop_key in ("SMILES", "ConnectivitySMILES"):
+        monkeypatch.setattr(authenticity.requests, "get", make_get(prop_key))
+
+        evidence = PubChemMoleculeVerifier(timeout=3)({
+            "pubchem_id": "7843",
+            "cas_number": "106-97-8",
+        })
+
+        assert evidence is not None
+        assert evidence.smiles == "CCCC"
+        assert evidence.pubchem_id == "7843"
+
+
 def test_cached_reference_verifier_deduplicates_and_persists(tmp_path):
     from harness.authenticity import CachedReferenceVerifier, ReferenceEvidence
 

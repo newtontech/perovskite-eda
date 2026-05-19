@@ -453,7 +453,7 @@ class PubChemMoleculeVerifier:
         props = response.json().get("PropertyTable", {}).get("Properties", [])
         if not props:
             return None
-        smiles = props[0].get("CanonicalSMILES")
+        smiles = _pubchem_smiles(props[0])
         if not smiles:
             return None
         return MoleculeEvidence(
@@ -463,6 +463,14 @@ class PubChemMoleculeVerifier:
             source="pubchem",
             url=f"https://pubchem.ncbi.nlm.nih.gov/compound/{cid}",
         )
+
+
+def _pubchem_smiles(properties: dict[str, Any]) -> str:
+    for key in ("CanonicalSMILES", "SMILES", "ConnectivitySMILES", "IsomericSMILES"):
+        smiles = _clean_text(properties.get(key))
+        if smiles:
+            return smiles
+    return ""
 
 
 def _crossref_year(message: dict[str, Any]) -> int | None:
