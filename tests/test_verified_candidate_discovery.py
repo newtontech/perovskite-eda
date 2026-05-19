@@ -44,6 +44,49 @@ def _verified_pool() -> pd.DataFrame:
     )
 
 
+def _external_candidate_pool() -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "candidate_id": "cand-001",
+                "smiles": "CC",
+                "pubchem_id": "702",
+                "cas_number": "64-17-5",
+                "vendor_name": "Sigma Aldrich",
+                "vendor_catalog_id": "EtOH",
+                "source_name": "pubchem",
+                "source_url": "https://pubchem.ncbi.nlm.nih.gov/compound/702",
+                "availability_status": "commercial",
+                "synthesis_status": "commercial",
+                "safety_status": "sds_available",
+                "verification_status": "verified",
+                "verification_sources": json.dumps([
+                    {"kind": "molecule", "source": "pubchem", "pubchem_id": "702"},
+                    {"kind": "availability", "source": "vendor_catalog", "vendor_name": "Sigma Aldrich"},
+                ]),
+            },
+            {
+                "candidate_id": "cand-002",
+                "smiles": "CCCC",
+                "pubchem_id": "7843",
+                "cas_number": "106-97-8",
+                "vendor_name": "TCI",
+                "vendor_catalog_id": "B0001",
+                "source_name": "vendor_catalog",
+                "source_url": "https://example.com/catalog/B0001",
+                "availability_status": "commercial",
+                "synthesis_status": "commercial",
+                "safety_status": "sds_available",
+                "verification_status": "verified",
+                "verification_sources": json.dumps([
+                    {"kind": "molecule", "source": "pubchem", "pubchem_id": "7843"},
+                    {"kind": "availability", "source": "vendor_catalog", "vendor_name": "TCI"},
+                ]),
+            },
+        ]
+    )
+
+
 def test_discovery_ranks_verified_pool_and_writes_outputs(tmp_path):
     from screening.verified_candidate_discovery import VerifiedCandidateDiscovery
 
@@ -98,3 +141,83 @@ def test_discovery_refuses_quarantined_or_unverified_rows(tmp_path):
 
     assert "row-002" in str(exc.value)
     assert "verification_status=verified" in str(exc.value)
+
+
+def test_candidate_library_contract_refuses_missing_required_source_columns(tmp_path):
+    from screening.verified_candidate_discovery import CandidateLibraryContractError, VerifiedCandidateDiscovery
+
+    pool = _external_candidate_pool().drop(columns=["source_url"])
+
+    with pytest.raises(CandidateLibraryContractError) as exc:
+        VerifiedCandidateDiscovery(output_dir=tmp_path).discover(
+            pool,
+            model=LengthModel(),
+            feature_fn=_feature_fn,
+            dataset_id="missing-source-url",
+        )
+
+    assert "source_url" in str(exc.value)
+
+
+def test_candidate_library_contract_refuses_empty_verification_sources(tmp_path):
+    from screening.verified_candidate_discovery import CandidateLibraryContractError, VerifiedCandidateDiscovery
+
+    pool = _external_candidate_pool()
+    pool.loc[0, "verification_sources"] = "[]"
+
+    with pytest.raises(CandidateLibraryContractError) as exc:
+        VerifiedCandidateDiscovery(output_dir=tmp_path).discover(
+            pool,
+            model=LengthModel(),
+            feature_fn=_feature_fn,
+            dataset_id="empty-sources",
+        )
+
+    assert "verification_sources" in str(exc.value)
+    assert "cand-001" in str(exc.value)
+
+
+def test_candidate_library_contract_requires_identity_or_molecule_source(tmp_path):
+    from screening.verified_candidate_discovery import CandidateLibraryContractError, VerifiedCandidateDiscovery
+
+    pool = _external_candidate_pool()
+    pool.loc[0, ["pubchem_id", "cas_number"]] = ""
+    pool.loc[0, "verification_sources"] = json.dumps([
+        {"kind": "availability", "source": "vendor_catalog"}
+    ])
+
+    with pytest.raises(CandidateLibraryContractError) as exc:
+        VerifiedCandidateDiscovery(output_dir=tmp_path).discover(
+            pool,
+            model=LengthModel(),
+            feature_fn=_feature_fn,
+            dataset_id="missing-identity",
+        )
+
+    assert "molecule identity" in str(exc.value)
+    assert "cand-001" in str(exc.value)
+
+
+def test_discovery_ranks_verified_external_candidate_library(tmp_path):
+    from screening.verified_candidate_discovery import VerifiedCandidateDiscovery
+
+    artifacts = VerifiedCandidateDiscovery(output_dir=tmp_path).discover(
+        _external_candidate_pool(),
+        model=LengthModel(),
+        feature_fn=_feature_fn,
+        top_k=1,
+        dataset_id="external-candidates",
+    )
+
+    ranked = pd.read_csv(artifacts.ranked_candidates_csv)
+    assert ranked["candidate_id"].tolist() == ["cand-002"]
+    assert ranked["vendor_name"].tolist() == ["TCI"]
+    assert ranked["source_url"].tolist() == ["https://example.com/catalog/B0001"]
+    assert ranked["availability_status"].tolist() == ["commercial"]
+    assert ranked["synthesis_status"].tolist() == ["commercial"]
+    assert ranked["safety_status"].tolist() == ["sds_available"]
+    assert "pubchem" in ranked.loc[0, "verification_sources"]
+
+    manifest = json.loads(artifacts.discovery_manifest_json.read_text(encoding="utf-8"))
+    assert manifest["candidate_library_contract_version"] == "candidate-library-v1"
+    assert manifest["requires_verification_sources"] is True
