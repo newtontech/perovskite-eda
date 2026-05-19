@@ -21,6 +21,7 @@ import pandas as pd
 EVIDENCE_CACHE_PREFLIGHT_SCHEMA_VERSION = "evidence-cache-preflight-v1"
 REFERENCE_CACHE_FILE = "reference_cache.json"
 MOLECULE_CACHE_FILE = "molecule_cache.json"
+MAX_MARKDOWN_MISSING_KEYS = 50
 
 
 @dataclass(frozen=True)
@@ -145,6 +146,7 @@ def _requirement_rows(
             {
                 "entity_type": entity_type,
                 "key": key,
+                "key_source": _key_source(entity_type, key),
                 "row_count": len(items[key]),
                 "record_ids": items[key],
                 "cache_status": cache_status,
@@ -210,6 +212,7 @@ def _write_requirements_csv(requirements: list[dict[str, Any]], path: Path) -> N
     columns = [
         "entity_type",
         "key",
+        "key_source",
         "row_count",
         "cache_status",
         "is_cached",
@@ -261,7 +264,21 @@ def _coverage_line(summary: dict[str, Any]) -> str:
 def _missing_lines(label: str, keys: list[str]) -> list[str]:
     if not keys:
         return [f"- {label}: none"]
-    return [f"- {label}: `{key}`" for key in keys]
+    lines = [f"- {label}: `{key}`" for key in keys[:MAX_MARKDOWN_MISSING_KEYS]]
+    remaining = len(keys) - MAX_MARKDOWN_MISSING_KEYS
+    if remaining > 0:
+        lines.append(f"- {label}: {remaining} more keys omitted from Markdown; see `evidence_cache_requirements.csv`.")
+    return lines
+
+
+def _key_source(entity_type: str, key: str) -> str:
+    if entity_type == "reference":
+        return "doi"
+    if key.startswith("pubchem:"):
+        return "pubchem_id"
+    if key.startswith("smiles:"):
+        return "smiles"
+    return "unknown"
 
 
 def _normalize_doi(value: Any) -> str:
