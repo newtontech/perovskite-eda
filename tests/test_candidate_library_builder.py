@@ -23,6 +23,7 @@ def _source_rows() -> pd.DataFrame:
                 "availability": "commercial",
                 "synthesis": "commercial",
                 "safety": "sds_available",
+                "verification_status": "verified",
                 "verification_sources": json.dumps(
                     [
                         {"kind": "molecule", "source": "pubchem", "pubchem_id": "702"},
@@ -45,6 +46,7 @@ def _source_rows() -> pd.DataFrame:
                 "availability": "commercial",
                 "synthesis": "commercial",
                 "safety": "sds_available",
+                "verification_status": "verified",
                 "verification_sources": json.dumps(
                     [
                         {"kind": "molecule", "source": "pubchem", "pubchem_id": "8471"},
@@ -130,3 +132,33 @@ def test_builder_rejects_rows_without_real_verification_sources(tmp_path):
 
     assert "verification_sources" in str(exc.value)
     assert "pubchem-vendor-fixture:pubchem-702" in str(exc.value)
+
+
+def test_builder_rejects_missing_explicit_verification_status(tmp_path):
+    from screening.candidate_library_builder import CandidateLibraryBuilder
+    from screening.verified_candidate_discovery import CandidateLibraryContractError
+
+    rows = _source_rows().drop(columns=["verification_status"])
+
+    with pytest.raises(CandidateLibraryContractError) as exc:
+        CandidateLibraryBuilder(output_dir=tmp_path / "out").build_from_dataframe(
+            rows,
+            dataset_id="missing-status",
+            source_name="pubchem-vendor-fixture",
+        )
+
+    assert "verification_status" in str(exc.value)
+    assert "pubchem-vendor-fixture:pubchem-702" in str(exc.value)
+
+
+def test_builder_records_explicit_verified_status_policy(tmp_path):
+    from screening.candidate_library_builder import CandidateLibraryBuilder
+
+    artifacts = CandidateLibraryBuilder(output_dir=tmp_path / "out").build_from_dataframe(
+        _source_rows(),
+        dataset_id="explicit-status",
+        source_name="pubchem-vendor-fixture",
+    )
+
+    provenance = json.loads(artifacts.provenance_json.read_text(encoding="utf-8"))
+    assert provenance["verification_status_policy"] == "explicit_verified_only"
