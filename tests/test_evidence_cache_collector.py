@@ -138,11 +138,12 @@ def test_collector_resumes_missing_requirements_without_overwriting_existing_cac
         molecule_resolver=molecule_resolver,
     )
 
-    assert second["attempted_count"] == 2
+    assert second["attempted_count"] == 1
     assert second["positive_written_count"] == 1
-    assert second["negative_written_count"] == 1
-    assert second["remaining_missing_count"] == 0
-    assert molecule_calls == [{"pubchem_id": "104810"}, {"smiles": "CCO"}]
+    assert second["negative_written_count"] == 0
+    assert second["unsupported_count"] == 1
+    assert second["remaining_missing_count"] == 1
+    assert molecule_calls == [{"pubchem_id": "104810"}]
 
     reference_cache = json.loads((cache_dir / "reference_cache.json").read_text(encoding="utf-8"))
     molecule_cache = json.loads((cache_dir / "molecule_cache.json").read_text(encoding="utf-8"))
@@ -150,7 +151,7 @@ def test_collector_resumes_missing_requirements_without_overwriting_existing_cac
     assert reference_cache["10.1021/acs.jpclett.6c00119"]["source"] == "fixture-crossref"
     assert reference_cache["10.1038/s41586-026-00001-1"]["source"] == "fixture-crossref"
     assert molecule_cache["pubchem:104810"]["pubchem_id"] == "104810"
-    assert molecule_cache["smiles:CCO"] is None
+    assert "smiles:CCO" not in molecule_cache
 
 
 def test_collector_dry_run_does_not_write_cache_files(tmp_path):
@@ -177,6 +178,7 @@ def test_collector_dry_run_does_not_write_cache_files(tmp_path):
     assert summary["dry_run"] is True
     assert summary["attempted_count"] == 0
     assert summary["planned_count"] == 3
+    assert summary["unsupported_count"] == 1
     assert {
         path.name: path.read_text(encoding="utf-8")
         for path in (cache_dir / "reference_cache.json", cache_dir / "molecule_cache.json")
@@ -220,3 +222,61 @@ def test_collector_cli_writes_report_with_injected_resolvers(tmp_path, monkeypat
     assert report["dataset_id"] == "collector-cli"
     assert report["attempted_count"] == 1
     assert report["entity_type_counts"]["reference"] == 1
+
+
+def test_collector_retries_transient_errors_without_writing_negative_cache(tmp_path):
+    from data.evidence_cache_collector import collect_evidence_cache
+    from harness.authenticity import ReferenceEvidence
+
+    requirements = tmp_path / "requirements.csv"
+    cache_dir = tmp_path / "evidence_cache"
+    _requirements_csv(requirements)
+    _seed_caches(cache_dir)
+    attempts = []
+
+    def flaky_reference_resolver(doi):
+        attempts.append(doi)
+        if len(attempts) == 1:
+            raise RuntimeError("temporary crossref failure")
+        return ReferenceEvidence(doi=doi, title="Recovered reference", source="fixture-crossref")
+
+    summary = collect_evidence_cache(
+        requirements_csv=requirements,
+        cache_dir=cache_dir,
+        max_requests=1,
+        retry_attempts=2,
+        reference_resolver=flaky_reference_resolver,
+        molecule_resolver=lambda record: None,
+    )
+
+    assert attempts == ["10.1021/acs.jpclett.6c00119", "10.1021/acs.jpclett.6c00119"]
+    assert summary["attempted_count"] == 1
+    assert summary["error_count"] == 0
+    reference_cache = json.loads((cache_dir / "reference_cache.json").read_text(encoding="utf-8"))
+    assert reference_cache["10.1021/acs.jpclett.6c00119"]["title"] == "Recovered reference"
+
+
+def test_collector_does_not_write_negative_cache_after_retry_exhaustion(tmp_path):
+    from data.evidence_cache_collector import collect_evidence_cache
+
+    requirements = tmp_path / "requirements.csv"
+    cache_dir = tmp_path / "evidence_cache"
+    _requirements_csv(requirements)
+    _seed_caches(cache_dir)
+
+    def failing_reference_resolver(doi):
+        raise RuntimeError("rate limited")
+
+    summary = collect_evidence_cache(
+        requirements_csv=requirements,
+        cache_dir=cache_dir,
+        max_requests=1,
+        retry_attempts=2,
+        reference_resolver=failing_reference_resolver,
+        molecule_resolver=lambda record: None,
+    )
+
+    assert summary["attempted_count"] == 1
+    assert summary["error_count"] == 1
+    reference_cache = json.loads((cache_dir / "reference_cache.json").read_text(encoding="utf-8"))
+    assert "10.1021/acs.jpclett.6c00119" not in reference_cache
