@@ -10,13 +10,18 @@ TOP_K ?= 100
 SMOKE_MAX_ROWS ?= 25
 SMOKE_MIN_VERIFIED_ROWS ?= 1
 SMOKE_TOP_K ?= 10
+CACHE_PREFLIGHT_MAX_ROWS ?=
+CACHE_PREFLIGHT_SMOKE_MAX_ROWS ?= $(SMOKE_MAX_ROWS)
+EVIDENCE_CACHE_DIR ?=
 PANDOC_PDF_ENGINE ?= xelatex
 PANDOC_MAINFONT ?= DejaVu Serif
 
 RUN_RESEARCH_PACKAGE := hybrid_agent_exploration/src/run_research_package.py
+RUN_EVIDENCE_CACHE_PREFLIGHT := hybrid_agent_exploration/src/run_evidence_cache_preflight.py
 ROOT_PROVENANCE_MANIFEST := hybrid_agent_exploration/src/reporting/root_provenance_manifest.py
 VERIFY_RESEARCH_PACKAGE := hybrid_agent_exploration/src/verify_research_package.py
 VERIFIED_DISCOVERY_DIR := $(ARTIFACT_DIR)/verified_discovery
+CACHE_PREFLIGHT_DIR := $(ARTIFACT_DIR)/evidence_cache_preflight
 REPORT_DIR := $(ARTIFACT_DIR)/report_bundle/main_text
 SI_DIR := $(ARTIFACT_DIR)/report_bundle/si
 CANDIDATE_LIBRARY_DIR := $(ARTIFACT_DIR)/candidate_library
@@ -32,10 +37,12 @@ SI_RESOURCE_PATH := $(SI_DIR):$(ARTIFACT_DIR)
 
 CANDIDATE_SOURCE_ARGS := $(if $(CANDIDATE_SOURCE),--candidate-source $(CANDIDATE_SOURCE),)
 CANDIDATE_SOURCE_NAME_ARGS := $(if $(CANDIDATE_SOURCE_NAME),--candidate-source-name $(CANDIDATE_SOURCE_NAME),)
+CACHE_PREFLIGHT_CACHE_DIR_ARGS := $(if $(EVIDENCE_CACHE_DIR),--cache-dir $(EVIDENCE_CACHE_DIR),)
+CACHE_PREFLIGHT_MAX_ROWS_ARGS := $(if $(CACHE_PREFLIGHT_MAX_ROWS),--max-rows $(CACHE_PREFLIGHT_MAX_ROWS),)
 VERIFY_CANDIDATE_LIBRARY_ARGS := $(if $(REQUIRE_CANDIDATE_LIBRARY),--require-candidate-library,)
 VERIFY_EVIDENCE_CACHE_ARGS := $(if $(REQUIRE_EVIDENCE_CACHE),--require-evidence-cache,)
 
-.PHONY: research-package research-package-smoke research-package-pdf research-package-verify test-research-package
+.PHONY: research-package research-package-smoke research-package-cache-preflight research-package-cache-preflight-smoke research-package-pdf research-package-verify test-research-package
 
 research-package:
 	$(PYTHON) $(RUN_RESEARCH_PACKAGE) \
@@ -58,6 +65,19 @@ research-package-smoke:
 		MIN_VERIFIED_ROWS=$(SMOKE_MIN_VERIFIED_ROWS) \
 		TOP_K=$(SMOKE_TOP_K) \
 		EXTRA_RUN_ARGS="--max-rows $(SMOKE_MAX_ROWS)"
+
+research-package-cache-preflight:
+	$(PYTHON) $(RUN_EVIDENCE_CACHE_PREFLIGHT) \
+		--input $(SOURCE_TABLE) \
+		--dataset-id $(DATASET_ID) \
+		--source-name $(notdir $(basename $(SOURCE_TABLE))) \
+		--output-dir $(CACHE_PREFLIGHT_DIR) \
+		$(CACHE_PREFLIGHT_CACHE_DIR_ARGS) \
+		$(CACHE_PREFLIGHT_MAX_ROWS_ARGS)
+
+research-package-cache-preflight-smoke:
+	$(MAKE) research-package-cache-preflight \
+		CACHE_PREFLIGHT_MAX_ROWS=$(CACHE_PREFLIGHT_SMOKE_MAX_ROWS)
 
 research-package-pdf:
 	@command -v pandoc >/dev/null 2>&1 || { echo "pandoc is required for research-package-pdf. Install pandoc and rerun this target." >&2; exit 127; }
@@ -89,6 +109,7 @@ research-package-verify:
 test-research-package:
 	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 $(PYTHON) -m pytest -q \
 		tests/test_canonical_make_targets.py \
+		tests/test_evidence_cache_preflight.py \
 		tests/test_research_package_runner.py \
 		tests/test_run_verified_discovery_cli.py \
 		tests/test_root_provenance_manifest.py
