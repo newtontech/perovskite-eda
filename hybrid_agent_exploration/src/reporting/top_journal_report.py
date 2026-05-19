@@ -23,6 +23,7 @@ from .composite_figure import CompositeFigure, CompositeFigureTemplates
 from .figure_selector import FigureSelector
 from .image_embedder import embed_markdown_images
 from .narrative_engine import NarrativeEngine
+from .plan_registry import PlanRegistry, build_report_plan_context, load_plan_registry
 from .report_bundle import ReportBundle
 from .research_crew import ClaimAuditorAgent, ReviewerAgent
 
@@ -33,12 +34,21 @@ class TopJournalReport:
     def __init__(self, results: list[dict], artifacts: dict[str, Any] | None = None,
                  output_dir: Path | str = "results/reports/top_journal",
                  quality_target: str = "standard",
-                 embed_images: bool = False):
+                 embed_images: bool = False,
+                 plan_registry: PlanRegistry | None = None,
+                 plan_registry_path: Path | str | None = None,
+                 enforce_plan_gates: bool = False):
         self.results = [r for r in results if isinstance(r, dict)]
         self.artifacts = artifacts or {}
         self.output_dir = Path(output_dir)
         self.quality_target = quality_target
         self.embed_images = embed_images
+        if plan_registry is not None and plan_registry_path is not None:
+            raise ValueError("Pass either plan_registry or plan_registry_path, not both")
+        self.plan_registry = plan_registry or (
+            load_plan_registry(plan_registry_path) if plan_registry_path else None
+        )
+        self.enforce_plan_gates = enforce_plan_gates
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.fig_dir = self.output_dir / "figures"
         self.fig_dir.mkdir(parents=True, exist_ok=True)
@@ -88,12 +98,40 @@ class TopJournalReport:
         review_path = self.output_dir / "review_report.json"
         self._write_json(review_path, {"review": review, "claim_audit": audit})
 
+        plan_manifest = None
+        if self.plan_registry is not None:
+            context = build_report_plan_context(
+                results=self.results,
+                artifacts=self.artifacts,
+                figures=[p for _, p in figure_paths],
+                report_text=report_text,
+                claim_ledger=claim_ledger,
+                review=review,
+                audit=audit,
+            )
+            if self.enforce_plan_gates:
+                evaluations = self.plan_registry.require_passed(context)
+            else:
+                evaluations = self.plan_registry.evaluate(context)
+            plan_manifest = self.plan_registry.to_manifest(evaluations)
+
         manifest_path = self.output_dir / "run_manifest.json"
-        manifest = self._build_manifest(figure_paths, best_result, claim_ledger_path, review_path)
+        manifest = self._build_manifest(
+            figure_paths,
+            best_result,
+            claim_ledger_path,
+            review_path,
+            plan_manifest=plan_manifest,
+        )
         self._write_json(manifest_path, manifest)
 
         warnings_out = list(review.get("findings", []))
         warnings_out.extend(item["phrase"] for item in audit.get("unsupported_claims", []))
+        if plan_manifest is not None:
+            warnings_out.extend(
+                item["id"] for item in plan_manifest["plans"]
+                if item["status"] != "passed"
+            )
         quality_score = self._quality_score(len(figure_paths), review, audit)
         return ReportBundle(
             path=report_path,
@@ -802,9 +840,10 @@ class TopJournalReport:
         best_result: dict | None,
         claim_ledger_path: Path,
         review_path: Path,
+        plan_manifest: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         best_metrics = best_result.get("metrics", {}) if best_result else {}
-        return {
+        manifest = {
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "quality_target": self.quality_target,
             "n_results": len(self.results),
@@ -827,6 +866,10 @@ class TopJournalReport:
             "review_path": str(review_path.name),
             "agents": ["TopJournalReport", "FigureAssemblyAgent", "NarrativeEngine", "ReviewerAgent", "ClaimAuditorAgent"],
         }
+        if plan_manifest is not None:
+            manifest["plan_registry"] = plan_manifest
+            manifest["agents"].insert(0, "PlanRegistryAgent")
+        return manifest
 
     def _quality_score(self, figure_count: int, review: dict[str, Any], audit: dict[str, Any]) -> float:
         score = 0.45 + min(figure_count, 8) * 0.05

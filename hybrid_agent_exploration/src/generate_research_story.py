@@ -41,6 +41,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 from reporting.top_journal_report import TopJournalReport
 from reporting.si_generator import SIGenerator
 from reporting.figure_selector import FigureSelector
+from reporting.plan_registry import load_plan_registry
 from worker_agent import run_worker_star
 
 
@@ -261,6 +262,8 @@ def generate_reports(
     quality_gate: str = "standard",
     journal_profile: str = "jpcl",
     require_external_validation: bool = False,
+    plan_registry_path: str | None = None,
+    enforce_plan_gates: bool = False,
 ):
     """Generate main text + SI reports."""
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -278,11 +281,16 @@ def generate_reports(
 
     # Main text
     print("\nGenerating main-text report...")
+    plan_registry = load_plan_registry(plan_registry_path) if plan_registry_path else None
+    if plan_registry is not None:
+        print(f"Plan registry → {plan_registry.path}")
     main_report = TopJournalReport(
         results=results, artifacts=artifacts,
         output_dir=output_dir / "main_text",
         quality_target=quality_target,
         embed_images=embed_images,
+        plan_registry=plan_registry,
+        enforce_plan_gates=enforce_plan_gates,
     )
     main_bundle = main_report.generate()
     gate_thresholds = {"draft": 0.5, "standard": 0.7, "strict": 0.85}
@@ -339,6 +347,10 @@ def main():
                         help="Existing run_manifest.json to carry forward as prior state")
     parser.add_argument("--require-external-validation", action="store_true",
                         help="Fail if independent external-validation artifacts are missing")
+    parser.add_argument("--plan-registry", type=str, default=None,
+                        help="YAML plan registry for science/validation/figure/writing/review gates")
+    parser.add_argument("--enforce-plan-gates", action="store_true",
+                        help="Fail report generation if any plan-registry gate is not satisfied")
     args = parser.parse_args()
 
     output_dir = Path(args.output)
@@ -449,6 +461,8 @@ def main():
         quality_gate=args.quality_gate,
         journal_profile=args.journal_profile,
         require_external_validation=args.require_external_validation,
+        plan_registry_path=args.plan_registry,
+        enforce_plan_gates=args.enforce_plan_gates,
     )
 
     print("\n" + "=" * 60)

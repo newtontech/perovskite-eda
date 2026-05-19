@@ -1,0 +1,96 @@
+version: 1
+artifact_policy: evidence-light
+plans:
+  - id: science_story_plan
+    stage: science
+    description: Define the scientific claim structure before report assembly.
+    inputs:
+      - experiment_results
+      - literature_benchmark
+    outputs:
+      - scientific_claims
+      - design_rules
+    required_evidence:
+      - successful_results
+    quality_gates:
+      min_successful_runs: 1
+    failure_policy: fail
+
+  - id: generalization_validation_plan
+    stage: validation
+    description: Require leakage-aware validation evidence before top-journal claims.
+    inputs:
+      - experiment_results
+      - validation_artifacts
+    outputs:
+      - generalization_assessment
+      - leakage_audit
+      - interpretability_evidence
+    required_evidence:
+      - scaffold_split
+      - prediction_arrays
+      - shap_diagnostics
+    quality_gates:
+      require_scaffold_split: true
+      require_prediction_arrays: true
+      require_shap_diagnostics: true
+    failure_policy: fail
+
+  - id: claim_first_figure_plan
+    stage: figure
+    description: Build main figures from scientific stories, not as a terminal appendix.
+    inputs:
+      - scientific_claims
+      - validation_artifacts
+    outputs:
+      - composite_main_figures
+      - figure_claim_links
+    required_evidence:
+      - main_figures
+      - figure_claims
+    quality_gates:
+      min_main_figures: 5
+      max_main_figures: 8
+      min_figure_claims: 5
+    failure_policy: fail
+
+  - id: journal_writing_plan
+    stage: writing
+    description: Interleave figures, captions, evidence, limitations, and references.
+    inputs:
+      - composite_main_figures
+      - claim_ledger
+      - literature_benchmark
+    outputs:
+      - main_text
+      - supporting_information
+    required_evidence:
+      - figures_in_context
+      - claim_ledger
+      - metric_claims
+    quality_gates:
+      require_figures_in_context: true
+      require_claim_ledger: true
+      min_metric_claims: 3
+      min_references: 30
+    failure_policy: fail
+
+  - id: reviewer_gate_plan
+    stage: review
+    description: Run reviewer and claim-audit gates before calling a bundle top-journal grade.
+    inputs:
+      - main_text
+      - claim_ledger
+      - review_report
+    outputs:
+      - reviewer_findings
+      - claim_audit
+      - run_manifest
+    required_evidence:
+      - review_report
+      - review_passed
+      - audit_passed
+    quality_gates:
+      require_review_passed: true
+      require_audit_passed: true
+    failure_policy: fail
