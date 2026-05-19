@@ -48,6 +48,12 @@ class SIGenerator:
         lines = []
         lines.append("# Supporting Information")
         lines.append("")
+        evidence_note = self._evidence_context_section()
+        if evidence_note:
+            lines.append("## S0. Evidence Context")
+            lines.append(evidence_note)
+            lines.append("")
+
         lines.append("## S1. Data Cleaning and Quality Control")
         lines.append(self._data_cleaning_section())
         lines.append("")
@@ -281,7 +287,13 @@ class SIGenerator:
         successful = [r for r in self.results if r.get("status") == "success" and "r2" in r.get("metrics", {})]
         if not successful:
             return "No successful experiments."
-        lines = ["Performance metrics for all evaluated configurations:", ""]
+        if self._has_training_only_metrics():
+            lines = [
+                "Training-only fit metrics for verified-discovery model fits. These values are not cross-validation, scaffold-split, temporal-split, or independent external-validation metrics.",
+                "",
+            ]
+        else:
+            lines = ["Performance metrics for all evaluated configurations:", ""]
         lines.append("| Model | Feature | L1 | R² | RMSE | MAE | Pearson r | N | Features |")
         lines.append("|-------|---------|-----|-----|------|-----|-----------|---|----------|")
         for r in successful:
@@ -305,6 +317,11 @@ class SIGenerator:
         return "\n".join(lines)
 
     def _cv_section(self) -> str:
+        if self._has_training_only_metrics():
+            return (
+                "Cross-validation was not supplied for this research-package run. "
+                "The reported model metrics are training-only diagnostics and cannot establish generalization."
+            )
         cv_results = self.artifacts.get("cv_detailed_results", [])
         if cv_results:
             lines = ["Cross-validation results:", ""]
@@ -384,3 +401,33 @@ class SIGenerator:
                 pass
             return "\n".join(lines)
         return "SHAP analysis was not performed for this experiment set."
+
+    def _evidence_context_section(self) -> str:
+        context = self._evidence_context()
+        if not context:
+            return ""
+        lines = [
+            f"Evidence mode: `{context.get('evidence_mode', 'unknown')}`.",
+            f"Verification level: `{context.get('verification_level', 'unknown')}`.",
+            f"Publication-grade flag: `{context.get('publication_grade', False)}`.",
+        ]
+        if context.get("source_columns_is_smoke_only"):
+            lines.append(
+                "This is a source-columns smoke-only package: DOI and molecule evidence were accepted from input columns rather than rechecked through external services."
+            )
+        if context.get("metric_scope") == "training_only":
+            lines.append("Model metrics in this package are training-only diagnostics.")
+        return "\n".join(lines)
+
+    def _evidence_context(self) -> dict[str, Any]:
+        value = self.artifacts.get("evidence_context")
+        return value if isinstance(value, dict) else {}
+
+    def _has_training_only_metrics(self) -> bool:
+        context = self._evidence_context()
+        if context.get("metric_scope") == "training_only":
+            return True
+        return any(
+            row.get("metrics", {}).get("metric_scope") == "training_only"
+            for row in self.results
+        )

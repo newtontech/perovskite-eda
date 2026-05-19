@@ -693,7 +693,7 @@ class TopJournalReport:
             "## 4. Limitations and Evidence Gaps",
             self._limitations(),
             "",
-            self.narrative.conclusion(self.results),
+            self._conclusion(best_result),
             "",
             "## References",
             self._reference_section(),
@@ -704,6 +704,9 @@ class TopJournalReport:
         return "\n".join(lines)
 
     def _abstract(self, metrics: dict, config: dict, n_models: int) -> str:
+        if self._has_training_only_metrics():
+            return self._training_only_abstract(metrics, config, n_models)
+
         target = config.get("target", "delta_pce")
         r2 = metrics.get("r2")
         rmse = metrics.get("rmse")
@@ -725,12 +728,53 @@ class TopJournalReport:
             "The report embeds all generated figures in context and records each quantitative claim in a machine-readable claim ledger."
         )
 
+    def _training_only_abstract(self, metrics: dict, config: dict, n_models: int) -> str:
+        target = config.get("target", "delta_pce")
+        model = config.get("layer3", {}).get("method_id", "model")
+        r2 = metrics.get("r2")
+        rmse = metrics.get("rmse")
+        mae = metrics.get("mae")
+        metric_sentence = "No training metric summary is available."
+        if r2 is not None:
+            metric_sentence = f"The {model} fit reached a training-only $R^2$ = {r2:.3f}"
+            if rmse is not None:
+                metric_sentence += f", RMSE = {rmse:.3f}"
+            if mae is not None:
+                metric_sentence += f", and MAE = {mae:.3f}"
+            metric_sentence += "."
+        verification_note = (
+            "The source-columns mode is marked smoke-only because evidence was accepted from source table columns rather than rechecked through external DOI and molecule services. "
+            if self._is_source_columns_smoke()
+            else ""
+        )
+        return (
+            f"We report an evidence-audited exploratory QSPR package for predicting {target} in perovskite solar-cell additive data. "
+            f"The package contains {n_models} converged verified-discovery model fit, a verified candidate table, report sidecars, and provenance manifests. "
+            f"{metric_sentence} These metrics are training-only fit diagnostics and are not presented as validation, external validation, or chemical generalization evidence. "
+            f"{verification_note}"
+            "The report records supported claims in a machine-readable claim ledger and explicitly separates artifact availability from scientific validation."
+        )
+
     def _results_overview(self, best_result: dict | None) -> str:
         successful = self._successful_results()
         if not successful or not best_result:
             return "No successful experiments were available for the main results narrative."
         best = best_result["metrics"]
         cfg = best_result.get("config", {})
+        if self._has_training_only_metrics():
+            smoke_note = (
+                "The source-columns evidence mode is smoke-only and must be replaced by external-cached verification before publication-grade claims are made. "
+                if self._is_source_columns_smoke()
+                else ""
+            )
+            return (
+                f"The verified-discovery package contains {len(successful)} successful training-only model fit. "
+                f"The run used {cfg.get('layer2', {}).get('method_id', 'unknown')} features and "
+                f"{cfg.get('layer3', {}).get('method_id', 'unknown')} with training-only $R^2$ = {best.get('r2', 0):.3f}. "
+                "This value is a fit diagnostic from the verified training rows, not a random-split, scaffold-split, temporal-split, or external-validation result. "
+                f"{smoke_note}"
+                "Candidate ranking is therefore interpreted as a reproducibility and provenance check rather than a validated design rule."
+            )
         split_counts = {}
         for row in successful:
             split = row.get("config", {}).get("layer4", {}).get("method_id", "unknown")
@@ -774,6 +818,18 @@ class TopJournalReport:
         return captions.get(figure_name, self.narrative.figure_caption(figure_name, {}))
 
     def _limitations(self) -> str:
+        if self._has_training_only_metrics():
+            source_note = (
+                "Source-columns mode uses DOI and molecule fields already present in the input table and is explicitly smoke-only. "
+                if self._is_source_columns_smoke()
+                else "External-cached evidence checks are recorded separately from model validation. "
+            )
+            return (
+                f"{source_note}"
+                "The reported model metrics are training-only diagnostics and cannot establish predictive generalization. "
+                "No scaffold-split, temporal-split, independent external-validation, or experimental follow-up evidence is inferred unless those artifacts are supplied. "
+                "Mechanistic statements are limited to artifact availability and aggregate diagnostics; candidate rankings require external validation before they can be used as design rules."
+            )
         has_external = bool(self.artifacts.get("y_true_external") and self.artifacts.get("y_pred_external"))
         external_note = (
             "Independent external validation artifacts were available and are reported as diagnostics."
@@ -784,6 +840,31 @@ class TopJournalReport:
             "The analysis is bounded by the size and composition of the available experiment table. "
             "Random splits can overestimate generalization when structural analogues occur across train and test partitions, making scaffold split diagnostics essential. "
             f"{external_note} Mechanistic statements are limited to associations supported by model diagnostics and should be tested experimentally before use as design rules."
+        )
+
+    def _conclusion(self, best_result: dict | None) -> str:
+        if not self._has_training_only_metrics():
+            return self.narrative.conclusion(self.results)
+
+        best_metrics = best_result.get("metrics", {}) if best_result else {}
+        r2 = best_metrics.get("r2")
+        if r2 is None:
+            metric_sentence = "No successful training metric was available."
+        else:
+            metric_sentence = f"The current package records a training-only $R^2$ = {r2:.3f}, which is treated only as a fit diagnostic."
+        smoke_sentence = (
+            "Because this run used source-columns mode, it is a smoke package rather than a publication-grade verification package. "
+            if self._is_source_columns_smoke()
+            else ""
+        )
+        return "\n".join(
+            [
+                "## Conclusion",
+                "",
+                "This research package demonstrates that the verified-discovery artifact chain can produce a traceable dataset, candidate library, ranked candidates, manuscript text, SI, and provenance manifests from real input records.",
+                f"{metric_sentence} {smoke_sentence}The package does not support claims about representation superiority, baseline-feature benefit, SHAP-derived mechanisms, scaffold generalization, or externally validated candidate performance unless those artifacts are added in a future run.",
+                "The next scientific step is to replace smoke evidence with external-cached DOI and molecule verification, add held-out validation protocols, and connect top candidates to independently verifiable experimental or supplier evidence.",
+            ]
         )
 
     def _build_claim_ledger(self, figure_paths: list[tuple[str, Path]], best_result: dict | None) -> list[dict[str, Any]]:
@@ -852,6 +933,14 @@ class TopJournalReport:
                     "source": "dataset/quarantine.csv",
                 },
             ])
+        evidence_context = self._evidence_context()
+        if evidence_context:
+            ledger.append({
+                "claim": "Research package evidence context and smoke status",
+                "evidence_id": "provenance:research_package.evidence_context",
+                "value": evidence_context,
+                "source": "artifacts.evidence_context",
+            })
         references = self._load_references()
         ledger.append({
             "claim": "Literature benchmark covers PSC, molecular ML, virtual screening, experimental validation, and database subfields",
@@ -898,6 +987,9 @@ class TopJournalReport:
             manifest["agents"].insert(0, "PlanRegistryAgent")
         if self.verified_discovery:
             manifest["verified_discovery"] = self.verified_discovery
+        evidence_context = self._evidence_context()
+        if evidence_context:
+            manifest["evidence_context"] = evidence_context
         return manifest
 
     def _quality_score(self, figure_count: int, review: dict[str, Any], audit: dict[str, Any]) -> float:
@@ -967,7 +1059,38 @@ class TopJournalReport:
     def _has_shap_artifacts(self) -> bool:
         return bool(self.artifacts.get("shap_values") and self.artifacts.get("shap_background"))
 
+    def _evidence_context(self) -> dict[str, Any]:
+        value = self.artifacts.get("evidence_context")
+        return value if isinstance(value, dict) else {}
+
+    def _is_source_columns_smoke(self) -> bool:
+        context = self._evidence_context()
+        return bool(context.get("source_columns_is_smoke_only"))
+
+    def _has_training_only_metrics(self) -> bool:
+        context = self._evidence_context()
+        if context.get("metric_scope") == "training_only":
+            return True
+        return any(
+            row.get("metrics", {}).get("metric_scope") == "training_only"
+            for row in self.results
+        )
+
     def _introduction(self) -> str:
+        if self._has_training_only_metrics():
+            smoke_note = (
+                "This source-columns package is a smoke run: DOI and molecule evidence were accepted from the input columns rather than rechecked through external services. "
+                if self._is_source_columns_smoke()
+                else "External evidence checks are recorded in the package manifests, but model metrics remain training-only. "
+            )
+            return (
+                "Accurate prediction of power-conversion-efficiency (PCE) modulation by molecular additives "
+                "requires both trustworthy source records and validation protocols that test chemical generalization. "
+                "This package focuses on the reproducible artifact chain needed for that study: strict row verification, "
+                "candidate-library normalization, training-set model fitting, candidate ranking, manuscript sidecars, and provenance manifests. "
+                f"{smoke_note}"
+                "The generated text therefore treats all model metrics as training-only diagnostics and reserves scientific design-rule claims for future runs with validation artifacts."
+            )
         interpretation_sentence = (
             "Available SHAP diagnostics are used to describe model associations while avoiding causal mechanistic claims. "
             if self._has_shap_artifacts()
@@ -996,6 +1119,22 @@ class TopJournalReport:
         l2s = set(r.get("config", {}).get("layer2", {}).get("method_id", "?") for r in successful)
         l3s = set(r.get("config", {}).get("layer3", {}).get("method_id", "?") for r in successful)
         l4s = set(r.get("config", {}).get("layer4", {}).get("method_id", "?") for r in successful)
+
+        if self._has_training_only_metrics():
+            lines = [
+                "### Data Collection and Curation",
+                f"Data were curated with {', '.join(sorted(l1s))}. Rows lacking required DOI, molecule, or target fields were quarantined rather than used for model fitting.",
+                "",
+                "### Feature Engineering",
+                f"The package used the run-declared molecular representation(s): {', '.join(sorted(l2s))}. No additional Morgan, SHAP, or baseline-feature comparisons are inferred unless corresponding artifacts are supplied.",
+                "",
+                "### Model Fitting and Candidate Ranking",
+                f"Model class(es) recorded in the package: {', '.join(sorted(l3s))}. Metrics emitted by this runner are training-only diagnostics from verified rows. Candidate ranking uses the validated candidate-library contract and records score components in the discovery manifest.",
+                "",
+                "### Validation Status",
+                "No cross-validation, scaffold-split, temporal-split, independent external-validation, or experimental follow-up metric is inferred from this runner output. External evidence and model validation must be added as explicit artifacts before publication-grade claims are made.",
+            ]
+            return "\n".join(lines)
 
         lines = [
             "### Data Collection and Curation",
