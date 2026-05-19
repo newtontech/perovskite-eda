@@ -76,6 +76,68 @@ def _sample_artifacts() -> dict:
     }
 
 
+def _write_verified_discovery_artifact_dir(root: Path) -> Path:
+    artifact_dir = root / "verified_discovery"
+    (artifact_dir / "discovery").mkdir(parents=True)
+    (artifact_dir / "dataset").mkdir(parents=True)
+    (artifact_dir / "workflow_manifest.json").write_text(
+        json.dumps(
+            {
+                "dataset_id": "verified-fixture",
+                "artifact_policy": "verified-light-artifacts-in-git",
+                "verified_rows": 12,
+                "quarantine_rows": 3,
+                "ranked_candidates": 3,
+                "top_k": 3,
+                "outputs": {
+                    "ranked_candidates_csv": "discovery/ranked_candidates.csv",
+                    "doi_manifest_json": "dataset/doi_manifest.json",
+                    "quarantine_csv": "dataset/quarantine.csv",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (artifact_dir / "discovery" / "ranked_candidates.csv").write_text(
+        "\n".join(
+            [
+                "rank,record_id,smiles,predicted_delta_pce,uncertainty,doi,verification_status",
+                "1,row-004,CCCC,1.25,0.10,10.1021/acs.jpclett.6c00122,verified",
+                "2,row-003,CCC,0.75,0.20,10.1021/acs.jpclett.6c00121,verified",
+                "3,row-002,CC,0.50,0.30,10.1021/acs.jpclett.6c00120,verified",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (artifact_dir / "dataset" / "doi_manifest.json").write_text(
+        json.dumps(
+            {
+                "dataset_id": "verified-fixture",
+                "reference_count": 2,
+                "references": [
+                    {"doi": "10.1021/acs.jpclett.6c00122", "title": "Verified source A"},
+                    {"doi": "10.1021/acs.jpclett.6c00121", "title": "Verified source B"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (artifact_dir / "dataset" / "quarantine.csv").write_text(
+        "\n".join(
+            [
+                "record_id,quarantine_reason",
+                "row-009,missing_doi",
+                "row-010,missing_doi;invalid_smiles",
+                "row-011,title_conflict",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return artifact_dir
+
+
 def test_top_journal_bundle_places_figures_in_context_and_records_claims(tmp_path):
     from reporting.report_bundle import ReportBundle
     from reporting.top_journal_report import TopJournalReport
@@ -110,6 +172,52 @@ def test_top_journal_bundle_places_figures_in_context_and_records_claims(tmp_pat
     review = json.loads((tmp_path / "review_report.json").read_text(encoding="utf-8"))
     assert review["review"]["passed"] is True
     assert review["claim_audit"]["passed"] is True
+
+
+def test_report_bundle_ingests_verified_discovery_provenance_without_manuscript_dependency(tmp_path):
+    from reporting.si_generator import SIGenerator
+    from reporting.top_journal_report import TopJournalReport
+
+    artifact_dir = _write_verified_discovery_artifact_dir(tmp_path)
+    artifacts = {
+        **_sample_artifacts(),
+        "verified_discovery_artifact_dir": artifact_dir,
+        "verified_discovery_top_n": 2,
+    }
+
+    bundle = TopJournalReport(
+        _sample_results(),
+        artifacts,
+        output_dir=tmp_path / "report",
+        quality_target="top-journal",
+    ).generate()
+    si_path = SIGenerator(
+        _sample_results(),
+        artifacts,
+        output_dir=tmp_path / "si",
+    ).generate()
+
+    manifest = json.loads(bundle.manifest_path.read_text(encoding="utf-8"))
+    discovery = manifest["verified_discovery"]
+    assert discovery["dataset_id"] == "verified-fixture"
+    assert discovery["source_dir"] == str(artifact_dir)
+    assert [row["record_id"] for row in discovery["top_candidates"]] == ["row-004", "row-003"]
+    assert "row-002" not in json.dumps(discovery)
+    assert discovery["quarantine_reason_summary"] == {
+        "invalid_smiles": 1,
+        "missing_doi": 2,
+        "title_conflict": 1,
+    }
+
+    evidence_ids = {entry["evidence_id"] for entry in bundle.claim_ledger}
+    assert "discovery:top_candidates.count" in evidence_ids
+    assert "provenance:quarantine_reason_summary" in evidence_ids
+
+    si_text = si_path.read_text(encoding="utf-8")
+    assert "## S9. Verified Discovery Provenance" in si_text
+    assert "| 1 | row-004 | `CCCC` | 1.250 | 0.100 | 10.1021/acs.jpclett.6c00122 |" in si_text
+    assert "row-002" not in si_text
+    assert "- missing_doi: 2" in si_text
 
 
 def test_embed_markdown_images_replaces_local_figure_links(tmp_path):
