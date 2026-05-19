@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1] / "hybrid_agent_exploration"
@@ -202,6 +203,259 @@ def test_collector_dry_run_does_not_write_cache_files(tmp_path):
     } == before
 
 
+def test_collector_actual_run_initializes_empty_cache_files_for_shard_merge(tmp_path):
+    from data.evidence_cache_collector import collect_evidence_cache
+
+    requirements = tmp_path / "requirements.csv"
+    cache_dir = tmp_path / "reference-only-shard"
+    _requirements_csv(requirements)
+
+    summary = collect_evidence_cache(
+        requirements_csv=requirements,
+        cache_dir=cache_dir,
+        max_requests=1,
+        entity_type="reference",
+        reference_resolver=lambda doi: None,
+        molecule_resolver=lambda record: None,
+    )
+
+    assert summary["attempted_count"] == 1
+    assert (cache_dir / "reference_cache.json").is_file()
+    assert (cache_dir / "molecule_cache.json").is_file()
+    assert json.loads((cache_dir / "reference_cache.json").read_text()) == {}
+    assert json.loads((cache_dir / "molecule_cache.json").read_text()) == {}
+
+
+def test_collector_shard_plans_are_non_overlapping(tmp_path):
+    from data.evidence_cache_collector import collect_evidence_cache
+
+    requirements = tmp_path / "requirements.csv"
+    shard_zero_cache = tmp_path / "shard-0"
+    shard_one_cache = tmp_path / "shard-1"
+    _requirements_csv(requirements)
+
+    shard_zero = collect_evidence_cache(
+        requirements_csv=requirements,
+        cache_dir=shard_zero_cache,
+        max_requests=10,
+        dry_run=True,
+        shard_count=2,
+        shard_index=0,
+        include_smiles=True,
+        reference_resolver=lambda doi: None,
+        molecule_resolver=lambda record: None,
+    )
+    shard_one = collect_evidence_cache(
+        requirements_csv=requirements,
+        cache_dir=shard_one_cache,
+        max_requests=10,
+        dry_run=True,
+        shard_count=2,
+        shard_index=1,
+        include_smiles=True,
+        reference_resolver=lambda doi: None,
+        molecule_resolver=lambda record: None,
+    )
+
+    shard_zero_keys = {item["key"] for item in shard_zero["planned"]}
+    shard_one_keys = {item["key"] for item in shard_one["planned"]}
+    assert shard_zero["shard"] == {"count": 2, "index": 0}
+    assert shard_one["shard"] == {"count": 2, "index": 1}
+    assert shard_zero_keys
+    assert shard_one_keys
+    assert shard_zero_keys.isdisjoint(shard_one_keys)
+    assert shard_zero_keys | shard_one_keys == {
+        "10.1021/acs.jpclett.6c00119",
+        "10.1038/s41586-026-00001-1",
+        "pubchem:104810",
+        "smiles:CCO",
+    }
+    assert not (shard_zero_cache / "reference_cache.json").exists()
+    assert not (shard_one_cache / "reference_cache.json").exists()
+
+
+def test_collector_shard_resume_keeps_stable_ownership(tmp_path):
+    from data.evidence_cache_collector import collect_evidence_cache
+    from harness.authenticity import MoleculeEvidence, ReferenceEvidence
+
+    requirements = tmp_path / "requirements.csv"
+    cache_dir = tmp_path / "shard-cache"
+    _requirements_csv(requirements)
+
+    initial_plans = [
+        collect_evidence_cache(
+            requirements_csv=requirements,
+            cache_dir=cache_dir,
+            max_requests=10,
+            dry_run=True,
+            shard_count=2,
+            shard_index=index,
+            include_smiles=True,
+            reference_resolver=lambda doi: None,
+            molecule_resolver=lambda record: None,
+        )["planned"]
+        for index in (0, 1)
+    ]
+    shard_index, initial_plan = next(
+        (index, plan) for index, plan in enumerate(initial_plans) if len(plan) >= 2
+    )
+    initial_keys = {item["key"] for item in initial_plan}
+
+    first_batch = collect_evidence_cache(
+        requirements_csv=requirements,
+        cache_dir=cache_dir,
+        max_requests=1,
+        shard_count=2,
+        shard_index=shard_index,
+        include_smiles=True,
+        reference_resolver=lambda doi: ReferenceEvidence(
+            doi=doi, title="Resolved reference", source="fixture-crossref"
+        ),
+        molecule_resolver=lambda record: MoleculeEvidence(
+            smiles=record.get("smiles", "[Ba+2]"),
+            pubchem_id=record.get("pubchem_id"),
+            source="fixture-pubchem",
+        ),
+    )
+
+    resumed = collect_evidence_cache(
+        requirements_csv=requirements,
+        cache_dir=cache_dir,
+        max_requests=10,
+        dry_run=True,
+        shard_count=2,
+        shard_index=shard_index,
+        include_smiles=True,
+        reference_resolver=lambda doi: None,
+        molecule_resolver=lambda record: None,
+    )
+
+    processed_keys = {item["key"] for item in first_batch["processed"]}
+    resumed_keys = {item["key"] for item in resumed["planned"]}
+    assert resumed_keys == initial_keys - processed_keys
+
+
+def test_merge_evidence_cache_shards_preserves_canonical_and_adds_shards(tmp_path):
+    from data.evidence_cache_collector import merge_evidence_cache_shards
+
+    canonical = tmp_path / "canonical"
+    shard_a = tmp_path / "shard-a"
+    shard_b = tmp_path / "shard-b"
+    canonical.mkdir()
+    shard_a.mkdir()
+    shard_b.mkdir()
+    (canonical / "reference_cache.json").write_text(
+        json.dumps(
+            {
+                "10.existing/canonical": {"title": "canonical existing"},
+                "10.conflict/ref": {"title": "canonical wins"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (canonical / "molecule_cache.json").write_text(
+        json.dumps({"pubchem:existing": {"source": "canonical"}}),
+        encoding="utf-8",
+    )
+    (shard_a / "reference_cache.json").write_text(
+        json.dumps(
+            {
+                "10.shard/a": {"title": "from shard a"},
+                "10.conflict/ref": {"title": "shard loses"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (shard_a / "molecule_cache.json").write_text("{}", encoding="utf-8")
+    (shard_b / "reference_cache.json").write_text(
+        json.dumps({"10.shard/b": {"title": "from shard b"}}),
+        encoding="utf-8",
+    )
+    (shard_b / "molecule_cache.json").write_text(
+        json.dumps({"pubchem:shard": {"source": "shard b"}}),
+        encoding="utf-8",
+    )
+
+    summary = merge_evidence_cache_shards(
+        canonical_cache_dir=canonical,
+        shard_cache_dirs=[shard_b, shard_a],
+        conflict_policy="keep-canonical",
+    )
+
+    reference_cache = json.loads(
+        (canonical / "reference_cache.json").read_text(encoding="utf-8")
+    )
+    molecule_cache = json.loads(
+        (canonical / "molecule_cache.json").read_text(encoding="utf-8")
+    )
+    assert reference_cache["10.existing/canonical"]["title"] == "canonical existing"
+    assert reference_cache["10.conflict/ref"]["title"] == "canonical wins"
+    assert reference_cache["10.shard/a"]["title"] == "from shard a"
+    assert reference_cache["10.shard/b"]["title"] == "from shard b"
+    assert molecule_cache["pubchem:existing"]["source"] == "canonical"
+    assert molecule_cache["pubchem:shard"]["source"] == "shard b"
+    assert summary["merged_counts"] == {"reference": 2, "molecule": 1}
+    assert summary["conflict_counts"] == {"reference": 1, "molecule": 0}
+    assert summary["conflicts"] == [
+        {
+            "cache_file": "reference_cache.json",
+            "key": "10.conflict/ref",
+            "kept_source": str(canonical / "reference_cache.json"),
+            "discarded_source": str(shard_a / "reference_cache.json"),
+            "kept_sha256": summary["conflicts"][0]["kept_sha256"],
+            "discarded_sha256": summary["conflicts"][0]["discarded_sha256"],
+        }
+    ]
+
+
+def test_merge_evidence_cache_shards_fails_on_conflict_by_default(tmp_path):
+    from data.evidence_cache_collector import merge_evidence_cache_shards
+
+    canonical = tmp_path / "canonical"
+    shard = tmp_path / "shard"
+    canonical.mkdir()
+    shard.mkdir()
+    (canonical / "reference_cache.json").write_text(
+        json.dumps({"10.conflict/ref": {"title": "canonical"}}),
+        encoding="utf-8",
+    )
+    (shard / "reference_cache.json").write_text(
+        json.dumps({"10.conflict/ref": {"title": "shard"}}),
+        encoding="utf-8",
+    )
+
+    summary = merge_evidence_cache_shards(
+        canonical_cache_dir=canonical,
+        shard_cache_dirs=[shard],
+        entity_type="reference",
+    )
+
+    reference_cache = json.loads(
+        (canonical / "reference_cache.json").read_text(encoding="utf-8")
+    )
+    assert summary["merge_status"] == "failed"
+    assert summary["conflict_counts"] == {"reference": 1, "molecule": 0}
+    assert summary["conflicts"][0]["key"] == "10.conflict/ref"
+    assert reference_cache["10.conflict/ref"]["title"] == "canonical"
+
+
+def test_merge_evidence_cache_shards_requires_expected_shard_cache_files(tmp_path):
+    from data.evidence_cache_collector import merge_evidence_cache_shards
+
+    canonical = tmp_path / "canonical"
+    shard = tmp_path / "missing-reference-shard"
+    canonical.mkdir()
+    shard.mkdir()
+    (canonical / "reference_cache.json").write_text("{}", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="reference_cache.json"):
+        merge_evidence_cache_shards(
+            canonical_cache_dir=canonical,
+            shard_cache_dirs=[shard],
+            entity_type="reference",
+        )
+
+
 def test_collector_cli_writes_report_with_injected_resolvers(tmp_path, monkeypatch):
     import run_evidence_cache_collector as runner
     from harness.authenticity import ReferenceEvidence
@@ -215,8 +469,10 @@ def test_collector_cli_writes_report_with_injected_resolvers(tmp_path, monkeypat
     monkeypatch.setattr(
         runner,
         "CrossrefReferenceVerifier",
-        lambda: lambda doi: ReferenceEvidence(
-            doi=doi, title="CLI resolved", source="fixture-crossref"
+        lambda: (
+            lambda doi: ReferenceEvidence(
+                doi=doi, title="CLI resolved", source="fixture-crossref"
+            )
         ),
     )
     monkeypatch.setattr(runner, "PubChemMoleculeVerifier", lambda: lambda record: None)
@@ -241,6 +497,109 @@ def test_collector_cli_writes_report_with_injected_resolvers(tmp_path, monkeypat
     assert report["dataset_id"] == "collector-cli"
     assert report["attempted_count"] == 1
     assert report["entity_type_counts"]["reference"] == 1
+
+
+def test_collector_cli_accepts_shard_arguments():
+    import run_evidence_cache_collector as runner
+
+    args = runner.parse_args(
+        [
+            "--requirements-csv",
+            "/tmp/requirements.csv",
+            "--dataset-id",
+            "collector-cli-shard",
+            "--cache-dir",
+            "/tmp/cache-shard-1",
+            "--max-requests",
+            "5",
+            "--output-json",
+            "/tmp/report.json",
+            "--dry-run",
+            "--shard-count",
+            "3",
+            "--shard-index",
+            "1",
+        ]
+    )
+
+    assert args.shard_count == 3
+    assert args.shard_index == 1
+
+
+def test_merge_cli_runs_against_temp_cache_dirs(tmp_path):
+    import run_evidence_cache_merge as runner
+
+    canonical = tmp_path / "canonical"
+    shard = tmp_path / "shard"
+    output_json = tmp_path / "merge-report.json"
+    canonical.mkdir()
+    shard.mkdir()
+    (canonical / "reference_cache.json").write_text("{}", encoding="utf-8")
+    (shard / "reference_cache.json").write_text(
+        json.dumps({"10.shard/ref": {"title": "from shard"}}),
+        encoding="utf-8",
+    )
+
+    exit_code = runner.main(
+        [
+            "--canonical-cache-dir",
+            str(canonical),
+            "--shard-cache-dir",
+            str(shard),
+            "--entity-type",
+            "reference",
+            "--output-json",
+            str(output_json),
+        ]
+    )
+
+    assert exit_code == 0
+    report = json.loads(output_json.read_text(encoding="utf-8"))
+    reference_cache = json.loads(
+        (canonical / "reference_cache.json").read_text(encoding="utf-8")
+    )
+    assert report["merged_counts"]["reference"] == 1
+    assert reference_cache["10.shard/ref"]["title"] == "from shard"
+
+
+def test_merge_cli_writes_conflict_audit_and_returns_nonzero(tmp_path):
+    import run_evidence_cache_merge as runner
+
+    canonical = tmp_path / "canonical"
+    shard = tmp_path / "shard"
+    output_json = tmp_path / "merge-report.json"
+    canonical.mkdir()
+    shard.mkdir()
+    (canonical / "reference_cache.json").write_text(
+        json.dumps({"10.conflict/ref": {"title": "canonical"}}),
+        encoding="utf-8",
+    )
+    (shard / "reference_cache.json").write_text(
+        json.dumps({"10.conflict/ref": {"title": "shard"}}),
+        encoding="utf-8",
+    )
+
+    exit_code = runner.main(
+        [
+            "--canonical-cache-dir",
+            str(canonical),
+            "--shard-cache-dir",
+            str(shard),
+            "--entity-type",
+            "reference",
+            "--output-json",
+            str(output_json),
+        ]
+    )
+
+    report = json.loads(output_json.read_text(encoding="utf-8"))
+    reference_cache = json.loads(
+        (canonical / "reference_cache.json").read_text(encoding="utf-8")
+    )
+    assert exit_code == 1
+    assert report["merge_status"] == "failed"
+    assert report["conflicts"][0]["key"] == "10.conflict/ref"
+    assert reference_cache["10.conflict/ref"]["title"] == "canonical"
 
 
 def test_collector_retries_transient_errors_without_writing_negative_cache(tmp_path):
@@ -420,8 +779,10 @@ def test_collector_cli_prints_progress_and_updates_report(
     monkeypatch.setattr(
         runner,
         "CrossrefReferenceVerifier",
-        lambda: lambda doi: ReferenceEvidence(
-            doi=doi, title="CLI resolved", source="fixture-crossref"
+        lambda: (
+            lambda doi: ReferenceEvidence(
+                doi=doi, title="CLI resolved", source="fixture-crossref"
+            )
         ),
     )
     monkeypatch.setattr(runner, "PubChemMoleculeVerifier", lambda: lambda record: None)

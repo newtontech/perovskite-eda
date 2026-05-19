@@ -33,6 +33,7 @@ def test_canonical_research_package_targets_are_declared():
         "research-package-cache-preflight-smoke",
         "research-package-cache-collect",
         "research-package-cache-collect-dry-run",
+        "research-package-cache-merge",
         "research-package-pdf",
         "research-package-verify",
         "test-research-package",
@@ -154,6 +155,91 @@ def test_cache_collect_dry_run_target_does_not_write_cache():
 
     assert "research-package-cache-collect" in output
     assert "EXTRA_CACHE_COLLECT_ARGS=--dry-run" in output
+
+
+def test_cache_collect_target_accepts_shard_variables():
+    output = _make_dry_run(
+        "research-package-cache-collect",
+        DATASET_ID="unit-dataset",
+        ARTIFACT_DIR="/tmp/artifacts",
+        CACHE_COLLECT_SHARD_COUNT="4",
+        CACHE_COLLECT_SHARD_INDEX="2",
+    )
+
+    assert "--shard-count 4" in output
+    assert "--shard-index 2" in output
+    assert (
+        "--cache-dir /tmp/artifacts/evidence_cache_shards/shard-2/evidence_cache"
+        in output
+    )
+    assert (
+        "--output-json /tmp/artifacts/evidence_cache_collection_shard_2_report.json"
+        in output
+    )
+
+
+def test_cache_collect_shard_defaults_index_zero_to_shard_local_cache():
+    output = _make_dry_run(
+        "research-package-cache-collect",
+        DATASET_ID="unit-dataset",
+        ARTIFACT_DIR="/tmp/artifacts",
+        CACHE_COLLECT_SHARD_COUNT="4",
+    )
+
+    assert "--shard-count 4" in output
+    assert "--shard-index 0" in output
+    assert (
+        "--cache-dir /tmp/artifacts/evidence_cache_shards/shard-0/evidence_cache"
+        in output
+    )
+    assert (
+        "--output-json /tmp/artifacts/evidence_cache_collection_shard_0_report.json"
+        in output
+    )
+
+
+def test_cache_collect_shard_ignores_canonical_evidence_cache_dir():
+    output = _make_dry_run(
+        "research-package-cache-collect",
+        DATASET_ID="unit-dataset",
+        ARTIFACT_DIR="/tmp/artifacts",
+        EVIDENCE_CACHE_DIR="/tmp/canonical-cache",
+        CACHE_COLLECT_SHARD_COUNT="4",
+        CACHE_COLLECT_SHARD_INDEX="1",
+    )
+
+    assert (
+        "--cache-dir /tmp/artifacts/evidence_cache_shards/shard-1/evidence_cache"
+        in output
+    )
+    assert "--cache-dir /tmp/canonical-cache" not in output
+
+
+def test_cache_merge_target_dry_run_merges_declared_shard_dirs():
+    output = _make_dry_run(
+        "research-package-cache-merge",
+        DATASET_ID="unit-dataset",
+        ARTIFACT_DIR="/tmp/artifacts",
+        EVIDENCE_CACHE_DIR="/tmp/canonical-cache",
+        CACHE_SHARD_DIRS="/tmp/shard-b /tmp/shard-a",
+    )
+
+    assert "hybrid_agent_exploration/src/run_evidence_cache_merge.py" in output
+    assert "--canonical-cache-dir /tmp/canonical-cache" in output
+    assert "--shard-cache-dir /tmp/shard-b" in output
+    assert "--shard-cache-dir /tmp/shard-a" in output
+    assert "--output-json /tmp/artifacts/evidence_cache_merge_report.json" in output
+
+
+def test_cache_merge_target_requires_declared_shard_dirs():
+    output = _make_dry_run(
+        "research-package-cache-merge",
+        DATASET_ID="unit-dataset",
+        ARTIFACT_DIR="/tmp/artifacts",
+    )
+
+    assert "CACHE_SHARD_DIRS is required for research-package-cache-merge" in output
+    assert "run_evidence_cache_merge.py" not in output
 
 
 def test_pdf_target_dry_run_checks_pandoc_and_exports_report_pdfs():

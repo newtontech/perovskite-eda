@@ -16,18 +16,28 @@ EVIDENCE_CACHE_DIR ?=
 CACHE_COLLECT_MAX_REQUESTS ?= 100
 CACHE_COLLECT_RETRY_ATTEMPTS ?= 2
 CACHE_COLLECT_PROGRESS_EVERY ?= 10
+CACHE_COLLECT_SHARD_COUNT ?=
+CACHE_COLLECT_SHARD_INDEX ?=
+CACHE_COLLECT_EFFECTIVE_SHARD_INDEX := $(if $(CACHE_COLLECT_SHARD_INDEX),$(CACHE_COLLECT_SHARD_INDEX),0)
+CACHE_COLLECT_SHARD_CACHE_DIR ?= $(ARTIFACT_DIR)/evidence_cache_shards/shard-$(CACHE_COLLECT_EFFECTIVE_SHARD_INDEX)/evidence_cache
+CACHE_COLLECT_SHARD_REPORT ?= $(ARTIFACT_DIR)/evidence_cache_collection_shard_$(CACHE_COLLECT_EFFECTIVE_SHARD_INDEX)_report.json
+CACHE_SHARD_DIRS ?=
+CACHE_MERGE_ENTITY_TYPE ?= all
+CACHE_MERGE_CONFLICT_POLICY ?= fail
 PANDOC_PDF_ENGINE ?= xelatex
 PANDOC_MAINFONT ?= DejaVu Serif
 
 RUN_RESEARCH_PACKAGE := hybrid_agent_exploration/src/run_research_package.py
 RUN_EVIDENCE_CACHE_PREFLIGHT := hybrid_agent_exploration/src/run_evidence_cache_preflight.py
 RUN_EVIDENCE_CACHE_COLLECTOR := hybrid_agent_exploration/src/run_evidence_cache_collector.py
+RUN_EVIDENCE_CACHE_MERGE := hybrid_agent_exploration/src/run_evidence_cache_merge.py
 ROOT_PROVENANCE_MANIFEST := hybrid_agent_exploration/src/reporting/root_provenance_manifest.py
 VERIFY_RESEARCH_PACKAGE := hybrid_agent_exploration/src/verify_research_package.py
 VERIFIED_DISCOVERY_DIR := $(ARTIFACT_DIR)/verified_discovery
 CACHE_PREFLIGHT_DIR := $(ARTIFACT_DIR)/evidence_cache_preflight
 CACHE_REQUIREMENTS_CSV := $(CACHE_PREFLIGHT_DIR)/evidence_cache_requirements.csv
 CACHE_COLLECTION_REPORT := $(ARTIFACT_DIR)/evidence_cache_collection_report.json
+CACHE_MERGE_REPORT := $(ARTIFACT_DIR)/evidence_cache_merge_report.json
 REPORT_DIR := $(ARTIFACT_DIR)/report_bundle/main_text
 SI_DIR := $(ARTIFACT_DIR)/report_bundle/si
 CANDIDATE_LIBRARY_DIR := $(ARTIFACT_DIR)/candidate_library
@@ -45,11 +55,17 @@ CANDIDATE_SOURCE_ARGS := $(if $(CANDIDATE_SOURCE),--candidate-source $(CANDIDATE
 CANDIDATE_SOURCE_NAME_ARGS := $(if $(CANDIDATE_SOURCE_NAME),--candidate-source-name $(CANDIDATE_SOURCE_NAME),)
 CACHE_PREFLIGHT_CACHE_DIR_ARGS := $(if $(EVIDENCE_CACHE_DIR),--cache-dir $(EVIDENCE_CACHE_DIR),)
 CACHE_PREFLIGHT_MAX_ROWS_ARGS := $(if $(CACHE_PREFLIGHT_MAX_ROWS),--max-rows $(CACHE_PREFLIGHT_MAX_ROWS),)
-CACHE_COLLECT_CACHE_DIR_ARGS := $(if $(EVIDENCE_CACHE_DIR),--cache-dir $(EVIDENCE_CACHE_DIR),)
+CACHE_COLLECT_SHARD_MODE := $(if $(CACHE_COLLECT_SHARD_COUNT),1,)
+CACHE_COLLECT_EFFECTIVE_CACHE_DIR := $(if $(CACHE_COLLECT_SHARD_MODE),$(CACHE_COLLECT_SHARD_CACHE_DIR),$(EVIDENCE_CACHE_DIR))
+CACHE_COLLECT_CACHE_DIR_ARGS := $(if $(CACHE_COLLECT_EFFECTIVE_CACHE_DIR),--cache-dir $(CACHE_COLLECT_EFFECTIVE_CACHE_DIR),)
+CACHE_COLLECT_SHARD_ARGS := $(if $(CACHE_COLLECT_SHARD_COUNT),--shard-count $(CACHE_COLLECT_SHARD_COUNT) --shard-index $(CACHE_COLLECT_EFFECTIVE_SHARD_INDEX),)
+CACHE_COLLECT_OUTPUT_JSON := $(if $(CACHE_COLLECT_SHARD_MODE),$(CACHE_COLLECT_SHARD_REPORT),$(CACHE_COLLECTION_REPORT))
+CACHE_MERGE_CANONICAL_DIR := $(if $(EVIDENCE_CACHE_DIR),$(EVIDENCE_CACHE_DIR),hybrid_agent_exploration/.cache/verified_discovery/$(DATASET_ID)/evidence_cache)
+CACHE_MERGE_SHARD_ARGS := $(foreach dir,$(CACHE_SHARD_DIRS),--shard-cache-dir $(dir))
 VERIFY_CANDIDATE_LIBRARY_ARGS := $(if $(REQUIRE_CANDIDATE_LIBRARY),--require-candidate-library,)
 VERIFY_EVIDENCE_CACHE_ARGS := $(if $(REQUIRE_EVIDENCE_CACHE),--require-evidence-cache,)
 
-.PHONY: research-package research-package-smoke research-package-cache-preflight research-package-cache-preflight-smoke research-package-cache-collect research-package-cache-collect-dry-run research-package-pdf research-package-verify test-research-package
+.PHONY: research-package research-package-smoke research-package-cache-preflight research-package-cache-preflight-smoke research-package-cache-collect research-package-cache-collect-dry-run research-package-cache-merge research-package-pdf research-package-verify test-research-package
 
 research-package:
 	$(PYTHON) $(RUN_RESEARCH_PACKAGE) \
@@ -93,13 +109,26 @@ research-package-cache-collect:
 		--max-requests $(CACHE_COLLECT_MAX_REQUESTS) \
 		--retry-attempts $(CACHE_COLLECT_RETRY_ATTEMPTS) \
 		--progress-every $(CACHE_COLLECT_PROGRESS_EVERY) \
-		--output-json $(CACHE_COLLECTION_REPORT) \
+		--output-json $(CACHE_COLLECT_OUTPUT_JSON) \
+		$(CACHE_COLLECT_SHARD_ARGS) \
 		$(CACHE_COLLECT_CACHE_DIR_ARGS) \
 		$(EXTRA_CACHE_COLLECT_ARGS)
 
 research-package-cache-collect-dry-run:
 	$(MAKE) research-package-cache-collect \
 		EXTRA_CACHE_COLLECT_ARGS=--dry-run
+
+research-package-cache-merge:
+ifeq ($(strip $(CACHE_SHARD_DIRS)),)
+	@test -n "$(CACHE_SHARD_DIRS)" || { echo "CACHE_SHARD_DIRS is required for research-package-cache-merge" >&2; exit 2; }
+else
+	$(PYTHON) $(RUN_EVIDENCE_CACHE_MERGE) \
+		--canonical-cache-dir $(CACHE_MERGE_CANONICAL_DIR) \
+		$(CACHE_MERGE_SHARD_ARGS) \
+		--entity-type $(CACHE_MERGE_ENTITY_TYPE) \
+		--conflict-policy $(CACHE_MERGE_CONFLICT_POLICY) \
+		--output-json $(CACHE_MERGE_REPORT)
+endif
 
 research-package-pdf:
 	@command -v pandoc >/dev/null 2>&1 || { echo "pandoc is required for research-package-pdf. Install pandoc and rerun this target." >&2; exit 127; }
