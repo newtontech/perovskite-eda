@@ -84,10 +84,15 @@ def run_research_package(
         candidate_library_rows = candidate_artifacts.output_count
 
     verification_level = _verification_level(evidence_mode)
+    dataset_publication_grade = evidence_mode == "external-cached" and max_rows is None
+    candidate_library_publication_grade = candidate_source_path is None
+    publication_grade = dataset_publication_grade and candidate_library_publication_grade
     run_metadata = {
         "evidence_mode": evidence_mode,
         "verification_level": verification_level,
-        "publication_grade": evidence_mode == "external-cached",
+        "publication_grade": publication_grade,
+        "dataset_publication_grade": dataset_publication_grade,
+        "candidate_library_publication_grade": candidate_library_publication_grade,
         "source_columns_is_smoke_only": evidence_mode == "source-columns",
         "input_path": str(Path(input_path)),
         "max_rows": max_rows,
@@ -117,7 +122,9 @@ def run_research_package(
         evidence_context={
             "evidence_mode": evidence_mode,
             "verification_level": verification_level,
-            "publication_grade": evidence_mode == "external-cached",
+            "publication_grade": publication_grade,
+            "dataset_publication_grade": dataset_publication_grade,
+            "candidate_library_publication_grade": candidate_library_publication_grade,
             "source_columns_is_smoke_only": evidence_mode == "source-columns",
             "max_rows": max_rows,
             "max_rows_is_smoke_only": max_rows is not None,
@@ -144,6 +151,9 @@ def run_research_package(
             dataset_id=dataset_id,
             output_root=output_root,
             evidence_mode=evidence_mode,
+            dataset_publication_grade=dataset_publication_grade,
+            candidate_library_publication_grade=candidate_library_publication_grade,
+            publication_grade=publication_grade,
             input_path=Path(input_path),
             candidate_source_path=Path(candidate_source_path) if candidate_source_path is not None else None,
             candidate_source_name=candidate_source_name,
@@ -242,6 +252,9 @@ def _package_manifest(
     dataset_id: str,
     output_root: Path,
     evidence_mode: str,
+    dataset_publication_grade: bool,
+    candidate_library_publication_grade: bool,
+    publication_grade: bool,
     input_path: Path,
     candidate_source_path: Path | None,
     candidate_source_name: str | None,
@@ -296,7 +309,9 @@ def _package_manifest(
         },
         "evidence_mode": evidence_mode,
         "verification_level": verification_level,
-        "publication_grade": evidence_mode == "external-cached",
+        "publication_grade": publication_grade,
+        "dataset_publication_grade": dataset_publication_grade,
+        "candidate_library_publication_grade": candidate_library_publication_grade,
         "source_columns_is_smoke_only": evidence_mode == "source-columns",
         "max_rows": max_rows,
         "max_rows_is_smoke_only": max_rows is not None,

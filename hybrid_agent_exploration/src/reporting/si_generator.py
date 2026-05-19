@@ -410,6 +410,8 @@ class SIGenerator:
             f"Evidence mode: `{context.get('evidence_mode', 'unknown')}`.",
             f"Verification level: `{context.get('verification_level', 'unknown')}`.",
             f"Publication-grade flag: `{context.get('publication_grade', False)}`.",
+            f"Dataset publication-grade flag: `{context.get('dataset_publication_grade', False)}`.",
+            f"Candidate-library publication-grade flag: `{context.get('candidate_library_publication_grade', False)}`.",
         ]
         if context.get("source_columns_is_smoke_only"):
             lines.append(

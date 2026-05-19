@@ -38,6 +38,7 @@ def _candidate_source() -> pd.DataFrame:
                 "availability": "commercial",
                 "synthesis": "commercial",
                 "safety": "sds_available",
+                "verification_status": "verified",
                 "verification_sources": json.dumps(
                     [
                         {"kind": "molecule", "source": "pubchem", "pubchem_id": "7843"},
@@ -110,6 +111,8 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert package_manifest["candidate_library_rows"] == 1
     assert package_manifest["ranked_candidates"] == 1
     assert package_manifest["publication_grade"] is False
+    assert package_manifest["dataset_publication_grade"] is False
+    assert package_manifest["candidate_library_publication_grade"] is False
     assert package_manifest["schema_version"] == "research-package-manifest-v1"
     assert package_manifest["verification_level"] == "source_columns_only"
     assert package_manifest["source_columns_is_smoke_only"] is True
@@ -143,6 +146,8 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     )
     assert candidate_provenance["network_access"] == "not_used"
     assert candidate_provenance["does_not_generate_candidates"] is True
+    assert candidate_provenance["publication_grade"] is False
+    assert candidate_provenance["verification_status_policy"] == "explicit_verified_only"
     assert candidate_provenance["input_file"]["path"].endswith("candidate_source.csv")
     assert candidate_provenance["input_file"]["exists"] is True
     assert len(candidate_provenance["input_file"]["sha256"]) == 64
@@ -172,11 +177,13 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert run_manifest["best_model"]["pearson_r"] is None
     assert run_manifest["evidence_context"]["source_columns_is_smoke_only"] is True
     assert run_manifest["evidence_context"]["metric_scope"] == "training_only"
+    assert run_manifest["evidence_context"]["candidate_library_publication_grade"] is False
 
     si_text = (package.report_dir / "si" / "supporting_information.md").read_text(encoding="utf-8")
     assert "source-columns" in si_text
     assert "smoke-only" in si_text
     assert "training-only" in si_text
+    assert "Candidate-library publication-grade flag: `False`" in si_text
     assert "Cross-validation was not supplied" in si_text
 
     root_manifest = json.loads(package.root_provenance_manifest_json.read_text(encoding="utf-8"))
@@ -196,3 +203,105 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     ranked = pd.read_csv(package.verified_discovery_dir / "discovery" / "ranked_candidates.csv")
     assert ranked["candidate_id"].tolist() == ["fixture-vendor-source:pubchem-7843"]
     assert "candidate_score" in ranked.columns
+
+
+def test_external_cached_candidate_source_does_not_overclaim_publication_grade(tmp_path, monkeypatch):
+    import run_research_package as runner
+    from harness.authenticity import RealDataAuthenticator
+    from run_verified_discovery import SourceColumnMoleculeVerifier, SourceColumnReferenceVerifier
+
+    raw_csv = tmp_path / "raw_psc.csv"
+    candidate_csv = tmp_path / "candidate_source.csv"
+    pd.DataFrame(
+        [
+            _raw_record("row-001", "10.1021/acs.jpclett.6c00119", "C", 0.25),
+            _raw_record("row-002", "10.1021/acs.jpclett.6c00120", "CC", 0.50),
+            _raw_record("row-003", "10.1021/acs.jpclett.6c00121", "CCC", 0.75),
+            _raw_record("row-004", "10.1021/acs.jpclett.6c00122", "CCCC", 1.00),
+        ]
+    ).to_csv(raw_csv, index=False)
+    _candidate_source().to_csv(candidate_csv, index=False)
+
+    def build_source_column_authenticator(evidence_mode, df, cache_dir):
+        return RealDataAuthenticator(
+            reference_verifier=SourceColumnReferenceVerifier(df),
+            molecule_verifier=SourceColumnMoleculeVerifier(),
+        )
+
+    monkeypatch.setattr(runner, "build_authenticator", build_source_column_authenticator)
+
+    package = runner.run_research_package(
+        input_path=raw_csv,
+        output_dir=tmp_path / "research_package",
+        dataset_id="external-cached-offline-candidates",
+        evidence_mode="external-cached",
+        candidate_source_path=candidate_csv,
+        candidate_source_name="fixture-vendor-source",
+        min_verified_rows=4,
+        top_k=1,
+    )
+
+    package_manifest = json.loads(package.package_manifest_json.read_text(encoding="utf-8"))
+    assert package_manifest["dataset_publication_grade"] is True
+    assert package_manifest["candidate_library_publication_grade"] is False
+    assert package_manifest["publication_grade"] is False
+
+    run_manifest = json.loads(
+        (package.report_dir / "main_text" / "run_manifest.json").read_text(encoding="utf-8")
+    )
+    assert run_manifest["evidence_context"]["publication_grade"] is False
+    assert run_manifest["evidence_context"]["dataset_publication_grade"] is True
+    assert run_manifest["evidence_context"]["candidate_library_publication_grade"] is False
+
+    si_text = (package.report_dir / "si" / "supporting_information.md").read_text(encoding="utf-8")
+    assert "Publication-grade flag: `False`" in si_text
+    assert "Candidate-library publication-grade flag: `False`" in si_text
+
+
+def test_external_cached_max_rows_does_not_overclaim_publication_grade(tmp_path, monkeypatch):
+    import run_research_package as runner
+    from harness.authenticity import RealDataAuthenticator
+    from run_verified_discovery import SourceColumnMoleculeVerifier, SourceColumnReferenceVerifier
+
+    raw_csv = tmp_path / "raw_psc.csv"
+    pd.DataFrame(
+        [
+            _raw_record("row-001", "10.1021/acs.jpclett.6c00119", "C", 0.25),
+            _raw_record("row-002", "10.1021/acs.jpclett.6c00120", "CC", 0.50),
+            _raw_record("row-003", "10.1021/acs.jpclett.6c00121", "CCC", 0.75),
+            _raw_record("row-004", "10.1021/acs.jpclett.6c00122", "CCCC", 1.00),
+            _raw_record("row-005", "10.1021/acs.jpclett.6c00123", "CCO", 0.40),
+        ]
+    ).to_csv(raw_csv, index=False)
+
+    def build_source_column_authenticator(evidence_mode, df, cache_dir):
+        return RealDataAuthenticator(
+            reference_verifier=SourceColumnReferenceVerifier(df),
+            molecule_verifier=SourceColumnMoleculeVerifier(),
+        )
+
+    monkeypatch.setattr(runner, "build_authenticator", build_source_column_authenticator)
+
+    package = runner.run_research_package(
+        input_path=raw_csv,
+        output_dir=tmp_path / "research_package",
+        dataset_id="external-cached-smoke",
+        evidence_mode="external-cached",
+        max_rows=4,
+        min_verified_rows=4,
+        top_k=1,
+    )
+
+    package_manifest = json.loads(package.package_manifest_json.read_text(encoding="utf-8"))
+    assert package_manifest["max_rows"] == 4
+    assert package_manifest["max_rows_is_smoke_only"] is True
+    assert package_manifest["dataset_publication_grade"] is False
+    assert package_manifest["candidate_library_publication_grade"] is True
+    assert package_manifest["publication_grade"] is False
+
+    run_manifest = json.loads(
+        (package.report_dir / "main_text" / "run_manifest.json").read_text(encoding="utf-8")
+    )
+    assert run_manifest["evidence_context"]["max_rows_is_smoke_only"] is True
+    assert run_manifest["evidence_context"]["dataset_publication_grade"] is False
+    assert run_manifest["evidence_context"]["publication_grade"] is False
