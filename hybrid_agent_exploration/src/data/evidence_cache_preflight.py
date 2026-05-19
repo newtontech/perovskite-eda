@@ -318,8 +318,11 @@ def _record_id(record: dict[str, Any], zero_based_index: int) -> str:
 def _clean_text(value: Any) -> str:
     if value is None:
         return ""
-    if isinstance(value, float) and math.isnan(value):
-        return ""
+    try:
+        if pd.isna(value):
+            return ""
+    except (TypeError, ValueError):
+        pass
     return str(value).strip()
 
 
