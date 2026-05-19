@@ -337,6 +337,10 @@ def test_external_cached_max_rows_does_not_overclaim_publication_grade(tmp_path,
     assert run_manifest["source_completeness"]["max_rows_is_smoke_only"] is True
     assert run_manifest["source_completeness"]["audit_population"] == "max_rows_subset"
 
+    report_text = (package.report_dir / "main_text" / "main_text_report.md").read_text(encoding="utf-8")
+    assert "replace smoke evidence with external-cached" not in report_text
+    assert "rerun the external-cached workflow without `max_rows`" in report_text
+
     source_completeness = json.loads(
         (package.output_dir / "source_completeness" / "source_completeness.json").read_text(encoding="utf-8")
     )

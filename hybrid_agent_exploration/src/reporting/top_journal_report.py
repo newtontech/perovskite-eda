@@ -872,8 +872,30 @@ class TopJournalReport:
                 "",
                 "This research package demonstrates that the verified-discovery artifact chain can produce a traceable dataset, candidate library, ranked candidates, manuscript text, SI, and provenance manifests from real input records.",
                 f"{metric_sentence} {smoke_sentence}The package does not support claims about representation superiority, baseline-feature benefit, SHAP-derived mechanisms, scaffold generalization, or externally validated candidate performance unless those artifacts are added in a future run.",
-                "The next scientific step is to replace smoke evidence with external-cached DOI and molecule verification, add held-out validation protocols, and connect top candidates to independently verifiable experimental or supplier evidence.",
+                self._next_scientific_step(),
             ]
+        )
+
+    def _next_scientific_step(self) -> str:
+        context = self._evidence_context()
+        if self._is_source_columns_smoke():
+            return (
+                "The next scientific step is to replace source-columns smoke evidence with external-cached DOI and molecule verification, "
+                "add held-out validation protocols, and connect top candidates to independently verifiable experimental or supplier evidence."
+            )
+        if context.get("max_rows_is_smoke_only"):
+            return (
+                "The next scientific step is to rerun the external-cached workflow without `max_rows`, add held-out validation protocols, "
+                "and connect top candidates to independently verifiable experimental or supplier evidence."
+            )
+        if context.get("evidence_mode") == "external-cached":
+            return (
+                "The next scientific step is to add held-out validation protocols and connect top candidates to independently verifiable "
+                "experimental or supplier evidence."
+            )
+        return (
+            "The next scientific step is to strengthen evidence verification, add held-out validation protocols, and connect top candidates "
+            "to independently verifiable experimental or supplier evidence."
         )
 
     def _build_claim_ledger(self, figure_paths: list[tuple[str, Path]], best_result: dict | None) -> list[dict[str, Any]]:
