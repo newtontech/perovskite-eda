@@ -30,6 +30,7 @@ def test_canonical_research_package_targets_are_declared():
         "research-package",
         "research-package-smoke",
         "research-package-cache-preflight",
+        "research-package-cache-preflight-smoke",
         "research-package-pdf",
         "research-package-verify",
         "test-research-package",
@@ -71,14 +72,30 @@ def test_smoke_target_dry_run_caps_rows_in_ignored_artifact_dir():
     assert "hybrid_agent_exploration/results/verified_discovery_runs/" in output
 
 
-def test_cache_preflight_target_dry_run_uses_source_table_cache_and_artifact_dir():
+def test_cache_preflight_target_dry_run_scans_full_table_by_default():
+    output = _make_dry_run(
+        "research-package-cache-preflight",
+        SOURCE_TABLE="/tmp/source.csv",
+        DATASET_ID="unit-dataset",
+        ARTIFACT_DIR="/tmp/artifacts",
+    )
+
+    assert "hybrid_agent_exploration/src/run_evidence_cache_preflight.py" in output
+    assert "--input /tmp/source.csv" in output
+    assert "--dataset-id unit-dataset" in output
+    assert "--output-dir /tmp/artifacts/evidence_cache_preflight" in output
+    assert "--cache-dir" not in output
+    assert "--max-rows" not in output
+
+
+def test_cache_preflight_target_accepts_explicit_cache_dir_and_row_cap():
     output = _make_dry_run(
         "research-package-cache-preflight",
         SOURCE_TABLE="/tmp/source.csv",
         DATASET_ID="unit-dataset",
         ARTIFACT_DIR="/tmp/artifacts",
         EVIDENCE_CACHE_DIR="/tmp/cache",
-        SMOKE_MAX_ROWS="25",
+        CACHE_PREFLIGHT_MAX_ROWS="25",
     )
 
     assert "hybrid_agent_exploration/src/run_evidence_cache_preflight.py" in output
@@ -87,6 +104,17 @@ def test_cache_preflight_target_dry_run_uses_source_table_cache_and_artifact_dir
     assert "--cache-dir /tmp/cache" in output
     assert "--output-dir /tmp/artifacts/evidence_cache_preflight" in output
     assert "--max-rows 25" in output
+
+
+def test_cache_preflight_smoke_target_dry_run_caps_rows_explicitly():
+    output = _make_dry_run(
+        "research-package-cache-preflight-smoke",
+        SOURCE_TABLE="/tmp/source.csv",
+        CACHE_PREFLIGHT_SMOKE_MAX_ROWS="25",
+    )
+
+    assert "research-package-cache-preflight" in output
+    assert "CACHE_PREFLIGHT_MAX_ROWS=25" in output
 
 
 def test_pdf_target_dry_run_checks_pandoc_and_exports_report_pdfs():

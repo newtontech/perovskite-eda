@@ -1,3 +1,4 @@
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -96,6 +97,10 @@ def _write_cache_files(cache_dir: Path) -> None:
     )
 
 
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def test_preflight_summarizes_required_external_cache_coverage(tmp_path):
     from data.evidence_cache_preflight import summarize_evidence_cache_preflight
 
@@ -183,14 +188,24 @@ def test_preflight_writes_json_csv_and_markdown_artifacts(tmp_path):
     assert "`smiles:CCO`" in report
 
 
-def test_preflight_cli_writes_artifacts_without_network_access(tmp_path):
+def test_preflight_cli_writes_artifacts_without_network_access(tmp_path, monkeypatch):
     from run_evidence_cache_preflight import main
+    import harness.authenticity as authenticity
 
     source_csv = tmp_path / "source.csv"
     cache_dir = tmp_path / "evidence_cache"
     output_dir = tmp_path / "preflight"
     _source_dataframe().to_csv(source_csv, index=False)
     _write_cache_files(cache_dir)
+    cache_fingerprints = {
+        path.name: (path.stat().st_mtime_ns, _sha256(path))
+        for path in (cache_dir / "reference_cache.json", cache_dir / "molecule_cache.json")
+    }
+
+    def fail_on_network(*args, **kwargs):
+        raise AssertionError("preflight must not call external network resolvers")
+
+    monkeypatch.setattr(authenticity.requests, "get", fail_on_network)
 
     exit_code = main(
         [
@@ -213,3 +228,7 @@ def test_preflight_cli_writes_artifacts_without_network_access(tmp_path):
     assert summary["network_access"] == "not_used"
     assert summary["reference_cache"]["missing_count"] == 1
     assert summary["molecule_cache"]["missing_count"] == 1
+    assert {
+        path.name: (path.stat().st_mtime_ns, _sha256(path))
+        for path in (cache_dir / "reference_cache.json", cache_dir / "molecule_cache.json")
+    } == cache_fingerprints

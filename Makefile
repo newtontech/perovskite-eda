@@ -10,8 +10,9 @@ TOP_K ?= 100
 SMOKE_MAX_ROWS ?= 25
 SMOKE_MIN_VERIFIED_ROWS ?= 1
 SMOKE_TOP_K ?= 10
-CACHE_PREFLIGHT_MAX_ROWS ?= $(SMOKE_MAX_ROWS)
-EVIDENCE_CACHE_DIR ?= hybrid_agent_exploration/.cache/verified_discovery/$(DATASET_ID)/evidence_cache
+CACHE_PREFLIGHT_MAX_ROWS ?=
+CACHE_PREFLIGHT_SMOKE_MAX_ROWS ?= $(SMOKE_MAX_ROWS)
+EVIDENCE_CACHE_DIR ?=
 PANDOC_PDF_ENGINE ?= xelatex
 PANDOC_MAINFONT ?= DejaVu Serif
 
@@ -36,11 +37,12 @@ SI_RESOURCE_PATH := $(SI_DIR):$(ARTIFACT_DIR)
 
 CANDIDATE_SOURCE_ARGS := $(if $(CANDIDATE_SOURCE),--candidate-source $(CANDIDATE_SOURCE),)
 CANDIDATE_SOURCE_NAME_ARGS := $(if $(CANDIDATE_SOURCE_NAME),--candidate-source-name $(CANDIDATE_SOURCE_NAME),)
+CACHE_PREFLIGHT_CACHE_DIR_ARGS := $(if $(EVIDENCE_CACHE_DIR),--cache-dir $(EVIDENCE_CACHE_DIR),)
 CACHE_PREFLIGHT_MAX_ROWS_ARGS := $(if $(CACHE_PREFLIGHT_MAX_ROWS),--max-rows $(CACHE_PREFLIGHT_MAX_ROWS),)
 VERIFY_CANDIDATE_LIBRARY_ARGS := $(if $(REQUIRE_CANDIDATE_LIBRARY),--require-candidate-library,)
 VERIFY_EVIDENCE_CACHE_ARGS := $(if $(REQUIRE_EVIDENCE_CACHE),--require-evidence-cache,)
 
-.PHONY: research-package research-package-smoke research-package-cache-preflight research-package-pdf research-package-verify test-research-package
+.PHONY: research-package research-package-smoke research-package-cache-preflight research-package-cache-preflight-smoke research-package-pdf research-package-verify test-research-package
 
 research-package:
 	$(PYTHON) $(RUN_RESEARCH_PACKAGE) \
@@ -69,9 +71,13 @@ research-package-cache-preflight:
 		--input $(SOURCE_TABLE) \
 		--dataset-id $(DATASET_ID) \
 		--source-name $(notdir $(basename $(SOURCE_TABLE))) \
-		--cache-dir $(EVIDENCE_CACHE_DIR) \
 		--output-dir $(CACHE_PREFLIGHT_DIR) \
+		$(CACHE_PREFLIGHT_CACHE_DIR_ARGS) \
 		$(CACHE_PREFLIGHT_MAX_ROWS_ARGS)
+
+research-package-cache-preflight-smoke:
+	$(MAKE) research-package-cache-preflight \
+		CACHE_PREFLIGHT_MAX_ROWS=$(CACHE_PREFLIGHT_SMOKE_MAX_ROWS)
 
 research-package-pdf:
 	@command -v pandoc >/dev/null 2>&1 || { echo "pandoc is required for research-package-pdf. Install pandoc and rerun this target." >&2; exit 127; }
