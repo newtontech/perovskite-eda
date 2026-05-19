@@ -464,6 +464,7 @@ def test_collector_progress_snapshot_cannot_mutate_final_summary(tmp_path):
 
     def mutate_snapshot(snapshot):
         snapshot["processed"][0]["cache_status"] = "mutated"
+        snapshot["processed"][0]["record_ids"].append("mutated-row")
         snapshot["entity_type_counts"]["reference"] = 999
 
     summary = collect_evidence_cache(
@@ -481,4 +482,5 @@ def test_collector_progress_snapshot_cannot_mutate_final_summary(tmp_path):
     )
 
     assert summary["processed"][0]["cache_status"] == "positive"
+    assert summary["processed"][0]["record_ids"] == ["row-001", "row-002"]
     assert summary["entity_type_counts"] == {"reference": 1}

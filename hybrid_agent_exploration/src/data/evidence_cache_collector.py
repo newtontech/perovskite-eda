@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -316,12 +317,7 @@ def _emit_progress(
 
 
 def _summary_snapshot(summary: dict[str, Any]) -> dict[str, Any]:
-    snapshot = dict(summary)
-    snapshot["entity_type_counts"] = dict(summary["entity_type_counts"])
-    snapshot["processed"] = [dict(item) for item in summary["processed"]]
-    snapshot["errors"] = [dict(item) for item in summary["errors"]]
-    snapshot["unsupported"] = [dict(item) for item in summary["unsupported"]]
-    return snapshot
+    return deepcopy(summary)
 
 
 def _requirement_summary(requirement: CacheRequirement) -> dict[str, Any]:
