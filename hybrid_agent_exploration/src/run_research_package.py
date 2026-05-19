@@ -22,7 +22,7 @@ from data.source_completeness import (
 from reporting.root_provenance_manifest import generate_root_provenance_manifest
 from reporting.si_generator import SIGenerator
 from reporting.top_journal_report import TopJournalReport
-from run_verified_discovery import build_authenticator, default_cache_dir, load_input
+from run_verified_discovery import build_authenticator, default_cache_dir, load_input, publication_grade_gate
 from screening.candidate_library_builder import CandidateLibraryBuilder
 from screening.verified_candidate_discovery import CANDIDATE_LIBRARY_CONTRACT_VERSION
 from screening.verified_discovery_workflow import VerifiedDiscoveryWorkflow
@@ -58,6 +58,7 @@ def run_research_package(
     candidate_source_name: str | None = None,
     cache_dir: str | Path | None = None,
     max_rows: int | None = None,
+    input_scope: str = "selected-subset",
     min_verified_rows: int = 10,
     top_k: int = 100,
     report_quality_target: str = "top-journal",
@@ -98,18 +99,32 @@ def run_research_package(
         candidate_library_rows = candidate_artifacts.output_count
 
     verification_level = _verification_level(evidence_mode)
-    dataset_publication_grade = evidence_mode == "external-cached" and max_rows is None
+    dataset_publication_grade, dataset_publication_grade_reason = publication_grade_gate(
+        evidence_mode=evidence_mode,
+        input_scope=input_scope,
+        max_rows=max_rows,
+    )
     candidate_library_publication_grade = candidate_source_path is None
     publication_grade = dataset_publication_grade and candidate_library_publication_grade
+    publication_grade_reason = _publication_grade_reason(
+        publication_grade=publication_grade,
+        dataset_publication_grade=dataset_publication_grade,
+        dataset_publication_grade_reason=dataset_publication_grade_reason,
+        candidate_library_publication_grade=candidate_library_publication_grade,
+    )
     run_metadata = {
         "evidence_mode": evidence_mode,
         "verification_level": verification_level,
         "publication_grade": publication_grade,
+        "publication_grade_reason": publication_grade_reason,
         "dataset_publication_grade": dataset_publication_grade,
+        "dataset_publication_grade_reason": dataset_publication_grade_reason,
         "candidate_library_publication_grade": candidate_library_publication_grade,
+        "input_scope": input_scope,
         "source_columns_is_smoke_only": evidence_mode == "source-columns",
         "input_path": str(Path(input_path)),
         "max_rows": max_rows,
+        "max_rows_is_smoke_only": max_rows is not None,
         "candidate_pool_contract_version": CANDIDATE_LIBRARY_CONTRACT_VERSION,
         "research_package_runner": "run_research_package",
     }
@@ -138,8 +153,11 @@ def run_research_package(
             "evidence_mode": evidence_mode,
             "verification_level": verification_level,
             "publication_grade": publication_grade,
+            "publication_grade_reason": publication_grade_reason,
             "dataset_publication_grade": dataset_publication_grade,
+            "dataset_publication_grade_reason": dataset_publication_grade_reason,
             "candidate_library_publication_grade": candidate_library_publication_grade,
+            "input_scope": input_scope,
             "source_columns_is_smoke_only": evidence_mode == "source-columns",
             "max_rows": max_rows,
             "max_rows_is_smoke_only": max_rows is not None,
@@ -167,8 +185,11 @@ def run_research_package(
             output_root=output_root,
             evidence_mode=evidence_mode,
             dataset_publication_grade=dataset_publication_grade,
+            dataset_publication_grade_reason=dataset_publication_grade_reason,
             candidate_library_publication_grade=candidate_library_publication_grade,
             publication_grade=publication_grade,
+            publication_grade_reason=publication_grade_reason,
+            input_scope=input_scope,
             input_path=Path(input_path),
             candidate_source_path=Path(candidate_source_path) if candidate_source_path is not None else None,
             candidate_source_name=candidate_source_name,
@@ -273,8 +294,11 @@ def _package_manifest(
     output_root: Path,
     evidence_mode: str,
     dataset_publication_grade: bool,
+    dataset_publication_grade_reason: str,
     candidate_library_publication_grade: bool,
     publication_grade: bool,
+    publication_grade_reason: str,
+    input_scope: str,
     input_path: Path,
     candidate_source_path: Path | None,
     candidate_source_name: str | None,
@@ -304,6 +328,7 @@ def _package_manifest(
         "candidate_source_name": candidate_source_name,
         "cache_dir": str(cache_dir) if cache_dir is not None else None,
         "max_rows": max_rows,
+        "input_scope": input_scope,
         "min_verified_rows": min_verified_rows,
         "top_k": top_k,
         "report_quality_target": report_quality_target,
@@ -331,8 +356,11 @@ def _package_manifest(
         "evidence_mode": evidence_mode,
         "verification_level": verification_level,
         "publication_grade": publication_grade,
+        "publication_grade_reason": publication_grade_reason,
         "dataset_publication_grade": dataset_publication_grade,
+        "dataset_publication_grade_reason": dataset_publication_grade_reason,
         "candidate_library_publication_grade": candidate_library_publication_grade,
+        "input_scope": input_scope,
         "source_columns_is_smoke_only": evidence_mode == "source-columns",
         "max_rows": max_rows,
         "max_rows_is_smoke_only": max_rows is not None,
@@ -401,6 +429,22 @@ def _verification_level(evidence_mode: str) -> str:
     return "external_cached" if evidence_mode == "external-cached" else "source_columns_only"
 
 
+def _publication_grade_reason(
+    *,
+    publication_grade: bool,
+    dataset_publication_grade: bool,
+    dataset_publication_grade_reason: str,
+    candidate_library_publication_grade: bool,
+) -> str:
+    if publication_grade:
+        return "all publication-grade gates passed"
+    if not dataset_publication_grade:
+        return dataset_publication_grade_reason
+    if not candidate_library_publication_grade:
+        return "candidate library is offline-normalized"
+    return "publication-grade gates failed"
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", required=True, help="CSV/XLSX PSC source table.")
@@ -411,6 +455,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--candidate-source-name", help="Source name for candidate-source normalization.")
     parser.add_argument("--cache-dir", help="External evidence cache directory.")
     parser.add_argument("--max-rows", type=int, help="Optional row cap for smoke runs.")
+    parser.add_argument(
+        "--input-scope",
+        choices=("selected-subset", "full-source"),
+        default="selected-subset",
+        help="Declare whether the input is the full source table or a selected subset.",
+    )
     parser.add_argument("--min-verified-rows", type=int, default=10)
     parser.add_argument("--top-k", type=int, default=100)
     parser.add_argument("--report-quality-target", choices=("standard", "top-journal"), default="top-journal")
@@ -428,6 +478,7 @@ def main(argv: list[str] | None = None) -> int:
         candidate_source_name=args.candidate_source_name,
         cache_dir=args.cache_dir,
         max_rows=args.max_rows,
+        input_scope=args.input_scope,
         min_verified_rows=args.min_verified_rows,
         top_k=args.top_k,
         report_quality_target=args.report_quality_target,

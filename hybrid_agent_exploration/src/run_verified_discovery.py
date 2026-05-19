@@ -23,6 +23,7 @@ from screening.verified_discovery_workflow import VerifiedDiscoveryWorkflow
 
 
 EVIDENCE_MODES = ("external-cached", "source-columns")
+INPUT_SCOPES = ("selected-subset", "full-source")
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -139,6 +140,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--top-k", type=int, default=100, help="Number of ranked candidates to emit.")
     parser.add_argument("--min-verified-rows", type=int, default=10, help="Minimum strict verified training rows.")
     parser.add_argument("--max-rows", type=int, help="Optional input row cap for smoke runs.")
+    parser.add_argument(
+        "--input-scope",
+        choices=INPUT_SCOPES,
+        default="selected-subset",
+        help="Declare whether the input is the full source table or a selected subset.",
+    )
     return parser.parse_args(argv)
 
 
@@ -148,10 +155,18 @@ def main(argv: list[str] | None = None) -> int:
     df = load_input(args.input, max_rows=args.max_rows)
     cache_dir = Path(args.cache_dir) if args.cache_dir else default_cache_dir(args.dataset_id)
     authenticator = build_authenticator(args.evidence_mode, df, cache_dir)
+    publication_grade, publication_grade_reason = publication_grade_gate(
+        evidence_mode=args.evidence_mode,
+        input_scope=args.input_scope,
+        max_rows=args.max_rows,
+    )
     run_metadata = {
         "evidence_mode": args.evidence_mode,
         "verification_level": "external_cached" if args.evidence_mode == "external-cached" else "source_columns_only",
-        "publication_grade": args.evidence_mode == "external-cached",
+        "publication_grade": publication_grade,
+        "publication_grade_reason": publication_grade_reason,
+        "input_scope": args.input_scope,
+        "max_rows_is_smoke_only": args.max_rows is not None,
         "source_columns_is_smoke_only": args.evidence_mode == "source-columns",
         "input_path": str(Path(args.input)),
         "max_rows": args.max_rows,
@@ -177,6 +192,18 @@ def main(argv: list[str] | None = None) -> int:
     print(f"[verified-discovery] quarantine_rows={artifacts.quarantine_rows}")
     print(f"[verified-discovery] ranked_candidates={artifacts.ranked_candidates}")
     return 0
+
+
+def publication_grade_gate(*, evidence_mode: str, input_scope: str, max_rows: int | None) -> tuple[bool, str]:
+    """Return whether dataset evidence can be labeled publication-grade."""
+
+    if evidence_mode != "external-cached":
+        return False, "evidence_mode is not external-cached"
+    if max_rows is not None:
+        return False, "max_rows smoke subset"
+    if input_scope != "full-source":
+        return False, "input_scope is not full-source"
+    return True, "external-cached full-source input"
 
 
 def _clean_text(value: Any) -> str:
