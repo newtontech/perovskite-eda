@@ -197,6 +197,8 @@ def main(argv: list[str] | None = None) -> int:
 def publication_grade_gate(*, evidence_mode: str, input_scope: str, max_rows: int | None) -> tuple[bool, str]:
     """Return whether dataset evidence can be labeled publication-grade."""
 
+    if input_scope not in INPUT_SCOPES:
+        raise ValueError(f"input_scope must be one of {', '.join(INPUT_SCOPES)}; got {input_scope!r}")
     if evidence_mode != "external-cached":
         return False, "evidence_mode is not external-cached"
     if max_rows is not None:

@@ -105,21 +105,30 @@ def run_research_package(
         max_rows=max_rows,
     )
     candidate_library_publication_grade = candidate_source_path is None
+    candidate_library_publication_grade_reason = (
+        "no offline candidate source" if candidate_library_publication_grade else "candidate library is offline-normalized"
+    )
     publication_grade = dataset_publication_grade and candidate_library_publication_grade
-    publication_grade_reason = _publication_grade_reason(
-        publication_grade=publication_grade,
+    publication_grade_reasons = _publication_grade_reasons(
         dataset_publication_grade=dataset_publication_grade,
         dataset_publication_grade_reason=dataset_publication_grade_reason,
         candidate_library_publication_grade=candidate_library_publication_grade,
+        candidate_library_publication_grade_reason=candidate_library_publication_grade_reason,
+    )
+    publication_grade_reason = _publication_grade_reason(
+        publication_grade=publication_grade,
+        publication_grade_reasons=publication_grade_reasons,
     )
     run_metadata = {
         "evidence_mode": evidence_mode,
         "verification_level": verification_level,
         "publication_grade": publication_grade,
         "publication_grade_reason": publication_grade_reason,
+        "publication_grade_reasons": publication_grade_reasons,
         "dataset_publication_grade": dataset_publication_grade,
         "dataset_publication_grade_reason": dataset_publication_grade_reason,
         "candidate_library_publication_grade": candidate_library_publication_grade,
+        "candidate_library_publication_grade_reason": candidate_library_publication_grade_reason,
         "input_scope": input_scope,
         "source_columns_is_smoke_only": evidence_mode == "source-columns",
         "input_path": str(Path(input_path)),
@@ -154,9 +163,11 @@ def run_research_package(
             "verification_level": verification_level,
             "publication_grade": publication_grade,
             "publication_grade_reason": publication_grade_reason,
+            "publication_grade_reasons": publication_grade_reasons,
             "dataset_publication_grade": dataset_publication_grade,
             "dataset_publication_grade_reason": dataset_publication_grade_reason,
             "candidate_library_publication_grade": candidate_library_publication_grade,
+            "candidate_library_publication_grade_reason": candidate_library_publication_grade_reason,
             "input_scope": input_scope,
             "source_columns_is_smoke_only": evidence_mode == "source-columns",
             "max_rows": max_rows,
@@ -187,8 +198,10 @@ def run_research_package(
             dataset_publication_grade=dataset_publication_grade,
             dataset_publication_grade_reason=dataset_publication_grade_reason,
             candidate_library_publication_grade=candidate_library_publication_grade,
+            candidate_library_publication_grade_reason=candidate_library_publication_grade_reason,
             publication_grade=publication_grade,
             publication_grade_reason=publication_grade_reason,
+            publication_grade_reasons=publication_grade_reasons,
             input_scope=input_scope,
             input_path=Path(input_path),
             candidate_source_path=Path(candidate_source_path) if candidate_source_path is not None else None,
@@ -296,8 +309,10 @@ def _package_manifest(
     dataset_publication_grade: bool,
     dataset_publication_grade_reason: str,
     candidate_library_publication_grade: bool,
+    candidate_library_publication_grade_reason: str,
     publication_grade: bool,
     publication_grade_reason: str,
+    publication_grade_reasons: list[str],
     input_scope: str,
     input_path: Path,
     candidate_source_path: Path | None,
@@ -357,9 +372,11 @@ def _package_manifest(
         "verification_level": verification_level,
         "publication_grade": publication_grade,
         "publication_grade_reason": publication_grade_reason,
+        "publication_grade_reasons": publication_grade_reasons,
         "dataset_publication_grade": dataset_publication_grade,
         "dataset_publication_grade_reason": dataset_publication_grade_reason,
         "candidate_library_publication_grade": candidate_library_publication_grade,
+        "candidate_library_publication_grade_reason": candidate_library_publication_grade_reason,
         "input_scope": input_scope,
         "source_columns_is_smoke_only": evidence_mode == "source-columns",
         "max_rows": max_rows,
@@ -432,17 +449,28 @@ def _verification_level(evidence_mode: str) -> str:
 def _publication_grade_reason(
     *,
     publication_grade: bool,
-    dataset_publication_grade: bool,
-    dataset_publication_grade_reason: str,
-    candidate_library_publication_grade: bool,
+    publication_grade_reasons: list[str],
 ) -> str:
     if publication_grade:
         return "all publication-grade gates passed"
-    if not dataset_publication_grade:
-        return dataset_publication_grade_reason
-    if not candidate_library_publication_grade:
-        return "candidate library is offline-normalized"
+    if publication_grade_reasons:
+        return publication_grade_reasons[0]
     return "publication-grade gates failed"
+
+
+def _publication_grade_reasons(
+    *,
+    dataset_publication_grade: bool,
+    dataset_publication_grade_reason: str,
+    candidate_library_publication_grade: bool,
+    candidate_library_publication_grade_reason: str,
+) -> list[str]:
+    reasons: list[str] = []
+    if not dataset_publication_grade:
+        reasons.append(dataset_publication_grade_reason)
+    if not candidate_library_publication_grade:
+        reasons.append(candidate_library_publication_grade_reason)
+    return reasons
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:

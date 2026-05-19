@@ -275,6 +275,11 @@ def test_external_cached_candidate_source_does_not_overclaim_publication_grade(t
     assert package_manifest["candidate_library_publication_grade"] is False
     assert package_manifest["publication_grade"] is False
     assert package_manifest["publication_grade_reason"] == "input_scope is not full-source"
+    assert package_manifest["publication_grade_reasons"] == [
+        "input_scope is not full-source",
+        "candidate library is offline-normalized",
+    ]
+    assert package_manifest["candidate_library_publication_grade_reason"] == "candidate library is offline-normalized"
 
     run_manifest = json.loads(
         (package.report_dir / "main_text" / "run_manifest.json").read_text(encoding="utf-8")
@@ -283,6 +288,10 @@ def test_external_cached_candidate_source_does_not_overclaim_publication_grade(t
     assert run_manifest["evidence_context"]["dataset_publication_grade"] is False
     assert run_manifest["evidence_context"]["candidate_library_publication_grade"] is False
     assert run_manifest["evidence_context"]["input_scope"] == "selected-subset"
+    assert run_manifest["evidence_context"]["publication_grade_reasons"] == [
+        "input_scope is not full-source",
+        "candidate library is offline-normalized",
+    ]
 
     si_text = (package.report_dir / "si" / "supporting_information.md").read_text(encoding="utf-8")
     assert "Publication-grade flag: `False`" in si_text
@@ -328,6 +337,34 @@ def test_external_cached_full_source_without_candidate_source_can_be_publication
     assert package_manifest["candidate_library_publication_grade"] is True
     assert package_manifest["publication_grade"] is True
     assert package_manifest["publication_grade_reason"] == "all publication-grade gates passed"
+    assert package_manifest["publication_grade_reasons"] == []
+
+
+def test_research_package_rejects_invalid_input_scope(tmp_path):
+    from run_research_package import run_research_package
+
+    raw_csv = tmp_path / "raw_psc.csv"
+    pd.DataFrame(
+        [
+            _raw_record("row-001", "10.1021/acs.jpclett.6c00119", "C", 0.25),
+            _raw_record("row-002", "10.1021/acs.jpclett.6c00120", "CC", 0.50),
+        ]
+    ).to_csv(raw_csv, index=False)
+
+    try:
+        run_research_package(
+            input_path=raw_csv,
+            output_dir=tmp_path / "research_package",
+            dataset_id="invalid-scope",
+            evidence_mode="source-columns",
+            input_scope="hand-picked",
+            min_verified_rows=2,
+            top_k=1,
+        )
+    except ValueError as exc:
+        assert "input_scope" in str(exc)
+    else:
+        raise AssertionError("invalid input_scope should fail")
 
 
 def test_external_cached_max_rows_does_not_overclaim_publication_grade(tmp_path, monkeypatch):
