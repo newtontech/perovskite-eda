@@ -31,6 +31,8 @@ def test_canonical_research_package_targets_are_declared():
         "research-package-smoke",
         "research-package-cache-preflight",
         "research-package-cache-preflight-smoke",
+        "research-package-cache-collect",
+        "research-package-cache-collect-dry-run",
         "research-package-pdf",
         "research-package-verify",
         "test-research-package",
@@ -117,6 +119,34 @@ def test_cache_preflight_smoke_target_dry_run_caps_rows_explicitly():
     assert "CACHE_PREFLIGHT_MAX_ROWS=25" in output
 
 
+def test_cache_collect_target_dry_run_uses_preflight_requirements_and_budget():
+    output = _make_dry_run(
+        "research-package-cache-collect",
+        DATASET_ID="unit-dataset",
+        ARTIFACT_DIR="/tmp/artifacts",
+        CACHE_COLLECT_MAX_REQUESTS="7",
+    )
+
+    assert "hybrid_agent_exploration/src/run_evidence_cache_collector.py" in output
+    assert "--requirements-csv /tmp/artifacts/evidence_cache_preflight/evidence_cache_requirements.csv" in output
+    assert "--dataset-id unit-dataset" in output
+    assert "--max-requests 7" in output
+    assert "--output-json /tmp/artifacts/evidence_cache_collection_report.json" in output
+    assert "--cache-dir" not in output
+    assert "--dry-run" not in output
+
+
+def test_cache_collect_dry_run_target_does_not_write_cache():
+    output = _make_dry_run(
+        "research-package-cache-collect-dry-run",
+        DATASET_ID="unit-dataset",
+        CACHE_COLLECT_MAX_REQUESTS="7",
+    )
+
+    assert "research-package-cache-collect" in output
+    assert "EXTRA_CACHE_COLLECT_ARGS=--dry-run" in output
+
+
 def test_pdf_target_dry_run_checks_pandoc_and_exports_report_pdfs():
     output = _make_dry_run("research-package-pdf", ARTIFACT_DIR="/tmp/artifacts")
 
@@ -152,6 +182,7 @@ def test_test_research_package_target_runs_canonical_pytest_slice():
 
     assert "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1" in output
     assert "tests/test_canonical_make_targets.py" in output
+    assert "tests/test_evidence_cache_collector.py" in output
     assert "tests/test_evidence_cache_preflight.py" in output
     assert "tests/test_research_package_runner.py" in output
     assert "tests/test_run_verified_discovery_cli.py" in output
