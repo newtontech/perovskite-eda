@@ -10,6 +10,8 @@ TOP_K ?= 100
 SMOKE_MAX_ROWS ?= 25
 SMOKE_MIN_VERIFIED_ROWS ?= 1
 SMOKE_TOP_K ?= 10
+PANDOC_PDF_ENGINE ?= xelatex
+PANDOC_MAINFONT ?= DejaVu Serif
 
 RUN_RESEARCH_PACKAGE := hybrid_agent_exploration/src/run_research_package.py
 ROOT_PROVENANCE_MANIFEST := hybrid_agent_exploration/src/reporting/root_provenance_manifest.py
@@ -24,6 +26,8 @@ MAIN_TEXT_MD := $(ARTIFACT_DIR)/report_bundle/main_text/main_text_report.md
 MAIN_TEXT_PDF := $(ARTIFACT_DIR)/report_bundle/main_text/main_text_report.pdf
 SI_MD := $(ARTIFACT_DIR)/report_bundle/si/supporting_information.md
 SI_PDF := $(ARTIFACT_DIR)/report_bundle/si/supporting_information.pdf
+MAIN_TEXT_RESOURCE_PATH := $(REPORT_DIR):$(ARTIFACT_DIR)
+SI_RESOURCE_PATH := $(SI_DIR):$(ARTIFACT_DIR)
 
 CANDIDATE_SOURCE_ARGS := $(if $(CANDIDATE_SOURCE),--candidate-source $(CANDIDATE_SOURCE),)
 CANDIDATE_SOURCE_NAME_ARGS := $(if $(CANDIDATE_SOURCE_NAME),--candidate-source-name $(CANDIDATE_SOURCE_NAME),)
@@ -56,8 +60,8 @@ research-package-pdf:
 	@command -v pandoc >/dev/null 2>&1 || { echo "pandoc is required for research-package-pdf. Install pandoc and rerun this target." >&2; exit 127; }
 	@test -f $(MAIN_TEXT_MD) || { echo "missing main text markdown: $(MAIN_TEXT_MD). Run make research-package first or set ARTIFACT_DIR." >&2; exit 2; }
 	@test -f $(SI_MD) || { echo "missing supporting information markdown: $(SI_MD). Run make research-package first or set ARTIFACT_DIR." >&2; exit 2; }
-	pandoc $(MAIN_TEXT_MD) -o $(MAIN_TEXT_PDF)
-	pandoc $(SI_MD) -o $(SI_PDF)
+	pandoc --pdf-engine=$(PANDOC_PDF_ENGINE) -V mainfont="$(PANDOC_MAINFONT)" --resource-path=$(MAIN_TEXT_RESOURCE_PATH) $(MAIN_TEXT_MD) -o $(MAIN_TEXT_PDF)
+	pandoc --pdf-engine=$(PANDOC_PDF_ENGINE) -V mainfont="$(PANDOC_MAINFONT)" --resource-path=$(SI_RESOURCE_PATH) $(SI_MD) -o $(SI_PDF)
 	@candidate_library_args=""; \
 	if [ -d "$(CANDIDATE_LIBRARY_DIR)" ]; then candidate_library_args="--candidate-library-dir $(CANDIDATE_LIBRARY_DIR)"; fi; \
 	candidate_source_args=""; \
