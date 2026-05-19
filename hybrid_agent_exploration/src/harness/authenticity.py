@@ -8,11 +8,15 @@ and production code can use Crossref, PubChem, or MCP-backed resolvers.
 
 from __future__ import annotations
 
+import json
 import math
 import re
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
+from pathlib import Path
 from typing import Any, Callable, Iterable
+
+import requests
 
 from .guardrail import Guardrail
 
@@ -140,8 +144,9 @@ class RealDataAuthenticator:
             sources.append(molecule.to_source())
             if smiles and molecule.smiles and not _smiles_match(smiles, molecule.smiles):
                 reasons.append("molecule_smiles_mismatch")
-            pubchem_id = _clean_text(record.get("pubchem_id"))
-            if pubchem_id and molecule.pubchem_id and pubchem_id != str(molecule.pubchem_id):
+            pubchem_id = _normalize_pubchem_id(record.get("pubchem_id"))
+            molecule_pubchem_id = _normalize_pubchem_id(molecule.pubchem_id)
+            if pubchem_id and molecule_pubchem_id and pubchem_id != molecule_pubchem_id:
                 reasons.append("pubchem_id_mismatch")
             cas_number = _clean_text(record.get("cas_number"))
             if cas_number and molecule.cas_number and cas_number != str(molecule.cas_number):
@@ -228,6 +233,25 @@ def _to_float(value: Any) -> float | None:
     return parsed
 
 
+def _normalize_doi(value: Any) -> str:
+    return _clean_text(value).lower()
+
+
+def _normalize_pubchem_id(value: Any) -> str:
+    text = _clean_text(value)
+    if not text:
+        return ""
+    try:
+        parsed = float(text)
+    except ValueError:
+        return text
+    if math.isnan(parsed):
+        return ""
+    if parsed.is_integer():
+        return str(int(parsed))
+    return text
+
+
 def _extract_year(record: dict[str, Any]) -> int | None:
     for key in ("year", "publication_year", "publication_date"):
         value = _clean_text(record.get(key))
@@ -260,6 +284,121 @@ def _smiles_match(left: str, right: str) -> bool:
     return left.strip() == right.strip()
 
 
+class CachedReferenceVerifier:
+    """JSON-backed DOI evidence cache around a reference verifier."""
+
+    def __init__(self, verifier: ReferenceVerifier, cache_path: str | Path) -> None:
+        self.verifier = verifier
+        self.cache_path = Path(cache_path)
+        self.cache: dict[str, dict[str, Any] | None] = self._load_cache()
+
+    def __call__(self, doi: str) -> ReferenceEvidence | None:
+        key = _normalize_doi(doi)
+        if not key:
+            return None
+        if key in self.cache:
+            return _reference_from_source(self.cache[key])
+        evidence = self.verifier(key)
+        self.cache[key] = evidence.to_source() if evidence else None
+        self._write_cache()
+        return evidence
+
+    def _load_cache(self) -> dict[str, dict[str, Any] | None]:
+        if not self.cache_path.exists():
+            return {}
+        payload = json.loads(self.cache_path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            raise ValueError(f"Reference cache must be a JSON object: {self.cache_path}")
+        return payload
+
+    def _write_cache(self) -> None:
+        self.cache_path.parent.mkdir(parents=True, exist_ok=True)
+        self.cache_path.write_text(
+            json.dumps(self.cache, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+
+class CachedMoleculeVerifier:
+    """JSON-backed molecule evidence cache keyed by normalized PubChem CID."""
+
+    def __init__(self, verifier: MoleculeVerifier, cache_path: str | Path) -> None:
+        self.verifier = verifier
+        self.cache_path = Path(cache_path)
+        self.cache: dict[str, dict[str, Any] | None] = self._load_cache()
+
+    def __call__(self, record: dict[str, Any]) -> MoleculeEvidence | None:
+        key = _molecule_cache_key(record)
+        if not key:
+            return None
+        if key in self.cache:
+            return _molecule_from_source(self.cache[key])
+        evidence = self.verifier(record)
+        self.cache[key] = evidence.to_source() if evidence else None
+        self._write_cache()
+        return evidence
+
+    def _load_cache(self) -> dict[str, dict[str, Any] | None]:
+        if not self.cache_path.exists():
+            return {}
+        payload = json.loads(self.cache_path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            raise ValueError(f"Molecule cache must be a JSON object: {self.cache_path}")
+        return payload
+
+    def _write_cache(self) -> None:
+        self.cache_path.parent.mkdir(parents=True, exist_ok=True)
+        self.cache_path.write_text(
+            json.dumps(self.cache, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+
+def _molecule_cache_key(record: dict[str, Any]) -> str:
+    pubchem_id = _normalize_pubchem_id(record.get("pubchem_id"))
+    if pubchem_id:
+        return f"pubchem:{pubchem_id}"
+    smiles = _clean_text(record.get("smiles"))
+    if smiles:
+        return f"smiles:{smiles}"
+    return ""
+
+
+def _reference_from_source(payload: dict[str, Any] | None) -> ReferenceEvidence | None:
+    if not payload:
+        return None
+    return ReferenceEvidence(
+        doi=_clean_text(payload.get("doi")),
+        title=_clean_text(payload.get("title")),
+        year=_source_int(payload.get("year")),
+        journal=_clean_text(payload.get("journal")) or None,
+        source=_clean_text(payload.get("source")) or "reference",
+        url=_clean_text(payload.get("url")) or None,
+    )
+
+
+def _molecule_from_source(payload: dict[str, Any] | None) -> MoleculeEvidence | None:
+    if not payload:
+        return None
+    return MoleculeEvidence(
+        smiles=_clean_text(payload.get("smiles")),
+        pubchem_id=_normalize_pubchem_id(payload.get("pubchem_id")) or None,
+        cas_number=_clean_text(payload.get("cas_number")) or None,
+        source=_clean_text(payload.get("source")) or "molecule",
+        url=_clean_text(payload.get("url")) or None,
+    )
+
+
+def _source_int(value: Any) -> int | None:
+    text = _clean_text(value)
+    if not text:
+        return None
+    try:
+        return int(float(text))
+    except ValueError:
+        return None
+
+
 class CrossrefReferenceVerifier:
     """Simple Crossref resolver used by production code when network is allowed."""
 
@@ -267,9 +406,7 @@ class CrossrefReferenceVerifier:
         self.timeout = timeout
 
     def __call__(self, doi: str) -> ReferenceEvidence | None:
-        import requests
-
-        doi = doi.strip()
+        doi = _normalize_doi(doi)
         if not doi:
             return None
         url = f"https://api.crossref.org/works/{doi}"
@@ -297,9 +434,7 @@ class PubChemMoleculeVerifier:
         self.timeout = timeout
 
     def __call__(self, record: dict[str, Any]) -> MoleculeEvidence | None:
-        import requests
-
-        cid = _clean_text(record.get("pubchem_id"))
+        cid = _normalize_pubchem_id(record.get("pubchem_id"))
         if not cid:
             return None
         url = (
