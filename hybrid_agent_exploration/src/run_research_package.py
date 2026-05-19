@@ -76,6 +76,7 @@ def run_research_package(
             df,
             dataset_id=dataset_id,
             source_name=Path(input_path).stem,
+            max_rows=max_rows,
         ),
         output_root / "source_completeness",
     )

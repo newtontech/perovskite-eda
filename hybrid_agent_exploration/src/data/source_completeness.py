@@ -88,11 +88,13 @@ def summarize_source_completeness(
     *,
     dataset_id: str,
     source_name: str,
+    max_rows: int | None = None,
     expected_groups: tuple[tuple[str, str, tuple[str, ...]], ...] | None = None,
 ) -> dict[str, Any]:
     """Summarize source-column missingness for a PSC input table."""
 
     row_count = int(len(df))
+    max_rows_is_smoke_only = max_rows is not None
     groups = [
         _summarize_group(df, row_count=row_count, group_id=group_id, label=label, columns=columns)
         for group_id, label, columns in (expected_groups or DEFAULT_SOURCE_GROUPS)
@@ -114,6 +116,9 @@ def summarize_source_completeness(
         "dataset_id": dataset_id,
         "source_name": source_name,
         "row_count": row_count,
+        "max_rows": max_rows,
+        "max_rows_is_smoke_only": max_rows_is_smoke_only,
+        "audit_population": "max_rows_subset" if max_rows_is_smoke_only else "loaded_source_table",
         "audit_scope": AUDIT_SCOPE,
         "external_verification": False,
         "interpretation": (
@@ -164,11 +169,18 @@ def format_source_completeness_markdown(summary: dict[str, Any]) -> str:
         f"- Dataset: `{summary.get('dataset_id', 'unknown')}`",
         f"- Source: `{summary.get('source_name', 'unknown')}`",
         f"- Rows audited: `{summary.get('row_count', 0)}`",
+        f"- Audit population: `{summary.get('audit_population', 'loaded_source_table')}`",
         f"- Overall completeness fraction: `{overall.get('completeness_fraction', 0.0)}`",
         "",
         "| Group | Column | Present | Non-missing | Missing | Completeness |",
         "|-------|--------|---------|-------------|---------|--------------|",
     ]
+    if summary.get("max_rows_is_smoke_only"):
+        lines.insert(
+            4,
+            "This audit covers a smoke-only subset selected by `max_rows`; it is not a full-source audit.",
+        )
+        lines.insert(5, "")
     for row in _flatten_rows(summary):
         present = "yes" if row["present"] else "no"
         lines.append(
@@ -187,6 +199,9 @@ def compact_source_completeness(summary: dict[str, Any]) -> dict[str, Any]:
         "dataset_id": summary.get("dataset_id"),
         "source_name": summary.get("source_name"),
         "row_count": summary.get("row_count"),
+        "max_rows": summary.get("max_rows"),
+        "max_rows_is_smoke_only": summary.get("max_rows_is_smoke_only"),
+        "audit_population": summary.get("audit_population"),
         "audit_scope": summary.get("audit_scope"),
         "external_verification": summary.get("external_verification"),
         "overall": summary.get("overall", {}),

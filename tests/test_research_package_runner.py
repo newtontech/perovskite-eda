@@ -193,6 +193,8 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     )
     assert source_completeness["row_count"] == 5
     assert source_completeness["external_verification"] is False
+    assert source_completeness["max_rows"] is None
+    assert source_completeness["max_rows_is_smoke_only"] is False
 
     si_text = (package.report_dir / "si" / "supporting_information.md").read_text(encoding="utf-8")
     assert "source-columns" in si_text
@@ -331,3 +333,19 @@ def test_external_cached_max_rows_does_not_overclaim_publication_grade(tmp_path,
     assert run_manifest["evidence_context"]["max_rows_is_smoke_only"] is True
     assert run_manifest["evidence_context"]["dataset_publication_grade"] is False
     assert run_manifest["evidence_context"]["publication_grade"] is False
+    assert run_manifest["source_completeness"]["max_rows"] == 4
+    assert run_manifest["source_completeness"]["max_rows_is_smoke_only"] is True
+    assert run_manifest["source_completeness"]["audit_population"] == "max_rows_subset"
+
+    source_completeness = json.loads(
+        (package.output_dir / "source_completeness" / "source_completeness.json").read_text(encoding="utf-8")
+    )
+    assert source_completeness["max_rows"] == 4
+    assert source_completeness["max_rows_is_smoke_only"] is True
+    assert source_completeness["audit_population"] == "max_rows_subset"
+
+    source_completeness_md = (
+        package.output_dir / "source_completeness" / "source_completeness.md"
+    ).read_text(encoding="utf-8")
+    assert "smoke-only subset" in source_completeness_md
+    assert "not a full-source audit" in source_completeness_md

@@ -100,6 +100,9 @@ def test_source_completeness_uses_real_psc_source_columns_and_writes_json_markdo
     assert payload["row_count"] == 3
     assert payload["audit_scope"] == "column_level_missingness_only"
     assert payload["external_verification"] is False
+    assert payload["max_rows"] is None
+    assert payload["max_rows_is_smoke_only"] is False
+    assert payload["audit_population"] == "loaded_source_table"
 
     groups = {group["id"]: group for group in payload["groups"]}
     assert {"literature_metadata", "chemical_identity", "molecular_descriptors", "jv_core", "target_derivation"}.issubset(groups)
@@ -138,3 +141,23 @@ def test_source_completeness_does_not_fabricate_absent_pdf_source_columns(tmp_pa
 
     assert "source_pdf_path" not in serialized
     assert "pdf" not in {group["id"] for group in summary["groups"]}
+
+
+def test_source_completeness_marks_max_rows_subset_as_smoke_only():
+    from data.source_completeness import format_source_completeness_markdown, summarize_source_completeness
+
+    summary = summarize_source_completeness(
+        _source_frame().head(2),
+        dataset_id="psc-source-fixture",
+        source_name="source-columns-smoke",
+        max_rows=2,
+    )
+
+    assert summary["row_count"] == 2
+    assert summary["max_rows"] == 2
+    assert summary["max_rows_is_smoke_only"] is True
+    assert summary["audit_population"] == "max_rows_subset"
+
+    markdown = format_source_completeness_markdown(summary)
+    assert "smoke-only subset" in markdown
+    assert "not a full-source audit" in markdown
