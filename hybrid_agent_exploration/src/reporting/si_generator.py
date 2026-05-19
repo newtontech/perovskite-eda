@@ -13,6 +13,8 @@ import numpy as np
 
 warnings.filterwarnings("ignore")
 
+from data.source_completeness import format_source_completeness_markdown
+
 from .figure_generator import FigureGenerator
 from .figure_selector import FigureSelector
 from .image_embedder import embed_markdown_images
@@ -42,6 +44,7 @@ class SIGenerator:
         self.shap = SHAPAnalyzer(self.fig_dir)
         self.mol = MolecularPlotter(self.fig_dir)
         self.verified_discovery = load_verified_discovery_summary(self.artifacts)
+        self.source_completeness = self._source_completeness()
 
     def generate(self) -> Path:
         """Generate the complete SI document."""
@@ -52,6 +55,10 @@ class SIGenerator:
         if evidence_note:
             lines.append("## S0. Evidence Context")
             lines.append(evidence_note)
+            lines.append("")
+        if self.source_completeness:
+            lines.append("## S0b. Source Completeness Audit")
+            lines.append(format_source_completeness_markdown(self.source_completeness))
             lines.append("")
 
         lines.append("## S1. Data Cleaning and Quality Control")
@@ -423,6 +430,10 @@ class SIGenerator:
 
     def _evidence_context(self) -> dict[str, Any]:
         value = self.artifacts.get("evidence_context")
+        return value if isinstance(value, dict) else {}
+
+    def _source_completeness(self) -> dict[str, Any]:
+        value = self.artifacts.get("source_completeness")
         return value if isinstance(value, dict) else {}
 
     def _has_training_only_metrics(self) -> bool:

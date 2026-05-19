@@ -15,6 +15,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from data.source_completeness import (
+    summarize_source_completeness,
+    write_source_completeness_artifacts,
+)
 from reporting.root_provenance_manifest import generate_root_provenance_manifest
 from reporting.si_generator import SIGenerator
 from reporting.top_journal_report import TopJournalReport
@@ -37,6 +41,7 @@ class ResearchPackageArtifacts:
 
     output_dir: Path
     verified_discovery_dir: Path
+    source_completeness_dir: Path
     candidate_library_dir: Path | None
     report_dir: Path
     root_provenance_manifest_json: Path
@@ -66,6 +71,15 @@ def run_research_package(
     report_dir = output_root / "report_bundle"
 
     df = load_input(input_path, max_rows=max_rows)
+    source_completeness_artifacts = write_source_completeness_artifacts(
+        summarize_source_completeness(
+            df,
+            dataset_id=dataset_id,
+            source_name=Path(input_path).stem,
+            max_rows=max_rows,
+        ),
+        output_root / "source_completeness",
+    )
     cache_root = Path(cache_dir) if cache_dir else default_cache_dir(dataset_id)
     authenticator = build_authenticator(evidence_mode, df, cache_root)
 
@@ -119,6 +133,7 @@ def run_research_package(
     report_inputs = _report_inputs(
         verified_discovery_dir,
         top_n=verified_discovery_top_n or top_k,
+        source_completeness=source_completeness_artifacts.summary,
         evidence_context={
             "evidence_mode": evidence_mode,
             "verification_level": verification_level,
@@ -163,6 +178,7 @@ def run_research_package(
             report_quality_target=report_quality_target,
             verified_discovery_top_n=verified_discovery_top_n,
             discovery_artifacts=discovery_artifacts,
+            source_completeness_dir=source_completeness_artifacts.output_dir,
             candidate_library_dir=candidate_library_dir,
             candidate_library_rows=candidate_library_rows,
             report_dir=report_dir,
@@ -179,6 +195,7 @@ def run_research_package(
         main_bundle.path.parent,
         si_path.parent,
         candidate_library_dir=candidate_library_dir,
+        source_completeness_dir=source_completeness_artifacts.output_dir,
         package_manifest_path=package_manifest_path,
         input_path=input_path,
         candidate_source_path=candidate_source_path,
@@ -187,6 +204,7 @@ def run_research_package(
     return ResearchPackageArtifacts(
         output_dir=output_root,
         verified_discovery_dir=verified_discovery_dir,
+        source_completeness_dir=source_completeness_artifacts.output_dir,
         candidate_library_dir=candidate_library_dir,
         report_dir=report_dir,
         root_provenance_manifest_json=root_manifest_path,
@@ -198,6 +216,7 @@ def _report_inputs(
     verified_discovery_dir: Path,
     *,
     top_n: int,
+    source_completeness: dict[str, Any],
     evidence_context: dict[str, Any],
 ) -> dict[str, Any]:
     metrics = _read_json(verified_discovery_dir / "model" / "model_metrics.json")
@@ -230,6 +249,7 @@ def _report_inputs(
     artifacts = {
         "verified_discovery_artifact_dir": verified_discovery_dir,
         "verified_discovery_top_n": top_n,
+        "source_completeness": source_completeness,
         "evidence_context": evidence_context,
         "multi_model_results": [
             {
@@ -264,6 +284,7 @@ def _package_manifest(
     report_quality_target: str,
     verified_discovery_top_n: int | None,
     discovery_artifacts,
+    source_completeness_dir: Path,
     candidate_library_dir: Path | None,
     candidate_library_rows: int | None,
     report_dir: Path,
@@ -323,6 +344,10 @@ def _package_manifest(
         "report_quality_score": report_quality_score,
         "outputs": {
             "verified_discovery_dir": _relative(discovery_artifacts.output_dir, output_root),
+            "source_completeness_dir": _relative(source_completeness_dir, output_root),
+            "source_completeness_json": _relative(source_completeness_dir / "source_completeness.json", output_root),
+            "source_completeness_csv": _relative(source_completeness_dir / "source_completeness.csv", output_root),
+            "source_completeness_md": _relative(source_completeness_dir / "source_completeness.md", output_root),
             "candidate_library_dir": _relative(candidate_library_dir, output_root) if candidate_library_dir else None,
             "report_dir": _relative(report_dir, output_root),
             "main_text_report_md": _relative(report_dir / "main_text" / "main_text_report.md", output_root),

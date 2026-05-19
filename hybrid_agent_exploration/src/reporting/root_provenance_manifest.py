@@ -19,7 +19,18 @@ from typing import Any
 MANIFEST_NAME = "provenance_manifest.json"
 SCHEMA_VERSION = "root-provenance-manifest-v1"
 HASH_BYTES_LIMIT = 1024 * 1024
-ARTIFACT_CATEGORIES = ("dataset", "model", "discovery", "report", "SI", "claim", "review", "audit", "package")
+ARTIFACT_CATEGORIES = (
+    "dataset",
+    "model",
+    "discovery",
+    "report",
+    "SI",
+    "claim",
+    "review",
+    "audit",
+    "source_completeness",
+    "package",
+)
 
 
 def generate_root_provenance_manifest(
@@ -28,6 +39,7 @@ def generate_root_provenance_manifest(
     si_dir: str | Path,
     *,
     candidate_library_dir: str | Path | None = None,
+    source_completeness_dir: str | Path | None = None,
     package_manifest_path: str | Path | None = None,
     input_path: str | Path | None = None,
     candidate_source_path: str | Path | None = None,
@@ -41,6 +53,8 @@ def generate_root_provenance_manifest(
         si_dir: Directory containing supplementary information artifacts.
         candidate_library_dir: Optional directory containing candidate_library.csv,
             source_summary.json, and provenance.json from CandidateLibraryBuilder.
+        source_completeness_dir: Optional directory containing source_completeness
+            JSON, CSV, and Markdown artifacts from the package runner.
         package_manifest_path: Optional top-level package_manifest.json emitted by
             run_research_package.
         input_path: Optional original PSC source table used by the package.
@@ -57,6 +71,7 @@ def generate_root_provenance_manifest(
     report_root = Path(report_dir)
     si_root = Path(si_dir)
     candidate_root = Path(candidate_library_dir) if candidate_library_dir is not None else None
+    source_completeness_root = Path(source_completeness_dir) if source_completeness_dir is not None else None
     package_manifest = Path(package_manifest_path) if package_manifest_path is not None else None
     source_input = Path(input_path) if input_path is not None else None
     candidate_source = Path(candidate_source_path) if candidate_source_path is not None else None
@@ -119,6 +134,18 @@ def generate_root_provenance_manifest(
                 )
             )
 
+    if source_completeness_root is not None:
+        for path in _iter_files(source_completeness_root):
+            artifacts["source_completeness"].append(
+                _artifact_record(
+                    _artifact_id_from_path(path),
+                    path,
+                    root_dir=root_dir,
+                    source_root=source_completeness_root,
+                    declared_in="source_completeness_dir",
+                )
+            )
+
     if package_manifest is not None:
         artifacts["package"].append(
             _artifact_record(
@@ -162,6 +189,8 @@ def generate_root_provenance_manifest(
     }
     if candidate_root is not None:
         manifest["roots"]["candidate_library_dir"] = _display_path(candidate_root, root_dir)
+    if source_completeness_root is not None:
+        manifest["roots"]["source_completeness_dir"] = _display_path(source_completeness_root, root_dir)
     if package_manifest is not None:
         manifest["source_manifests"]["package_manifest_json"] = _file_facts(package_manifest, root_dir=root_dir)
 
@@ -178,6 +207,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--report-dir", required=True)
     parser.add_argument("--si-dir", required=True)
     parser.add_argument("--candidate-library-dir")
+    parser.add_argument("--source-completeness-dir")
     parser.add_argument("--package-manifest-path")
     parser.add_argument("--input-path")
     parser.add_argument("--candidate-source-path")
@@ -188,6 +218,7 @@ def main(argv: list[str] | None = None) -> int:
         args.report_dir,
         args.si_dir,
         candidate_library_dir=args.candidate_library_dir,
+        source_completeness_dir=args.source_completeness_dir,
         package_manifest_path=args.package_manifest_path,
         input_path=args.input_path,
         candidate_source_path=args.candidate_source_path,

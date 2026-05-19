@@ -99,6 +99,9 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
         package.report_dir / "main_text" / "review_report.json",
         package.report_dir / "main_text" / "run_manifest.json",
         package.report_dir / "si" / "supporting_information.md",
+        package.output_dir / "source_completeness" / "source_completeness.json",
+        package.output_dir / "source_completeness" / "source_completeness.csv",
+        package.output_dir / "source_completeness" / "source_completeness.md",
         package.root_provenance_manifest_json,
         package.package_manifest_json,
     ]
@@ -132,6 +135,10 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert package_manifest["inputs"]["candidate_source"]["source_name"] == "fixture-vendor-source"
     assert package_manifest["inputs"]["candidate_source"]["exists"] is True
     assert len(package_manifest["inputs"]["candidate_source"]["sha256"]) == 64
+    assert package_manifest["outputs"]["source_completeness_dir"] == "source_completeness"
+    assert package_manifest["outputs"]["source_completeness_json"] == "source_completeness/source_completeness.json"
+    assert package_manifest["outputs"]["source_completeness_csv"] == "source_completeness/source_completeness.csv"
+    assert package_manifest["outputs"]["source_completeness_md"] == "source_completeness/source_completeness.md"
     assert package_manifest["outputs"]["root_provenance_manifest_json"] == "provenance_manifest.json"
 
     workflow_manifest = json.loads(
@@ -178,13 +185,29 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert run_manifest["evidence_context"]["source_columns_is_smoke_only"] is True
     assert run_manifest["evidence_context"]["metric_scope"] == "training_only"
     assert run_manifest["evidence_context"]["candidate_library_publication_grade"] is False
+    assert run_manifest["source_completeness"]["audit_scope"] == "column_level_missingness_only"
+    assert run_manifest["source_completeness"]["external_verification"] is False
+
+    source_completeness = json.loads(
+        (package.output_dir / "source_completeness" / "source_completeness.json").read_text(encoding="utf-8")
+    )
+    assert source_completeness["row_count"] == 5
+    assert source_completeness["external_verification"] is False
+    assert source_completeness["max_rows"] is None
+    assert source_completeness["max_rows_is_smoke_only"] is False
 
     si_text = (package.report_dir / "si" / "supporting_information.md").read_text(encoding="utf-8")
     assert "source-columns" in si_text
     assert "smoke-only" in si_text
     assert "training-only" in si_text
     assert "Candidate-library publication-grade flag: `False`" in si_text
+    assert "Source Completeness Audit" in si_text
+    assert "column-level missingness audit" in si_text
     assert "Cross-validation was not supplied" in si_text
+
+    report_text = (package.report_dir / "main_text" / "main_text_report.md").read_text(encoding="utf-8")
+    assert "Source Completeness Audit" in report_text
+    assert "not external verification" in report_text
 
     root_manifest = json.loads(package.root_provenance_manifest_json.read_text(encoding="utf-8"))
     assert root_manifest["dataset_id"] == "package-fixture"
@@ -196,6 +219,11 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert len(root_manifest["source_inputs"]["input_table"]["sha256"]) == 64
     assert root_manifest["source_inputs"]["candidate_source_table"]["path"].endswith("candidate_source.csv")
     assert len(root_manifest["source_inputs"]["candidate_source_table"]["sha256"]) == 64
+    assert {item["id"] for item in root_manifest["artifacts"]["source_completeness"]} == {
+        "source_completeness_csv",
+        "source_completeness_json",
+        "source_completeness_md",
+    }
     assert "candidate_library:candidate_library_csv" in {
         item["id"] for item in root_manifest["artifacts"]["discovery"]
     }
@@ -305,3 +333,19 @@ def test_external_cached_max_rows_does_not_overclaim_publication_grade(tmp_path,
     assert run_manifest["evidence_context"]["max_rows_is_smoke_only"] is True
     assert run_manifest["evidence_context"]["dataset_publication_grade"] is False
     assert run_manifest["evidence_context"]["publication_grade"] is False
+    assert run_manifest["source_completeness"]["max_rows"] == 4
+    assert run_manifest["source_completeness"]["max_rows_is_smoke_only"] is True
+    assert run_manifest["source_completeness"]["audit_population"] == "max_rows_subset"
+
+    source_completeness = json.loads(
+        (package.output_dir / "source_completeness" / "source_completeness.json").read_text(encoding="utf-8")
+    )
+    assert source_completeness["max_rows"] == 4
+    assert source_completeness["max_rows_is_smoke_only"] is True
+    assert source_completeness["audit_population"] == "max_rows_subset"
+
+    source_completeness_md = (
+        package.output_dir / "source_completeness" / "source_completeness.md"
+    ).read_text(encoding="utf-8")
+    assert "smoke-only subset" in source_completeness_md
+    assert "not a full-source audit" in source_completeness_md

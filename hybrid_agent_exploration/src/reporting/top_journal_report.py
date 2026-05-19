@@ -19,6 +19,8 @@ import numpy as np
 
 warnings.filterwarnings("ignore")
 
+from data.source_completeness import format_source_completeness_markdown
+
 from .composite_figure import CompositeFigure, CompositeFigureTemplates
 from .figure_selector import FigureSelector
 from .image_embedder import embed_markdown_images
@@ -59,6 +61,7 @@ class TopJournalReport:
         self.selector = FigureSelector(self.artifacts)
         self.narrative = NarrativeEngine()
         self.verified_discovery = load_verified_discovery_summary(self.artifacts)
+        self.source_completeness = self._source_completeness()
 
     def generate(self) -> ReportBundle:
         """Generate the complete main-text report."""
@@ -688,6 +691,12 @@ class TopJournalReport:
                 format_verified_discovery_markdown(self.verified_discovery),
                 "",
             ])
+        if self.source_completeness:
+            lines.extend([
+                "### Source Completeness Audit",
+                format_source_completeness_markdown(self.source_completeness),
+                "",
+            ])
 
         lines.extend([
             "## 4. Limitations and Evidence Gaps",
@@ -933,6 +942,13 @@ class TopJournalReport:
                     "source": "dataset/quarantine.csv",
                 },
             ])
+        if self.source_completeness:
+            ledger.append({
+                "claim": "Source completeness audit is column-level missingness only and not external verification",
+                "evidence_id": "provenance:source_completeness.input_table",
+                "value": self.source_completeness,
+                "source": "source_completeness/source_completeness.json",
+            })
         evidence_context = self._evidence_context()
         if evidence_context:
             ledger.append({
@@ -987,6 +1003,8 @@ class TopJournalReport:
             manifest["agents"].insert(0, "PlanRegistryAgent")
         if self.verified_discovery:
             manifest["verified_discovery"] = self.verified_discovery
+        if self.source_completeness:
+            manifest["source_completeness"] = self.source_completeness
         evidence_context = self._evidence_context()
         if evidence_context:
             manifest["evidence_context"] = evidence_context
@@ -1061,6 +1079,10 @@ class TopJournalReport:
 
     def _evidence_context(self) -> dict[str, Any]:
         value = self.artifacts.get("evidence_context")
+        return value if isinstance(value, dict) else {}
+
+    def _source_completeness(self) -> dict[str, Any]:
+        value = self.artifacts.get("source_completeness")
         return value if isinstance(value, dict) else {}
 
     def _is_source_columns_smoke(self) -> bool:
