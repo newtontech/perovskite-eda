@@ -63,7 +63,10 @@ def test_research_package_dry_run_uses_canonical_runner_and_ignored_artifact_dir
     assert "--top-k 7" in output
     assert "--candidate-source /tmp/candidates.csv" in output
     assert "--candidate-source-name unit-candidates" in output
-    assert "hybrid_agent_exploration/results/verified_discovery_runs/unit-dataset" in output
+    assert (
+        "hybrid_agent_exploration/results/verified_discovery_runs/unit-dataset"
+        in output
+    )
 
 
 def test_smoke_target_dry_run_caps_rows_in_ignored_artifact_dir():
@@ -128,11 +131,16 @@ def test_cache_collect_target_dry_run_uses_preflight_requirements_and_budget():
     )
 
     assert "hybrid_agent_exploration/src/run_evidence_cache_collector.py" in output
-    assert "--requirements-csv /tmp/artifacts/evidence_cache_preflight/evidence_cache_requirements.csv" in output
+    assert (
+        "--requirements-csv /tmp/artifacts/evidence_cache_preflight/evidence_cache_requirements.csv"
+        in output
+    )
     assert "--dataset-id unit-dataset" in output
     assert "--max-requests 7" in output
     assert "--progress-every 10" in output
-    assert "--output-json /tmp/artifacts/evidence_cache_collection_report.json" in output
+    assert (
+        "--output-json /tmp/artifacts/evidence_cache_collection_report.json" in output
+    )
     assert "--cache-dir" not in output
     assert "--dry-run" not in output
 
@@ -154,13 +162,18 @@ def test_pdf_target_dry_run_checks_pandoc_and_exports_report_pdfs():
     assert "command -v pandoc" in output
     assert "--pdf-engine=xelatex" in output
     assert '-V mainfont="DejaVu Serif"' in output
-    assert "--resource-path=/tmp/artifacts/report_bundle/main_text:/tmp/artifacts" in output
+    assert (
+        "--resource-path=/tmp/artifacts/report_bundle/main_text:/tmp/artifacts"
+        in output
+    )
     assert "main_text/main_text_report.md" in output
     assert "main_text/main_text_report.pdf" in output
     assert "si/supporting_information.md" in output
     assert "si/supporting_information.pdf" in output
     assert "pandoc" in output
-    assert "hybrid_agent_exploration/src/reporting/root_provenance_manifest.py" in output
+    assert (
+        "hybrid_agent_exploration/src/reporting/root_provenance_manifest.py" in output
+    )
     assert "--output-path /tmp/artifacts/provenance_manifest.json" in output
 
 
