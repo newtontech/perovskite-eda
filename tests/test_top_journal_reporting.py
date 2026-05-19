@@ -172,3 +172,85 @@ def test_quality_score_downgrades_failed_review_or_audit():
     )
 
     assert score < 0.7
+
+
+def test_default_plan_registry_covers_top_journal_workflow():
+    from reporting.plan_registry import load_plan_registry
+
+    registry = load_plan_registry()
+
+    assert registry.artifact_policy == "evidence-light"
+    assert [plan.stage for plan in registry.plans] == [
+        "science",
+        "validation",
+        "figure",
+        "writing",
+        "review",
+    ]
+    assert {plan.id for plan in registry.plans} == {
+        "science_story_plan",
+        "generalization_validation_plan",
+        "claim_first_figure_plan",
+        "journal_writing_plan",
+        "reviewer_gate_plan",
+    }
+
+
+def test_plan_registry_manifest_is_written_with_report_bundle(tmp_path):
+    from reporting.plan_registry import load_plan_registry
+    from reporting.top_journal_report import TopJournalReport
+
+    registry = load_plan_registry()
+    bundle = TopJournalReport(
+        _sample_results(),
+        _sample_artifacts(),
+        output_dir=tmp_path,
+        quality_target="top-journal",
+        plan_registry=registry,
+    ).generate()
+
+    manifest = json.loads(bundle.manifest_path.read_text(encoding="utf-8"))
+    plan_manifest = manifest["plan_registry"]
+    assert plan_manifest["artifact_policy"] == "evidence-light"
+    assert [entry["stage"] for entry in plan_manifest["plans"]] == [
+        "science",
+        "validation",
+        "figure",
+        "writing",
+        "review",
+    ]
+    assert all(entry["status"] == "passed" for entry in plan_manifest["plans"])
+
+
+def test_plan_registry_strict_gate_fails_missing_scaffold_and_shap(tmp_path):
+    from reporting.plan_registry import PlanRegistryError, load_plan_registry
+    from reporting.top_journal_report import TopJournalReport
+
+    results = [
+        row for row in _sample_results()
+        if row["config"]["layer4"]["method_id"] == "E42_random_split"
+    ]
+    artifacts = {
+        "y_true": [0.0, 1.0, 2.0],
+        "y_pred": [0.1, 0.9, 1.8],
+        "feature_importances": [0.4, 0.3, 0.2],
+    }
+    registry = load_plan_registry()
+
+    try:
+        TopJournalReport(
+            results,
+            artifacts,
+            output_dir=tmp_path,
+            quality_target="top-journal",
+            plan_registry=registry,
+            enforce_plan_gates=True,
+        ).generate()
+    except PlanRegistryError as exc:
+        message = str(exc)
+    else:
+        message = ""
+
+    assert "generalization_validation_plan" in message
+    assert "scaffold_split" in message
+    assert "shap_diagnostics" in message
