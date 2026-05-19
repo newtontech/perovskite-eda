@@ -6,6 +6,7 @@ import json
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from hashlib import sha256
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
@@ -47,6 +48,8 @@ def collect_evidence_cache(
     write_negative_cache: bool = False,
     progress_every: int = 0,
     progress_callback: ProgressCallback | None = None,
+    shard_count: int = 1,
+    shard_index: int = 0,
 ) -> dict[str, Any]:
     """Fill missing cache entries with a bounded, resumable collection run."""
 
@@ -56,18 +59,32 @@ def collect_evidence_cache(
         raise ValueError("retry_attempts must be >= 1")
     if progress_every < 0:
         raise ValueError("progress_every must be >= 0")
+    _validate_shard(shard_count=shard_count, shard_index=shard_index)
     cache_root = Path(cache_dir)
     reference_cache_path = cache_root / REFERENCE_CACHE_FILE
     molecule_cache_path = cache_root / MOLECULE_CACHE_FILE
     reference_cache = _load_cache(reference_cache_path)
     molecule_cache = _load_cache(molecule_cache_path)
     requirements = _load_requirements(requirements_csv, entity_type=entity_type)
-    missing = _select_missing(
-        requirements, reference_cache=reference_cache, molecule_cache=molecule_cache
+    supported, unsupported = _split_supported(
+        requirements, include_smiles=include_smiles
     )
-    initial_missing_count = len(missing)
-    supported, unsupported = _split_supported(missing, include_smiles=include_smiles)
-    planned = supported[:max_requests]
+    shard_supported = _select_shard(
+        supported, shard_count=shard_count, shard_index=shard_index
+    )
+    shard_unsupported = _select_shard(
+        unsupported, shard_count=shard_count, shard_index=shard_index
+    )
+    missing = _select_missing(
+        shard_supported, reference_cache=reference_cache, molecule_cache=molecule_cache
+    )
+    unsupported_missing = _select_missing(
+        shard_unsupported,
+        reference_cache=reference_cache,
+        molecule_cache=molecule_cache,
+    )
+    initial_missing_count = len(missing) + len(unsupported_missing)
+    planned = missing[:max_requests]
 
     summary = {
         "schema_version": "evidence-cache-collector-v1",
@@ -80,6 +97,7 @@ def collect_evidence_cache(
         "max_requests": max_requests,
         "retry_attempts": retry_attempts,
         "write_negative_cache": write_negative_cache,
+        "shard": {"count": shard_count, "index": shard_index},
         "planned_count": len(planned),
         "attempted_count": 0,
         "remaining_planned_count": len(planned),
@@ -87,20 +105,30 @@ def collect_evidence_cache(
         "negative_written_count": 0,
         "no_evidence_count": 0,
         "error_count": 0,
-        "unsupported_count": len(unsupported),
-        "skipped_existing_count": len(requirements) - len(missing),
-        "remaining_missing_count": len(missing),
+        "unsupported_count": len(unsupported_missing),
+        "skipped_existing_count": (
+            len(shard_supported) + len(shard_unsupported) - initial_missing_count
+        ),
+        "remaining_missing_count": initial_missing_count,
         "entity_type_counts": {},
         "processed": [],
+        "planned": [_requirement_summary(requirement) for requirement in planned],
         "errors": [],
         "unsupported": [
-            _requirement_summary(requirement) for requirement in unsupported
+            _requirement_summary(requirement) for requirement in unsupported_missing
         ],
     }
     if dry_run or max_requests == 0:
-        summary["remaining_missing_count"] = len(missing)
+        summary["remaining_missing_count"] = initial_missing_count
         summary["entity_type_counts"] = _entity_counts(planned)
         return summary
+
+    _initialize_cache_files(
+        reference_cache=reference_cache,
+        reference_cache_path=reference_cache_path,
+        molecule_cache=molecule_cache,
+        molecule_cache_path=molecule_cache_path,
+    )
 
     for requirement in planned:
         evidence: ReferenceEvidence | MoleculeEvidence | None
@@ -182,7 +210,14 @@ def collect_evidence_cache(
         )
 
     remaining = _select_missing(
-        requirements, reference_cache=reference_cache, molecule_cache=molecule_cache
+        shard_supported, reference_cache=reference_cache, molecule_cache=molecule_cache
+    )
+    remaining.extend(
+        _select_missing(
+            shard_unsupported,
+            reference_cache=reference_cache,
+            molecule_cache=molecule_cache,
+        )
     )
     summary["remaining_planned_count"] = 0
     summary["remaining_missing_count"] = len(remaining)
@@ -196,6 +231,78 @@ def write_collection_report(summary: dict[str, Any], output_path: str | Path) ->
     path = Path(output_path)
     _write_json_atomic(summary, path)
     return path
+
+
+def merge_evidence_cache_shards(
+    *,
+    canonical_cache_dir: str | Path,
+    shard_cache_dirs: Iterable[str | Path],
+    entity_type: str = "all",
+    conflict_policy: str = "fail",
+) -> dict[str, Any]:
+    """Merge shard cache JSON files into the canonical cache.
+
+    The default conflict policy fails before writing canonical files. Use
+    ``keep-canonical`` to keep existing canonical entries and earlier shards.
+    """
+
+    if entity_type not in {"all", "reference", "molecule"}:
+        raise ValueError("entity_type must be one of: all, reference, molecule")
+    if conflict_policy not in {"fail", "keep-canonical"}:
+        raise ValueError("conflict_policy must be one of: fail, keep-canonical")
+
+    canonical_root = Path(canonical_cache_dir)
+    ordered_shards = sorted(
+        (Path(path) for path in shard_cache_dirs), key=lambda p: str(p)
+    )
+    merge_plan: dict[str, tuple[Path, list[Path]]] = {}
+    if entity_type in {"all", "reference"}:
+        merge_plan["reference"] = (
+            canonical_root / REFERENCE_CACHE_FILE,
+            [shard / REFERENCE_CACHE_FILE for shard in ordered_shards],
+        )
+    if entity_type in {"all", "molecule"}:
+        merge_plan["molecule"] = (
+            canonical_root / MOLECULE_CACHE_FILE,
+            [shard / MOLECULE_CACHE_FILE for shard in ordered_shards],
+        )
+
+    file_summaries = {
+        cache_type: _merge_cache_file(canonical_path, shard_paths)
+        for cache_type, (canonical_path, shard_paths) in merge_plan.items()
+    }
+    conflicts = [
+        conflict
+        for summary in file_summaries.values()
+        for conflict in summary["conflicts"]
+    ]
+    merge_status = "failed" if conflicts and conflict_policy == "fail" else "merged"
+    if merge_status == "merged":
+        for cache_type, (canonical_path, _) in merge_plan.items():
+            _write_cache(file_summaries[cache_type]["cache"], canonical_path)
+
+    return {
+        "schema_version": "evidence-cache-merge-v1",
+        "generated_at": _now_iso(),
+        "canonical_cache_dir": str(canonical_root),
+        "shard_cache_dirs": [str(path) for path in ordered_shards],
+        "entity_type": entity_type,
+        "conflict_policy": conflict_policy,
+        "merge_status": merge_status,
+        "merged_counts": {
+            "reference": file_summaries.get("reference", {}).get("merged_count", 0),
+            "molecule": file_summaries.get("molecule", {}).get("merged_count", 0),
+        },
+        "conflict_counts": {
+            "reference": file_summaries.get("reference", {}).get("conflict_count", 0),
+            "molecule": file_summaries.get("molecule", {}).get("conflict_count", 0),
+        },
+        "canonical_counts": {
+            "reference": file_summaries.get("reference", {}).get("canonical_count", 0),
+            "molecule": file_summaries.get("molecule", {}).get("canonical_count", 0),
+        },
+        "conflicts": conflicts,
+    }
 
 
 def _load_requirements(path: str | Path, *, entity_type: str) -> list[CacheRequirement]:
@@ -217,6 +324,31 @@ def _load_requirements(path: str | Path, *, entity_type: str) -> list[CacheRequi
             )
         )
     return [requirement for requirement in requirements if requirement.key]
+
+
+def _validate_shard(*, shard_count: int, shard_index: int) -> None:
+    if shard_count < 1:
+        raise ValueError("shard_count must be >= 1")
+    if shard_index < 0 or shard_index >= shard_count:
+        raise ValueError("shard_index must be >= 0 and < shard_count")
+
+
+def _select_shard(
+    requirements: Iterable[CacheRequirement],
+    *,
+    shard_count: int,
+    shard_index: int,
+) -> list[CacheRequirement]:
+    return [
+        requirement
+        for requirement in requirements
+        if _stable_shard_index(requirement, shard_count) == shard_index
+    ]
+
+
+def _stable_shard_index(requirement: CacheRequirement, shard_count: int) -> int:
+    key = f"{requirement.entity_type}\0{requirement.key}".encode("utf-8")
+    return int(sha256(key).hexdigest(), 16) % shard_count
 
 
 def _select_missing(
@@ -332,6 +464,66 @@ def _load_cache(path: Path) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError(f"Evidence cache must be a JSON object: {path}")
     return payload
+
+
+def _merge_cache_file(
+    canonical_path: Path, shard_paths: Iterable[Path]
+) -> dict[str, Any]:
+    merged_cache = _load_cache(canonical_path)
+    source_by_key = {key: str(canonical_path) for key in merged_cache}
+    merged_count = 0
+    conflicts: list[dict[str, str]] = []
+    for shard_path in shard_paths:
+        shard_cache = _load_required_cache(shard_path)
+        for key, value in sorted(shard_cache.items()):
+            if key in merged_cache:
+                if merged_cache[key] == value:
+                    continue
+                conflicts.append(
+                    {
+                        "cache_file": canonical_path.name,
+                        "key": key,
+                        "kept_source": source_by_key[key],
+                        "discarded_source": str(shard_path),
+                        "kept_sha256": _payload_sha256(merged_cache[key]),
+                        "discarded_sha256": _payload_sha256(value),
+                    }
+                )
+                continue
+            merged_cache[key] = value
+            source_by_key[key] = str(shard_path)
+            merged_count += 1
+    return {
+        "cache": merged_cache,
+        "canonical_count": len(merged_cache),
+        "merged_count": merged_count,
+        "conflict_count": len(conflicts),
+        "conflicts": conflicts,
+    }
+
+
+def _load_required_cache(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        raise ValueError(f"Required evidence shard cache file is missing: {path}")
+    return _load_cache(path)
+
+
+def _initialize_cache_files(
+    *,
+    reference_cache: dict[str, Any],
+    reference_cache_path: Path,
+    molecule_cache: dict[str, Any],
+    molecule_cache_path: Path,
+) -> None:
+    if not reference_cache_path.exists():
+        _write_cache(reference_cache, reference_cache_path)
+    if not molecule_cache_path.exists():
+        _write_cache(molecule_cache, molecule_cache_path)
+
+
+def _payload_sha256(payload: Any) -> str:
+    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
+    return sha256(encoded).hexdigest()
 
 
 def _write_cache(cache: dict[str, Any], path: Path) -> None:

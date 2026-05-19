@@ -57,6 +57,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Attempt smiles:<SMILES> molecule keys. Default is false because the current PubChem resolver is CID-backed.",
     )
+    parser.add_argument(
+        "--shard-count",
+        type=int,
+        default=1,
+        help="Total number of independent collector shards.",
+    )
+    parser.add_argument(
+        "--shard-index",
+        type=int,
+        default=0,
+        help="Zero-based index for this collector shard.",
+    )
     return parser.parse_args(argv)
 
 
@@ -91,6 +103,8 @@ def main(argv: list[str] | None = None) -> int:
         write_negative_cache=args.write_negative_cache,
         progress_every=args.progress_every,
         progress_callback=write_progress if args.progress_every else None,
+        shard_count=args.shard_count,
+        shard_index=args.shard_index,
         reference_resolver=CrossrefReferenceVerifier(),
         molecule_resolver=PubChemMoleculeVerifier(),
     )
