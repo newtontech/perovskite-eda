@@ -152,7 +152,7 @@ def _normalize_row(row: dict[str, Any], *, source_name: str) -> dict[str, Any]:
         "availability_status": _status(canonical, "availability_status"),
         "synthesis_status": _status(canonical, "synthesis_status"),
         "safety_status": _status(canonical, "safety_status"),
-        "verification_status": _text(canonical.get("verification_status")) or "verified",
+        "verification_status": _text(canonical.get("verification_status")),
         "verification_sources": json.dumps(verification_sources, ensure_ascii=False, sort_keys=True),
         "pubchem_id": _text(canonical.get("pubchem_id")),
         "cas_number": _text(canonical.get("cas_number")),
@@ -270,6 +270,9 @@ def _provenance(
         "output_columns": list(normalized_df.columns),
         "network_access": "not_used",
         "does_not_generate_candidates": True,
+        "publication_grade": False,
+        "publication_grade_reason": "offline candidate-library normalization does not re-verify candidate identities or availability",
+        "verification_status_policy": "explicit_verified_only",
         "validation": {
             "function": "screening.verified_candidate_discovery.validate_candidate_library_contract",
             "status": "passed",
