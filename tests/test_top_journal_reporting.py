@@ -172,3 +172,81 @@ def test_quality_score_downgrades_failed_review_or_audit():
     )
 
     assert score < 0.7
+
+
+def test_default_plan_registry_covers_top_journal_workflow():
+    from reporting.plan_registry import load_plan_registry
+
+    registry = load_plan_registry()
+
+    assert registry.artifact_policy == "evidence-light"
+    assert [plan.stage for plan in registry.plans] == [
+        "science",
+        "validation",
+        "figure",
+        "writing",
+        "review",
+    ]
+    assert {plan.id for plan in registry.plans} == {
+        "science_story_plan",
+        "generalization_validation_plan",
+        "claim_first_figure_plan",
+        "journal_writing_plan",
+        "reviewer_gate_plan",
+    }
+
+
+def test_plan_registry_manifest_is_written_with_report_bundle(tmp_path):
+    from reporting.plan_registry import load_plan_registry
+    from reporting.top_journal_report import TopJournalReport
+
+    registry = load_plan_registry()
+    bundle = TopJournalReport(
+        _sample_results(),
+        _sample_artifacts(),
+        output_dir=tmp_path,
+        quality_target="top-journal",
+        plan_registry=registry,
+    ).generate()
+
+    manifest = json.loads(bundle.manifest_path.read_text(encoding="utf-8"))
+    plan_manifest = manifest["plan_registry"]
+    assert plan_manifest["artifact_policy"] == "evidence-light"
+    assert [entry["stage"] for entry in plan_manifest["plans"]] == [
+        "science",
+        "validation",
+        "figure",
+        "writing",
+        "review",
+    ]
+    assert all(entry["status"] == "passed" for entry in plan_manifest["plans"])
+
+
+def test_plan_registry_strict_gate_fails_missing_scaffold_and_shap():
+    from reporting.plan_registry import PlanRegistryError, load_plan_registry
+
+    registry = load_plan_registry()
+    context = {
+        "successful_results": True,
+        "successful_runs": 4,
+        "prediction_arrays": True,
+        "main_figures": 5,
+        "figure_claims": 5,
+        "figures_in_context": True,
+        "claim_ledger": True,
+        "metric_claims": 3,
+        "references": 40,
+        "review_report": True,
+        "review_passed": True,
+        "audit_passed": True,
+    }
+    try:
+        registry.require_passed(context)
+    except PlanRegistryError as exc:
+        message = str(exc)
+    else:
+        message = ""
+
+    assert "generalization_validation_plan" in message
+    assert "scaffold_split" in message
+    assert "shap_diagnostics" in message
