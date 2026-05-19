@@ -82,14 +82,21 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
         package.verified_discovery_dir / "dataset" / "verified_train.csv",
         package.verified_discovery_dir / "dataset" / "quarantine.csv",
         package.verified_discovery_dir / "dataset" / "doi_manifest.json",
+        package.verified_discovery_dir / "dataset" / "provenance.json",
         package.verified_discovery_dir / "dataset" / "data_audit_report.md",
+        package.verified_discovery_dir / "model" / "model_metrics.json",
+        package.verified_discovery_dir / "model" / "model_manifest.json",
         package.verified_discovery_dir / "discovery" / "ranked_candidates.csv",
+        package.verified_discovery_dir / "discovery" / "candidate_discovery_manifest.json",
+        package.verified_discovery_dir / "discovery" / "candidate_discovery_audit.md",
         package.verified_discovery_dir / "workflow_manifest.json",
         package.candidate_library_dir / "candidate_library.csv",
         package.candidate_library_dir / "source_summary.json",
         package.candidate_library_dir / "provenance.json",
         package.report_dir / "main_text" / "main_text_report.md",
         package.report_dir / "main_text" / "claim_ledger.json",
+        package.report_dir / "main_text" / "review_report.json",
+        package.report_dir / "main_text" / "run_manifest.json",
         package.report_dir / "si" / "supporting_information.md",
         package.root_provenance_manifest_json,
         package.package_manifest_json,
@@ -103,7 +110,57 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert package_manifest["candidate_library_rows"] == 1
     assert package_manifest["ranked_candidates"] == 1
     assert package_manifest["publication_grade"] is False
+    assert package_manifest["verification_level"] == "source_columns_only"
+    assert package_manifest["source_columns_is_smoke_only"] is True
+    assert package_manifest["max_rows"] is None
+    assert package_manifest["max_rows_is_smoke_only"] is False
+    assert package_manifest["candidate_pool_contract_version"] == "candidate-library-v1"
     assert package_manifest["outputs"]["root_provenance_manifest_json"] == "provenance_manifest.json"
+
+    workflow_manifest = json.loads(
+        (package.verified_discovery_dir / "workflow_manifest.json").read_text(encoding="utf-8")
+    )
+    assert workflow_manifest["publication_grade"] is False
+    assert workflow_manifest["verification_level"] == "source_columns_only"
+    assert workflow_manifest["source_columns_is_smoke_only"] is True
+
+    candidate_provenance = json.loads(
+        (package.candidate_library_dir / "provenance.json").read_text(encoding="utf-8")
+    )
+    assert candidate_provenance["network_access"] == "not_used"
+    assert candidate_provenance["does_not_generate_candidates"] is True
+    assert candidate_provenance["validation"]["status"] == "passed"
+
+    report_text = (package.report_dir / "main_text" / "main_text_report.md").read_text(encoding="utf-8")
+    assert "training-only" in report_text
+    unsupported_phrases = [
+        "substructural fingerprints (Morgan) outperform",
+        "incorporating baseline device PCE as a feature helps",
+        "SHAP interpretability analysis suggests",
+        "SHAP analysis reveals",
+        "excellent predictive ability",
+        "external validation was performed",
+    ]
+    for phrase in unsupported_phrases:
+        assert phrase not in report_text
+
+    review_report = json.loads(
+        (package.report_dir / "main_text" / "review_report.json").read_text(encoding="utf-8")
+    )
+    assert review_report["claim_audit"]["unsupported_claims"] == []
+
+    run_manifest = json.loads(
+        (package.report_dir / "main_text" / "run_manifest.json").read_text(encoding="utf-8")
+    )
+    assert run_manifest["best_model"]["pearson_r"] is None
+    assert run_manifest["evidence_context"]["source_columns_is_smoke_only"] is True
+    assert run_manifest["evidence_context"]["metric_scope"] == "training_only"
+
+    si_text = (package.report_dir / "si" / "supporting_information.md").read_text(encoding="utf-8")
+    assert "source-columns" in si_text
+    assert "smoke-only" in si_text
+    assert "training-only" in si_text
+    assert "Cross-validation was not supplied" in si_text
 
     root_manifest = json.loads(package.root_provenance_manifest_json.read_text(encoding="utf-8"))
     assert root_manifest["dataset_id"] == "package-fixture"
@@ -116,4 +173,3 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     ranked = pd.read_csv(package.verified_discovery_dir / "discovery" / "ranked_candidates.csv")
     assert ranked["candidate_id"].tolist() == ["fixture-vendor-source:pubchem-7843"]
     assert "candidate_score" in ranked.columns
-

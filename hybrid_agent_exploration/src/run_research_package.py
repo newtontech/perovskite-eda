@@ -75,9 +75,10 @@ def run_research_package(
         candidate_pool = candidate_artifacts.candidate_library_csv
         candidate_library_rows = candidate_artifacts.output_count
 
+    verification_level = _verification_level(evidence_mode)
     run_metadata = {
         "evidence_mode": evidence_mode,
-        "verification_level": "external_cached" if evidence_mode == "external-cached" else "source_columns_only",
+        "verification_level": verification_level,
         "publication_grade": evidence_mode == "external-cached",
         "source_columns_is_smoke_only": evidence_mode == "source-columns",
         "input_path": str(Path(input_path)),
@@ -105,6 +106,16 @@ def run_research_package(
     report_inputs = _report_inputs(
         verified_discovery_dir,
         top_n=verified_discovery_top_n or top_k,
+        evidence_context={
+            "evidence_mode": evidence_mode,
+            "verification_level": verification_level,
+            "publication_grade": evidence_mode == "external-cached",
+            "source_columns_is_smoke_only": evidence_mode == "source-columns",
+            "max_rows": max_rows,
+            "max_rows_is_smoke_only": max_rows is not None,
+            "metric_scope": "training_only",
+            "candidate_pool_contract_version": CANDIDATE_LIBRARY_CONTRACT_VERSION,
+        },
     )
     main_bundle = TopJournalReport(
         report_inputs["results"],
@@ -140,6 +151,8 @@ def run_research_package(
             report_quality_score=main_bundle.quality_score,
             root_manifest_path=root_manifest_path,
             package_manifest_path=package_manifest_path,
+            max_rows=max_rows,
+            candidate_pool_contract_version=CANDIDATE_LIBRARY_CONTRACT_VERSION,
         ),
         package_manifest_path,
     )
@@ -153,7 +166,12 @@ def run_research_package(
     )
 
 
-def _report_inputs(verified_discovery_dir: Path, *, top_n: int) -> dict[str, Any]:
+def _report_inputs(
+    verified_discovery_dir: Path,
+    *,
+    top_n: int,
+    evidence_context: dict[str, Any],
+) -> dict[str, Any]:
     metrics = _read_json(verified_discovery_dir / "model" / "model_metrics.json")
     workflow = _read_json(verified_discovery_dir / "workflow_manifest.json")
     feature_columns = metrics.get("feature_columns", [])
@@ -167,7 +185,7 @@ def _report_inputs(verified_discovery_dir: Path, *, top_n: int) -> dict[str, Any
             "layer1": {"method_id": "strict_verified_data"},
             "layer2": {"method_id": "default_smiles_features"},
             "layer3": {"method_id": metrics.get("model_class", "model")},
-            "layer4": {"method_id": "verified_discovery_training"},
+            "layer4": {"method_id": "training_only_fit"},
             "layer5": {"method_id": "candidate_discovery_report"},
             "target": metrics.get("target_column", "delta_pce"),
             "baseline_as_feature": False,
@@ -177,12 +195,14 @@ def _report_inputs(verified_discovery_dir: Path, *, top_n: int) -> dict[str, Any
             "r2": metrics.get("train_r2", 0.0),
             "rmse": metrics.get("train_rmse"),
             "mae": metrics.get("train_mae"),
-            "pearson_r": metrics.get("train_pearson_r", 0.0),
+            "pearson_r": metrics.get("train_pearson_r"),
+            "metric_scope": "training_only",
         },
     }
     artifacts = {
         "verified_discovery_artifact_dir": verified_discovery_dir,
         "verified_discovery_top_n": top_n,
+        "evidence_context": evidence_context,
         "multi_model_results": [
             {
                 "name": "Verified discovery model",
@@ -211,13 +231,21 @@ def _package_manifest(
     report_quality_score: float,
     root_manifest_path: Path,
     package_manifest_path: Path,
+    max_rows: int | None,
+    candidate_pool_contract_version: str,
 ) -> dict[str, Any]:
+    verification_level = _verification_level(evidence_mode)
     return {
         "dataset_id": dataset_id,
         "generated_at": _now_iso(),
         "package_runner": "run_research_package",
         "evidence_mode": evidence_mode,
+        "verification_level": verification_level,
         "publication_grade": evidence_mode == "external-cached",
+        "source_columns_is_smoke_only": evidence_mode == "source-columns",
+        "max_rows": max_rows,
+        "max_rows_is_smoke_only": max_rows is not None,
+        "candidate_pool_contract_version": candidate_pool_contract_version,
         "verified_rows": discovery_artifacts.verified_rows,
         "quarantine_rows": discovery_artifacts.quarantine_rows,
         "ranked_candidates": discovery_artifacts.ranked_candidates,
@@ -254,6 +282,10 @@ def _relative(path: Path | None, root: Path) -> str | None:
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def _verification_level(evidence_mode: str) -> str:
+    return "external_cached" if evidence_mode == "external-cached" else "source_columns_only"
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
