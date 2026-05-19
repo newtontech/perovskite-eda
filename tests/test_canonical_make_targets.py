@@ -78,6 +78,8 @@ def test_pdf_target_dry_run_checks_pandoc_and_exports_report_pdfs():
     assert "si/supporting_information.md" in output
     assert "si/supporting_information.pdf" in output
     assert "pandoc" in output
+    assert "hybrid_agent_exploration/src/reporting/root_provenance_manifest.py" in output
+    assert "--output-path /tmp/artifacts/provenance_manifest.json" in output
 
 
 def test_test_research_package_target_runs_canonical_pytest_slice():
