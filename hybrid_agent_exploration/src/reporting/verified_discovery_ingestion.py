@@ -87,24 +87,50 @@ def format_verified_discovery_markdown(summary: dict[str, Any] | None) -> str:
         "",
         "### Top Verified Candidates",
         "",
-        "| Rank | Record ID | SMILES | Predicted Delta PCE | Uncertainty | DOI |",
-        "|------|-----------|--------|---------------------|-------------|-----|",
+        (
+            "| Rank | Candidate ID | Record ID | SMILES | Source | Availability | "
+            "Synthesis | Safety | Predicted Delta PCE | Candidate Score | Uncertainty | DOI |"
+        ),
+        (
+            "|------|--------------|-----------|--------|--------|--------------|"
+            "-----------|--------|---------------------|-----------------|-------------|-----|"
+        ),
     ]
     candidates = summary.get("top_candidates", [])
     if candidates:
         for row in candidates:
             lines.append(
-                "| {rank} | {record_id} | `{smiles}` | {score} | {uncertainty} | {doi} |".format(
+                (
+                    "| {rank} | {candidate_id} | {record_id} | `{smiles}` | {source_name} | "
+                    "{availability} | {synthesis} | {safety} | {score} | {candidate_score} | "
+                    "{uncertainty} | {doi} |"
+                ).format(
                     rank=_text(row.get("rank")) or "?",
+                    candidate_id=_text(row.get("candidate_id")) or _text(row.get("record_id")) or "?",
                     record_id=_text(row.get("record_id")) or "?",
                     smiles=_text(row.get("smiles")) or "?",
+                    source_name=_text(row.get("source_name")) or "N/A",
+                    availability=_text(row.get("availability_status")) or "N/A",
+                    synthesis=_text(row.get("synthesis_status")) or "N/A",
+                    safety=_text(row.get("safety_status")) or "N/A",
                     score=_format_float(row.get("predicted_delta_pce")),
+                    candidate_score=_format_float(row.get("candidate_score")),
                     uncertainty=_format_float(row.get("uncertainty")),
                     doi=_text(row.get("doi")) or "N/A",
                 )
             )
+        source_urls = sorted(
+            {
+                _text(row.get("source_url"))
+                for row in candidates
+                if _text(row.get("source_url"))
+            }
+        )
+        if source_urls:
+            lines.extend(["", "Candidate source URLs:"])
+            lines.extend(f"- {url}" for url in source_urls)
     else:
-        lines.append("| N/A | N/A | N/A | N/A | N/A | N/A |")
+        lines.append("| N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |")
 
     lines.extend(["", "### Quarantine Reason Summary", ""])
     reasons = summary.get("quarantine_reason_summary", {})
@@ -145,11 +171,27 @@ def _relative_to_artifact_dir(path: Path, artifact_dir: Path) -> str:
 def _read_top_candidates(path: Path, *, top_n: int) -> list[dict[str, Any]]:
     if not path.exists():
         raise FileNotFoundError(f"Verified discovery artifact missing: {path}")
-    columns = ("rank", "record_id", "smiles", "predicted_delta_pce", "uncertainty", "doi", "verification_status")
+    columns = (
+        "rank",
+        "record_id",
+        "candidate_id",
+        "smiles",
+        "predicted_delta_pce",
+        "uncertainty",
+        "doi",
+        "source_name",
+        "source_url",
+        "availability_status",
+        "synthesis_status",
+        "safety_status",
+        "candidate_score",
+        "score_components",
+        "verification_status",
+    )
     rows: list[dict[str, Any]] = []
     with path.open("r", encoding="utf-8", newline="") as handle:
         for row in csv.DictReader(handle):
-            rows.append({column: _coerce_cell(row.get(column, "")) for column in columns if column in row})
+            rows.append({column: _coerce_candidate_cell(column, row.get(column, "")) for column in columns if column in row})
             if len(rows) >= top_n:
                 break
     return rows
@@ -187,6 +229,19 @@ def _coerce_cell(value: Any) -> Any:
     if number.is_integer() and "." not in text:
         return int(number)
     return number
+
+
+def _coerce_candidate_cell(column: str, value: Any) -> Any:
+    if column == "score_components":
+        text = _text(value)
+        if not text:
+            return {}
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            return text
+        return parsed if isinstance(parsed, dict) else parsed
+    return _coerce_cell(value)
 
 
 def _format_float(value: Any) -> str:
