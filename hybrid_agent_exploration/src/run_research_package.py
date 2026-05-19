@@ -84,7 +84,7 @@ def run_research_package(
         candidate_library_rows = candidate_artifacts.output_count
 
     verification_level = _verification_level(evidence_mode)
-    dataset_publication_grade = evidence_mode == "external-cached"
+    dataset_publication_grade = evidence_mode == "external-cached" and max_rows is None
     candidate_library_publication_grade = candidate_source_path is None
     publication_grade = dataset_publication_grade and candidate_library_publication_grade
     run_metadata = {

@@ -21,6 +21,7 @@ import pandas as pd
 from screening.verified_candidate_discovery import (
     CANDIDATE_LIBRARY_CONTRACT_VERSION,
     CANDIDATE_LIBRARY_REQUIRED_COLUMNS,
+    CandidateLibraryContractError,
     validate_candidate_library_contract,
 )
 
@@ -101,6 +102,7 @@ class CandidateLibraryBuilder:
         """Normalize a source dataframe and validate it against candidate-library-v1."""
 
         normalized = _normalize_source_table(df, source_name=source_name)
+        _require_explicit_verified_status(normalized)
         validate_candidate_library_contract(normalized)
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -138,6 +140,18 @@ def _load_table(path: Path) -> pd.DataFrame:
 def _normalize_source_table(df: pd.DataFrame, *, source_name: str) -> pd.DataFrame:
     rows = [_normalize_row(row, source_name=source_name) for row in df.to_dict(orient="records")]
     return pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
+
+
+def _require_explicit_verified_status(df: pd.DataFrame) -> None:
+    statuses = df["verification_status"].map(_text)
+    bad = df[statuses != "verified"]
+    if bad.empty:
+        return
+    identifiers = bad["candidate_id"].map(_text).head(10).tolist()
+    raise CandidateLibraryContractError(
+        "Candidate library builder requires verification_status=verified for every row; "
+        f"blocked rows: {', '.join(identifiers)}"
+    )
 
 
 def _normalize_row(row: dict[str, Any], *, source_name: str) -> dict[str, Any]:

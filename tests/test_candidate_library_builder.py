@@ -151,6 +151,24 @@ def test_builder_rejects_missing_explicit_verification_status(tmp_path):
     assert "pubchem-vendor-fixture:pubchem-702" in str(exc.value)
 
 
+def test_builder_rejects_explicit_non_verified_status(tmp_path):
+    from screening.candidate_library_builder import CandidateLibraryBuilder
+    from screening.verified_candidate_discovery import CandidateLibraryContractError
+
+    rows = _source_rows()
+    rows.loc[0, "verification_status"] = "manual_review"
+
+    with pytest.raises(CandidateLibraryContractError) as exc:
+        CandidateLibraryBuilder(output_dir=tmp_path / "out").build_from_dataframe(
+            rows,
+            dataset_id="non-verified-status",
+            source_name="pubchem-vendor-fixture",
+        )
+
+    assert "verification_status=verified" in str(exc.value)
+    assert "pubchem-vendor-fixture:pubchem-702" in str(exc.value)
+
+
 def test_builder_records_explicit_verified_status_policy(tmp_path):
     from screening.candidate_library_builder import CandidateLibraryBuilder
 

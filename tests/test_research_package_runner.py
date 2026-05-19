@@ -256,3 +256,52 @@ def test_external_cached_candidate_source_does_not_overclaim_publication_grade(t
     si_text = (package.report_dir / "si" / "supporting_information.md").read_text(encoding="utf-8")
     assert "Publication-grade flag: `False`" in si_text
     assert "Candidate-library publication-grade flag: `False`" in si_text
+
+
+def test_external_cached_max_rows_does_not_overclaim_publication_grade(tmp_path, monkeypatch):
+    import run_research_package as runner
+    from harness.authenticity import RealDataAuthenticator
+    from run_verified_discovery import SourceColumnMoleculeVerifier, SourceColumnReferenceVerifier
+
+    raw_csv = tmp_path / "raw_psc.csv"
+    pd.DataFrame(
+        [
+            _raw_record("row-001", "10.1021/acs.jpclett.6c00119", "C", 0.25),
+            _raw_record("row-002", "10.1021/acs.jpclett.6c00120", "CC", 0.50),
+            _raw_record("row-003", "10.1021/acs.jpclett.6c00121", "CCC", 0.75),
+            _raw_record("row-004", "10.1021/acs.jpclett.6c00122", "CCCC", 1.00),
+            _raw_record("row-005", "10.1021/acs.jpclett.6c00123", "CCO", 0.40),
+        ]
+    ).to_csv(raw_csv, index=False)
+
+    def build_source_column_authenticator(evidence_mode, df, cache_dir):
+        return RealDataAuthenticator(
+            reference_verifier=SourceColumnReferenceVerifier(df),
+            molecule_verifier=SourceColumnMoleculeVerifier(),
+        )
+
+    monkeypatch.setattr(runner, "build_authenticator", build_source_column_authenticator)
+
+    package = runner.run_research_package(
+        input_path=raw_csv,
+        output_dir=tmp_path / "research_package",
+        dataset_id="external-cached-smoke",
+        evidence_mode="external-cached",
+        max_rows=4,
+        min_verified_rows=4,
+        top_k=1,
+    )
+
+    package_manifest = json.loads(package.package_manifest_json.read_text(encoding="utf-8"))
+    assert package_manifest["max_rows"] == 4
+    assert package_manifest["max_rows_is_smoke_only"] is True
+    assert package_manifest["dataset_publication_grade"] is False
+    assert package_manifest["candidate_library_publication_grade"] is True
+    assert package_manifest["publication_grade"] is False
+
+    run_manifest = json.loads(
+        (package.report_dir / "main_text" / "run_manifest.json").read_text(encoding="utf-8")
+    )
+    assert run_manifest["evidence_context"]["max_rows_is_smoke_only"] is True
+    assert run_manifest["evidence_context"]["dataset_publication_grade"] is False
+    assert run_manifest["evidence_context"]["publication_grade"] is False
