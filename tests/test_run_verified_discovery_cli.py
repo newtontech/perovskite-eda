@@ -98,3 +98,64 @@ def test_gitignore_excludes_verified_discovery_runtime_outputs():
     assert "hybrid_agent_exploration/results/verified_discovery_runs/" in gitignore
     assert "hybrid_agent_exploration/results/verified_discovery_smoke*/" in gitignore
     assert "**/evidence_cache/" in gitignore
+
+
+def test_cli_accepts_external_candidate_pool_path(tmp_path):
+    from run_verified_discovery import main
+
+    input_csv = tmp_path / "raw.csv"
+    candidate_csv = tmp_path / "external_candidates.csv"
+    output_dir = tmp_path / "out"
+    pd.DataFrame(
+        [
+            _record("row-001", "10.1021/acs.jpclett.6c00119", "C", 0.25),
+            _record("row-002", "10.1021/acs.jpclett.6c00120", "CC", 0.50),
+        ]
+    ).to_csv(input_csv, index=False)
+    pd.DataFrame(
+        [
+            {
+                "candidate_id": "external-001",
+                "smiles": "CCCC",
+                "pubchem_id": "7843",
+                "cas_number": "106-97-8",
+                "vendor_name": "TCI",
+                "vendor_catalog_id": "B0001",
+                "source_name": "vendor_catalog",
+                "source_url": "https://example.com/catalog/B0001",
+                "availability_status": "commercial",
+                "synthesis_status": "commercial",
+                "safety_status": "sds_available",
+                "verification_status": "verified",
+                "verification_sources": json.dumps([
+                    {"kind": "molecule", "source": "pubchem", "pubchem_id": "7843"}
+                ]),
+            }
+        ]
+    ).to_csv(candidate_csv, index=False)
+
+    exit_code = main(
+        [
+            "--input",
+            str(input_csv),
+            "--candidate-pool",
+            str(candidate_csv),
+            "--output-dir",
+            str(output_dir),
+            "--dataset-id",
+            "cli-external-candidate-fixture",
+            "--evidence-mode",
+            "source-columns",
+            "--min-verified-rows",
+            "2",
+            "--top-k",
+            "1",
+        ]
+    )
+
+    assert exit_code == 0
+    ranked = pd.read_csv(output_dir / "discovery" / "ranked_candidates.csv")
+    assert ranked["candidate_id"].tolist() == ["external-001"]
+    manifest = json.loads((output_dir / "workflow_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["candidate_pool_path"] == str(candidate_csv)
+    assert manifest["candidate_pool_contract_version"] == "candidate-library-v1"

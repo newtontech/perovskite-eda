@@ -18,6 +18,7 @@ from harness.authenticity import (
     RealDataAuthenticator,
     ReferenceEvidence,
 )
+from screening.verified_candidate_discovery import CANDIDATE_LIBRARY_CONTRACT_VERSION
 from screening.verified_discovery_workflow import VerifiedDiscoveryWorkflow
 
 
@@ -131,6 +132,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--cache-dir",
         help="Evidence cache directory; defaults to hybrid_agent_exploration/.cache/verified_discovery/<dataset-id>/evidence_cache.",
     )
+    parser.add_argument(
+        "--candidate-pool",
+        help="Optional CSV/XLSX verified external candidate library to rank instead of the dataset-derived pool.",
+    )
     parser.add_argument("--top-k", type=int, default=100, help="Number of ranked candidates to emit.")
     parser.add_argument("--min-verified-rows", type=int, default=10, help="Minimum strict verified training rows.")
     parser.add_argument("--max-rows", type=int, help="Optional input row cap for smoke runs.")
@@ -150,7 +155,10 @@ def main(argv: list[str] | None = None) -> int:
         "source_columns_is_smoke_only": args.evidence_mode == "source-columns",
         "input_path": str(Path(args.input)),
         "max_rows": args.max_rows,
+        "candidate_pool_contract_version": CANDIDATE_LIBRARY_CONTRACT_VERSION,
     }
+    if args.candidate_pool:
+        run_metadata["candidate_pool_path"] = str(Path(args.candidate_pool))
     if args.evidence_mode == "external-cached":
         run_metadata["cache_dir"] = str(cache_dir)
     artifacts = VerifiedDiscoveryWorkflow(
@@ -162,6 +170,7 @@ def main(argv: list[str] | None = None) -> int:
         top_k=args.top_k,
         min_verified_rows=args.min_verified_rows,
         run_metadata=run_metadata,
+        candidate_pool=args.candidate_pool,
     )
     print(f"[verified-discovery] workflow_manifest={artifacts.workflow_manifest_json}")
     print(f"[verified-discovery] verified_rows={artifacts.verified_rows}")

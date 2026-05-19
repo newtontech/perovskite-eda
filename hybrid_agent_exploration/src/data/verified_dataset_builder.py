@@ -26,9 +26,17 @@ from harness.authenticity import (
 ARTIFACT_POLICY = "verified-light-artifacts-in-git"
 DEFAULT_CANDIDATE_COLUMNS = (
     "record_id",
+    "candidate_id",
     "smiles",
     "pubchem_id",
     "cas_number",
+    "source_name",
+    "source_url",
+    "availability_status",
+    "synthesis_status",
+    "safety_status",
+    "vendor_name",
+    "vendor_catalog_id",
     "molecular_formula",
     "molecular_weight",
     "h_bond_donors",
@@ -189,8 +197,58 @@ def _candidate_pool(rows: list[dict[str, Any]], candidate_columns: Iterable[str]
         if key in seen:
             continue
         seen.add(key)
-        candidates.append({column: row.get(column) for column in columns if column in row})
+        candidates.append(_candidate_row(row, columns))
     return candidates
+
+
+def _candidate_row(row: dict[str, Any], columns: Iterable[str]) -> dict[str, Any]:
+    sources = _verification_sources(row)
+    molecule_source = _first_source({"verification_sources": sources}, "molecule")
+    reference_source = _first_source({"verification_sources": sources}, "reference")
+    primary_source = molecule_source or (sources[0] if sources else {})
+    defaults = {
+        "candidate_id": _text(row.get("candidate_id")) or _text(row.get("record_id")),
+        "source_name": _text(row.get("source_name")) or _text(primary_source.get("source")),
+        "source_url": _text(row.get("source_url")) or _candidate_source_url(row, molecule_source, reference_source),
+        "availability_status": _text(row.get("availability_status")) or "not_assessed",
+        "synthesis_status": _text(row.get("synthesis_status")) or "reported_in_literature",
+        "safety_status": _text(row.get("safety_status")) or "not_assessed",
+        "vendor_name": row.get("vendor_name"),
+        "vendor_catalog_id": row.get("vendor_catalog_id"),
+        "verification_sources": json.dumps(sources, ensure_ascii=False, sort_keys=True),
+    }
+    return {column: defaults.get(column, row.get(column)) for column in columns}
+
+
+def _candidate_source_url(
+    row: dict[str, Any],
+    molecule_source: dict[str, Any],
+    reference_source: dict[str, Any],
+) -> str:
+    for source in (molecule_source, reference_source):
+        url = _text(source.get("url"))
+        if url:
+            return url
+    pubchem_id = _text(row.get("pubchem_id"))
+    if pubchem_id:
+        return f"https://pubchem.ncbi.nlm.nih.gov/compound/{pubchem_id}"
+    doi = _text(row.get("doi"))
+    if doi:
+        return f"https://doi.org/{doi}"
+    return "verified_dataset"
+
+
+def _verification_sources(row: dict[str, Any]) -> list[dict[str, Any]]:
+    sources = row.get("verification_sources", [])
+    if isinstance(sources, str):
+        try:
+            parsed = json.loads(sources)
+        except json.JSONDecodeError:
+            return []
+        sources = parsed
+    if not isinstance(sources, list):
+        return []
+    return [source for source in sources if isinstance(source, dict)]
 
 
 def _doi_manifest(dataset_id: str, verified_rows: list[dict[str, Any]]) -> dict[str, Any]:
@@ -222,7 +280,7 @@ def _doi_manifest(dataset_id: str, verified_rows: list[dict[str, Any]]) -> dict[
 
 
 def _first_source(row: dict[str, Any], kind: str) -> dict[str, Any]:
-    for source in row.get("verification_sources", []):
+    for source in _verification_sources(row):
         if source.get("kind") == kind:
             return source
     return {}
