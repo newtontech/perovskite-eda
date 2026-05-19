@@ -62,6 +62,7 @@ def collect_evidence_cache(
     molecule_cache = _load_cache(molecule_cache_path)
     requirements = _load_requirements(requirements_csv, entity_type=entity_type)
     missing = _select_missing(requirements, reference_cache=reference_cache, molecule_cache=molecule_cache)
+    initial_missing_count = len(missing)
     supported, unsupported = _split_supported(missing, include_smiles=include_smiles)
     planned = supported[:max_requests]
 
@@ -102,7 +103,7 @@ def collect_evidence_cache(
         if requirement.entity_type == "reference":
             evidence, error = _resolve_with_retry(lambda: reference_resolver(requirement.key), retry_attempts)
             if error is not None:
-                _record_error(summary, requirement, error)
+                _record_error(summary, requirement, error, initial_missing_count=initial_missing_count)
                 _emit_progress(summary, progress_every=progress_every, progress_callback=progress_callback)
                 continue
             should_write_negative = write_negative_cache
@@ -113,7 +114,7 @@ def collect_evidence_cache(
             record = _molecule_record(requirement.key)
             evidence, error = _resolve_with_retry(lambda: molecule_resolver(record), retry_attempts)
             if error is not None:
-                _record_error(summary, requirement, error)
+                _record_error(summary, requirement, error, initial_missing_count=initial_missing_count)
                 _emit_progress(summary, progress_every=progress_every, progress_callback=progress_callback)
                 continue
             should_write_negative = write_negative_cache and not _is_smiles_requirement(requirement)
@@ -142,7 +143,7 @@ def collect_evidence_cache(
                 "record_ids": requirement.record_ids,
             }
         )
-        _update_progress(summary)
+        _update_progress(summary, initial_missing_count=initial_missing_count)
         _emit_progress(summary, progress_every=progress_every, progress_callback=progress_callback)
 
     remaining = _select_missing(requirements, reference_cache=reference_cache, molecule_cache=molecule_cache)
@@ -228,17 +229,25 @@ def _resolve_with_retry(
     return None, str(last_error)
 
 
-def _record_error(summary: dict[str, Any], requirement: CacheRequirement, error: str) -> None:
+def _record_error(
+    summary: dict[str, Any],
+    requirement: CacheRequirement,
+    error: str,
+    *,
+    initial_missing_count: int,
+) -> None:
     summary["attempted_count"] += 1
     summary["error_count"] += 1
     summary["errors"].append({**_requirement_summary(requirement), "error": error})
-    _update_progress(summary)
+    _update_progress(summary, initial_missing_count=initial_missing_count)
 
 
-def _update_progress(summary: dict[str, Any]) -> None:
+def _update_progress(summary: dict[str, Any], *, initial_missing_count: int) -> None:
     planned_count = int(summary["planned_count"])
     attempted_count = int(summary["attempted_count"])
+    resolved_missing_count = int(summary["positive_written_count"]) + int(summary["negative_written_count"])
     summary["remaining_planned_count"] = max(planned_count - attempted_count, 0)
+    summary["remaining_missing_count"] = max(initial_missing_count - resolved_missing_count, 0)
 
 
 def _emit_progress(

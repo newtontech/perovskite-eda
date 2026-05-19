@@ -361,6 +361,7 @@ def test_collector_emits_progress_snapshots_during_batch(tmp_path):
     assert summary["attempted_count"] == 3
     assert [snapshot["attempted_count"] for snapshot in snapshots] == [1, 2, 3]
     assert [snapshot["remaining_planned_count"] for snapshot in snapshots] == [2, 1, 0]
+    assert [snapshot["remaining_missing_count"] for snapshot in snapshots] == [3, 3, 3]
     assert snapshots[0]["positive_written_count"] == 1
     assert snapshots[1]["error_count"] == 1
     assert snapshots[2]["no_evidence_count"] == 1
