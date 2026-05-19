@@ -18,6 +18,10 @@ from .figure_selector import FigureSelector
 from .image_embedder import embed_markdown_images
 from .shap_analyzer import SHAPAnalyzer
 from .molecular_plots import MolecularPlotter
+from .verified_discovery_ingestion import (
+    format_verified_discovery_markdown,
+    load_verified_discovery_summary,
+)
 
 
 class SIGenerator:
@@ -37,6 +41,7 @@ class SIGenerator:
         self.fg = FigureGenerator(self.fig_dir, "si")
         self.shap = SHAPAnalyzer(self.fig_dir)
         self.mol = MolecularPlotter(self.fig_dir)
+        self.verified_discovery = load_verified_discovery_summary(self.artifacts)
 
     def generate(self) -> Path:
         """Generate the complete SI document."""
@@ -78,6 +83,11 @@ class SIGenerator:
             lines.append(f"**Figure S{i}**. {caption}")
             lines.append("")
             lines.append(f"![{rel}](figures/{rel})")
+            lines.append("")
+
+        if self.verified_discovery:
+            lines.append("## S9. Verified Discovery Provenance")
+            lines.append(format_verified_discovery_markdown(self.verified_discovery))
             lines.append("")
 
         lines.append("---")
