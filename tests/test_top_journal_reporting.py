@@ -269,6 +269,22 @@ def test_claim_auditor_flags_unsupported_performance_claims():
     assert findings["passed"] is False
 
 
+def test_claim_auditor_flags_candidate_discovery_claims_without_manifest_evidence():
+    from reporting.research_crew import ClaimAuditorAgent
+
+    text = (
+        "We screened 5,000 PubChem candidates and discovered SAM-1 "
+        "with a predicted PCE of 26.8%."
+    )
+    ledger = [{"claim": "R2 is modest", "evidence_id": "metric:best_model.r2"}]
+    findings = ClaimAuditorAgent(max_supported_r2=0.24).audit_text(text, ledger)
+
+    phrases = {item["phrase"] for item in findings["unsupported_claims"]}
+    assert "5,000 PubChem candidates" in phrases
+    assert "SAM-1 predicted PCE 26.8%" in phrases
+    assert findings["passed"] is False
+
+
 def test_quality_score_downgrades_failed_review_or_audit():
     from reporting.top_journal_report import TopJournalReport
 
