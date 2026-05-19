@@ -484,3 +484,72 @@ def test_collector_progress_snapshot_cannot_mutate_final_summary(tmp_path):
     assert summary["processed"][0]["cache_status"] == "positive"
     assert summary["processed"][0]["record_ids"] == ["row-001", "row-002"]
     assert summary["entity_type_counts"] == {"reference": 1}
+
+
+def test_cache_write_failure_keeps_existing_json_readable(tmp_path, monkeypatch):
+    from data.evidence_cache_collector import _write_cache
+
+    cache_path = tmp_path / "reference_cache.json"
+    cache_path.write_text(json.dumps({"existing": {"title": "safe"}}), encoding="utf-8")
+    original_write_text = Path.write_text
+
+    def failing_write_text(path, text, *args, **kwargs):
+        original_write_text(path, '{"partial"', *args, **kwargs)
+        raise RuntimeError("simulated interrupted write")
+
+    monkeypatch.setattr(Path, "write_text", failing_write_text)
+
+    try:
+        _write_cache({"new": {"title": "unsafe"}}, cache_path)
+    except RuntimeError:
+        pass
+
+    assert json.loads(cache_path.read_text(encoding="utf-8")) == {
+        "existing": {"title": "safe"}
+    }
+
+
+def test_report_write_failure_keeps_existing_json_readable(tmp_path, monkeypatch):
+    from data.evidence_cache_collector import write_collection_report
+
+    report_path = tmp_path / "report.json"
+    report_path.write_text(json.dumps({"attempted_count": 1}), encoding="utf-8")
+    original_write_text = Path.write_text
+
+    def failing_write_text(path, text, *args, **kwargs):
+        original_write_text(path, '{"partial"', *args, **kwargs)
+        raise RuntimeError("simulated interrupted write")
+
+    monkeypatch.setattr(Path, "write_text", failing_write_text)
+
+    try:
+        write_collection_report({"attempted_count": 2}, report_path)
+    except RuntimeError:
+        pass
+
+    assert json.loads(report_path.read_text(encoding="utf-8")) == {"attempted_count": 1}
+
+
+def test_atomic_write_cleans_temp_file_after_keyboard_interrupt(tmp_path, monkeypatch):
+    from data.evidence_cache_collector import _write_cache
+
+    cache_path = tmp_path / "reference_cache.json"
+    cache_path.write_text(json.dumps({"existing": {"title": "safe"}}), encoding="utf-8")
+    temp_path = cache_path.with_name(f".{cache_path.name}.tmp")
+    original_write_text = Path.write_text
+
+    def interrupted_write_text(path, text, *args, **kwargs):
+        original_write_text(path, '{"partial"', *args, **kwargs)
+        raise KeyboardInterrupt()
+
+    monkeypatch.setattr(Path, "write_text", interrupted_write_text)
+
+    try:
+        _write_cache({"new": {"title": "unsafe"}}, cache_path)
+    except KeyboardInterrupt:
+        pass
+
+    assert json.loads(cache_path.read_text(encoding="utf-8")) == {
+        "existing": {"title": "safe"}
+    }
+    assert not temp_path.exists()

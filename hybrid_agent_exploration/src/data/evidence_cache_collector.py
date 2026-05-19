@@ -194,11 +194,7 @@ def write_collection_report(summary: dict[str, Any], output_path: str | Path) ->
     """Write the collector summary JSON."""
 
     path = Path(output_path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    _write_json_atomic(summary, path)
     return path
 
 
@@ -339,11 +335,21 @@ def _load_cache(path: Path) -> dict[str, Any]:
 
 
 def _write_cache(cache: dict[str, Any], path: Path) -> None:
+    _write_json_atomic(cache, path)
+
+
+def _write_json_atomic(payload: dict[str, Any], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(cache, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    tmp_path = path.with_name(f".{path.name}.tmp")
+    try:
+        tmp_path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        tmp_path.replace(path)
+    except BaseException:
+        tmp_path.unlink(missing_ok=True)
+        raise
 
 
 def _molecule_record(key: str) -> dict[str, Any]:
