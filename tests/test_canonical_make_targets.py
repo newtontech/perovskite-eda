@@ -73,6 +73,9 @@ def test_pdf_target_dry_run_checks_pandoc_and_exports_report_pdfs():
     output = _make_dry_run("research-package-pdf", ARTIFACT_DIR="/tmp/artifacts")
 
     assert "command -v pandoc" in output
+    assert "--pdf-engine=xelatex" in output
+    assert '-V mainfont="DejaVu Serif"' in output
+    assert "--resource-path=/tmp/artifacts/report_bundle/main_text:/tmp/artifacts" in output
     assert "main_text/main_text_report.md" in output
     assert "main_text/main_text_report.pdf" in output
     assert "si/supporting_information.md" in output
