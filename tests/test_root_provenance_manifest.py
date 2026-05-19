@@ -47,6 +47,10 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
     _write(candidate_library_dir / "candidate_library.csv", "candidate_id,smiles\ncand-001,C\n")
     _write(candidate_library_dir / "source_summary.json", '{"output_rows": 1}\n')
     _write(candidate_library_dir / "provenance.json", '{"network_access": "not_used"}\n')
+    source_completeness_dir = tmp_path / "source_completeness"
+    _write(source_completeness_dir / "source_completeness.json", '{"audit_scope": "column_level_missingness_only"}\n')
+    _write(source_completeness_dir / "source_completeness.csv", "group_id,column,present\nliterature_metadata,doi,true\n")
+    _write(source_completeness_dir / "source_completeness.md", "# Source Completeness Audit\n")
     package_manifest = _write(
         tmp_path / "package_manifest.json",
         '{"schema_version": "research-package-manifest-v1"}\n',
@@ -57,6 +61,7 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
         report_dir,
         si_dir,
         candidate_library_dir=candidate_library_dir,
+        source_completeness_dir=source_completeness_dir,
         package_manifest_path=package_manifest,
         input_path=input_table,
         candidate_source_path=candidate_source,
@@ -87,6 +92,11 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
     assert {item["id"] for item in manifest["artifacts"]["claim"]} == {"claim_ledger_json"}
     assert {item["id"] for item in manifest["artifacts"]["review"]} == {"review_report_json"}
     assert {item["id"] for item in manifest["artifacts"]["package"]} == {"package_manifest_json"}
+    assert {item["id"] for item in manifest["artifacts"]["source_completeness"]} == {
+        "source_completeness_csv",
+        "source_completeness_json",
+        "source_completeness_md",
+    }
     assert manifest["source_manifests"]["package_manifest_json"]["exists"] is True
     assert manifest["source_inputs"]["input_table"]["path"].endswith("raw_source.csv")
     assert len(manifest["source_inputs"]["input_table"]["sha256"]) == 64
@@ -98,6 +108,7 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
     assert verified_train["size_bytes"] == len("record_id,smiles\nrow-001,C\n")
     assert verified_train["sha256_16"]
     assert manifest["roots"]["candidate_library_dir"] == str(candidate_library_dir)
+    assert manifest["roots"]["source_completeness_dir"] == str(source_completeness_dir)
 
 
 def test_root_provenance_manifest_records_missing_declared_outputs(tmp_path):
