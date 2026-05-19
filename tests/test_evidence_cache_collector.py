@@ -527,6 +527,4 @@ def test_report_write_failure_keeps_existing_json_readable(tmp_path, monkeypatch
     except RuntimeError:
         pass
 
-    assert json.loads(report_path.read_text(encoding="utf-8")) == {
-        "attempted_count": 1
-    }
+    assert json.loads(report_path.read_text(encoding="utf-8")) == {"attempted_count": 1}
