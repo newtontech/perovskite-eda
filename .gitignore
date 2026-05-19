@@ -61,6 +61,7 @@ Desktop.ini
 
 # ===== Claude Code =====
 .claude/
+.worktrees/
 
 # ===== Large HTML (dashboard) =====
 dashboard.html
