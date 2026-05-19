@@ -24,20 +24,38 @@ def _verified_pool() -> pd.DataFrame:
         [
             {
                 "record_id": "row-001",
+                "candidate_id": "row-001",
                 "smiles": "CC",
+                "pubchem_id": "702",
+                "cas_number": "64-17-5",
                 "doi": "10.1021/acs.jpclett.6c00119",
+                "source_name": "fixture-pubchem",
+                "source_url": "https://pubchem.ncbi.nlm.nih.gov/compound/702",
+                "availability_status": "not_assessed",
+                "synthesis_status": "reported_in_literature",
+                "safety_status": "not_assessed",
                 "verification_status": "verified",
                 "verification_sources": json.dumps([
-                    {"kind": "reference", "source": "fixture-crossref", "doi": "10.1021/acs.jpclett.6c00119"}
+                    {"kind": "reference", "source": "fixture-crossref", "doi": "10.1021/acs.jpclett.6c00119"},
+                    {"kind": "molecule", "source": "fixture-pubchem", "pubchem_id": "702"},
                 ]),
             },
             {
                 "record_id": "row-002",
+                "candidate_id": "row-002",
                 "smiles": "CCCC",
+                "pubchem_id": "7843",
+                "cas_number": "106-97-8",
                 "doi": "10.1021/acs.jpclett.6c00120",
+                "source_name": "fixture-pubchem",
+                "source_url": "https://pubchem.ncbi.nlm.nih.gov/compound/7843",
+                "availability_status": "not_assessed",
+                "synthesis_status": "reported_in_literature",
+                "safety_status": "not_assessed",
                 "verification_status": "verified",
                 "verification_sources": json.dumps([
-                    {"kind": "reference", "source": "fixture-crossref", "doi": "10.1021/acs.jpclett.6c00120"}
+                    {"kind": "reference", "source": "fixture-crossref", "doi": "10.1021/acs.jpclett.6c00120"},
+                    {"kind": "molecule", "source": "fixture-pubchem", "pubchem_id": "7843"},
                 ]),
             },
         ]

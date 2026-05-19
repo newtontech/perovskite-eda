@@ -78,6 +78,27 @@ def test_builder_writes_verified_training_quarantine_and_manifests(tmp_path):
     assert "missing_doi" in quarantine.loc[0, "quarantine_reason"]
     assert candidate_pool["record_id"].tolist() == ["row-001"]
     assert "row-002" not in set(candidate_pool["record_id"])
+    assert {
+        "candidate_id",
+        "source_name",
+        "source_url",
+        "availability_status",
+        "synthesis_status",
+        "safety_status",
+        "vendor_name",
+        "vendor_catalog_id",
+    }.issubset(candidate_pool.columns)
+    assert candidate_pool.loc[0, "candidate_id"] == "row-001"
+    assert candidate_pool.loc[0, "source_name"] == "fixture-pubchem"
+    assert candidate_pool.loc[0, "source_url"] == "https://pubchem.ncbi.nlm.nih.gov/compound/702"
+    assert candidate_pool.loc[0, "availability_status"] == "not_assessed"
+    assert candidate_pool.loc[0, "synthesis_status"] == "reported_in_literature"
+    assert candidate_pool.loc[0, "safety_status"] == "not_assessed"
+    assert pd.isna(candidate_pool.loc[0, "vendor_name"])
+    assert pd.isna(candidate_pool.loc[0, "vendor_catalog_id"])
+    verification_sources = json.loads(candidate_pool.loc[0, "verification_sources"])
+    assert verification_sources
+    assert verification_sources[0]["source"] == "fixture-crossref"
 
     doi_manifest = json.loads(artifacts.doi_manifest_json.read_text(encoding="utf-8"))
     assert doi_manifest["dataset_id"] == "fixture-additive-dataset"
