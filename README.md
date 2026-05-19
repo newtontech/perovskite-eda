@@ -59,6 +59,50 @@ wget -O data/raw/perovskite_database_all.csv \
 python scripts/data_overview.py
 ```
 
+### 生成规范研究包
+
+根目录 `Makefile` 提供规范入口，输出默认写入已忽略的
+`hybrid_agent_exploration/results/verified_discovery_runs/` 目录：
+
+```bash
+make research-package
+make research-package-pdf
+make test-research-package
+```
+
+常用环境变量：
+
+- `SOURCE_TABLE`: 输入 CSV/XLSX 源表，默认使用本项目 QSPR 合并表。
+- `DATASET_ID`: 稳定数据集或运行标识，默认 `canonical-research-package`。
+- `ARTIFACT_DIR`: 研究包输出目录，默认 `hybrid_agent_exploration/results/verified_discovery_runs/$(DATASET_ID)`。
+- `EVIDENCE_MODE`: 证据模式，支持 `external-cached` 或 `source-columns`。
+- `INPUT_SCOPE`: 输入范围声明，支持 `selected-subset` 或 `full-source`。
+- `MIN_VERIFIED_ROWS`: 最少验证行数。
+- `TOP_K`: 候选排序输出数量。
+- `CANDIDATE_SOURCE`: 可选外部候选源 CSV/XLSX。
+- `CANDIDATE_SOURCE_NAME`: 可选外部候选源名称。
+
+示例：
+
+```bash
+SOURCE_TABLE=/path/to/source.xlsx \
+DATASET_ID=jpcl-full-source \
+EVIDENCE_MODE=external-cached \
+INPUT_SCOPE=full-source \
+MIN_VERIFIED_ROWS=10 \
+TOP_K=100 \
+make research-package
+```
+
+快速冒烟运行可使用：
+
+```bash
+SOURCE_TABLE=/path/to/source.csv make research-package-smoke
+```
+
+`research-package-pdf` 会把已生成的 `main_text_report.md` 和
+`supporting_information.md` 转换为 PDF；如果未安装 `pandoc`，该目标会直接失败并提示安装。
+
 ### 运行 EDA 分析
 
 ```bash
