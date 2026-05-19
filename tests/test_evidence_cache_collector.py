@@ -280,3 +280,53 @@ def test_collector_does_not_write_negative_cache_after_retry_exhaustion(tmp_path
     assert summary["error_count"] == 1
     reference_cache = json.loads((cache_dir / "reference_cache.json").read_text(encoding="utf-8"))
     assert "10.1021/acs.jpclett.6c00119" not in reference_cache
+
+
+def test_collector_does_not_write_negative_cache_for_none_by_default(tmp_path):
+    from data.evidence_cache_collector import collect_evidence_cache
+
+    requirements = tmp_path / "requirements.csv"
+    cache_dir = tmp_path / "evidence_cache"
+    _requirements_csv(requirements)
+    _seed_caches(cache_dir)
+
+    summary = collect_evidence_cache(
+        requirements_csv=requirements,
+        cache_dir=cache_dir,
+        max_requests=1,
+        reference_resolver=lambda doi: None,
+        molecule_resolver=lambda record: None,
+    )
+
+    assert summary["attempted_count"] == 1
+    assert summary["no_evidence_count"] == 1
+    assert summary["negative_written_count"] == 0
+    reference_cache = json.loads((cache_dir / "reference_cache.json").read_text(encoding="utf-8"))
+    assert "10.1021/acs.jpclett.6c00119" not in reference_cache
+
+
+def test_collector_never_writes_negative_cache_for_smiles_with_cid_only_resolver(tmp_path):
+    from data.evidence_cache_collector import collect_evidence_cache
+
+    requirements = tmp_path / "requirements.csv"
+    cache_dir = tmp_path / "evidence_cache"
+    _requirements_csv(requirements)
+    _seed_caches(cache_dir)
+
+    summary = collect_evidence_cache(
+        requirements_csv=requirements,
+        cache_dir=cache_dir,
+        max_requests=10,
+        entity_type="molecule",
+        include_smiles=True,
+        write_negative_cache=True,
+        reference_resolver=lambda doi: None,
+        molecule_resolver=lambda record: None,
+    )
+
+    assert summary["attempted_count"] == 2
+    assert summary["negative_written_count"] == 1
+    assert summary["no_evidence_count"] == 1
+    molecule_cache = json.loads((cache_dir / "molecule_cache.json").read_text(encoding="utf-8"))
+    assert molecule_cache["pubchem:104810"] is None
+    assert "smiles:CCO" not in molecule_cache

@@ -24,6 +24,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--retry-attempts", type=int, default=2)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
+        "--write-negative-cache",
+        action="store_true",
+        help="Persist resolver None results as negative cache entries. Default is false to avoid poisoning cache on swallowed transient failures.",
+    )
+    parser.add_argument(
         "--include-smiles",
         action="store_true",
         help="Attempt smiles:<SMILES> molecule keys. Default is false because the current PubChem resolver is CID-backed.",
@@ -43,6 +48,7 @@ def main(argv: list[str] | None = None) -> int:
         retry_attempts=args.retry_attempts,
         dry_run=args.dry_run,
         include_smiles=args.include_smiles,
+        write_negative_cache=args.write_negative_cache,
         reference_resolver=CrossrefReferenceVerifier(),
         molecule_resolver=PubChemMoleculeVerifier(),
     )

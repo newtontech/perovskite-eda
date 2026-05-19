@@ -42,6 +42,7 @@ def collect_evidence_cache(
     dry_run: bool = False,
     retry_attempts: int = 1,
     include_smiles: bool = False,
+    write_negative_cache: bool = False,
 ) -> dict[str, Any]:
     """Fill missing cache entries with a bounded, resumable collection run."""
 
@@ -69,10 +70,12 @@ def collect_evidence_cache(
         "entity_type": entity_type,
         "max_requests": max_requests,
         "retry_attempts": retry_attempts,
+        "write_negative_cache": write_negative_cache,
         "planned_count": len(planned),
         "attempted_count": 0,
         "positive_written_count": 0,
         "negative_written_count": 0,
+        "no_evidence_count": 0,
         "error_count": 0,
         "unsupported_count": len(unsupported),
         "skipped_existing_count": len(requirements) - len(missing),
@@ -95,16 +98,20 @@ def collect_evidence_cache(
             if error is not None:
                 _record_error(summary, requirement, error)
                 continue
-            reference_cache[requirement.key] = evidence.to_source() if evidence else None
-            _write_cache(reference_cache, reference_cache_path)
+            should_write_negative = write_negative_cache
+            if evidence or should_write_negative:
+                reference_cache[requirement.key] = evidence.to_source() if evidence else None
+                _write_cache(reference_cache, reference_cache_path)
         elif requirement.entity_type == "molecule":
             record = _molecule_record(requirement.key)
             evidence, error = _resolve_with_retry(lambda: molecule_resolver(record), retry_attempts)
             if error is not None:
                 _record_error(summary, requirement, error)
                 continue
-            molecule_cache[requirement.key] = evidence.to_source() if evidence else None
-            _write_cache(molecule_cache, molecule_cache_path)
+            should_write_negative = write_negative_cache and not _is_smiles_requirement(requirement)
+            if evidence or should_write_negative:
+                molecule_cache[requirement.key] = evidence.to_source() if evidence else None
+                _write_cache(molecule_cache, molecule_cache_path)
         else:
             raise ValueError(f"Unsupported entity_type: {requirement.entity_type}")
 
@@ -112,9 +119,12 @@ def collect_evidence_cache(
         if evidence:
             summary["positive_written_count"] += 1
             status = "positive"
-        else:
+        elif should_write_negative:
             summary["negative_written_count"] += 1
             status = "negative"
+        else:
+            summary["no_evidence_count"] += 1
+            status = "no_evidence"
         summary["processed"].append(
             {
                 "entity_type": requirement.entity_type,
@@ -242,6 +252,10 @@ def _molecule_record(key: str) -> dict[str, Any]:
     if key.startswith("smiles:"):
         return {"smiles": key.removeprefix("smiles:")}
     return {"smiles": key}
+
+
+def _is_smiles_requirement(requirement: CacheRequirement) -> bool:
+    return requirement.entity_type == "molecule" and requirement.key.startswith("smiles:")
 
 
 def _record_ids(record: dict[str, Any]) -> list[str]:
