@@ -80,6 +80,7 @@ class VerifiedDiscoveryWorkflow:
         min_verified_rows: int = 10,
         target_column: str = "delta_pce",
         smiles_column: str = "smiles",
+        run_metadata: dict[str, Any] | None = None,
     ) -> VerifiedDiscoveryWorkflowArtifacts:
         """Run the workflow from a CSV/XLSX input table."""
 
@@ -95,6 +96,7 @@ class VerifiedDiscoveryWorkflow:
             min_verified_rows=min_verified_rows,
             target_column=target_column,
             smiles_column=smiles_column,
+            run_metadata=run_metadata,
         )
 
     def run_from_dataframe(
@@ -109,6 +111,7 @@ class VerifiedDiscoveryWorkflow:
         min_verified_rows: int = 10,
         target_column: str = "delta_pce",
         smiles_column: str = "smiles",
+        run_metadata: dict[str, Any] | None = None,
     ) -> VerifiedDiscoveryWorkflowArtifacts:
         """Run the full verified discovery workflow from an in-memory table."""
 
@@ -191,6 +194,7 @@ class VerifiedDiscoveryWorkflow:
                 min_verified_rows=min_verified_rows,
                 top_k=top_k,
                 model_class=trained_model.__class__.__name__,
+                run_metadata=run_metadata,
             ),
             workflow_manifest_json,
         )
@@ -326,6 +330,7 @@ def _workflow_manifest(
     min_verified_rows: int,
     top_k: int,
     model_class: str,
+    run_metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     outputs = {
         key: value.relative_to(artifacts["verified_train_csv"].parents[1]).as_posix()
@@ -335,7 +340,7 @@ def _workflow_manifest(
     outputs["workflow_manifest_json"] = workflow_manifest_json.relative_to(
         artifacts["verified_train_csv"].parents[1]
     ).as_posix()
-    return {
+    manifest = {
         "dataset_id": dataset_id,
         "generated_at": _now_iso(),
         "artifact_policy": ARTIFACT_POLICY,
@@ -349,6 +354,9 @@ def _workflow_manifest(
         "ranked_candidates": artifacts["ranked_candidates"],
         "outputs": outputs,
     }
+    if run_metadata:
+        manifest.update(run_metadata)
+    return manifest
 
 
 def _write_json(payload: dict[str, Any], path: Path) -> None:

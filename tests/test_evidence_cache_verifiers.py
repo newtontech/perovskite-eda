@@ -108,3 +108,27 @@ def test_cached_molecule_verifier_keys_by_normalized_pubchem_id(tmp_path):
     payload = json.loads(cache_path.read_text(encoding="utf-8"))
     assert list(payload) == ["pubchem:104810"]
     assert payload["pubchem:104810"]["smiles"] == "[Ba+2]"
+
+
+def test_external_reference_timeout_returns_none_without_abort(monkeypatch):
+    from harness import authenticity
+    from harness.authenticity import CrossrefReferenceVerifier
+
+    def fake_get(url, timeout):
+        raise authenticity.requests.Timeout("crossref timed out")
+
+    monkeypatch.setattr(authenticity.requests, "get", fake_get)
+
+    assert CrossrefReferenceVerifier(timeout=1)("10.1021/acs.jpclett.6c00119") is None
+
+
+def test_external_molecule_timeout_returns_none_without_abort(monkeypatch):
+    from harness import authenticity
+    from harness.authenticity import PubChemMoleculeVerifier
+
+    def fake_get(url, timeout):
+        raise authenticity.requests.Timeout("pubchem timed out")
+
+    monkeypatch.setattr(authenticity.requests, "get", fake_get)
+
+    assert PubChemMoleculeVerifier(timeout=1)({"pubchem_id": "104810.0"}) is None
