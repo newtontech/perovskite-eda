@@ -156,6 +156,13 @@ def test_cli_accepts_external_candidate_pool_path(tmp_path):
     assert exit_code == 0
     ranked = pd.read_csv(output_dir / "discovery" / "ranked_candidates.csv")
     assert ranked["candidate_id"].tolist() == ["external-001"]
+    assert "candidate_score" in ranked.columns
+    assert "score_components" in ranked.columns
+    discovery_manifest = json.loads(
+        (output_dir / "discovery" / "candidate_discovery_manifest.json").read_text(encoding="utf-8")
+    )
+    assert discovery_manifest["scoring_policy_version"] == "baseline-aware-candidate-scoring-v1"
+    assert discovery_manifest["scoring_policy"]["sort_key"] == "candidate_score"
     manifest = json.loads((output_dir / "workflow_manifest.json").read_text(encoding="utf-8"))
     assert manifest["candidate_pool_path"] == str(candidate_csv)
     assert manifest["candidate_pool_contract_version"] == "candidate-library-v1"

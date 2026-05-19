@@ -239,3 +239,59 @@ def test_discovery_ranks_verified_external_candidate_library(tmp_path):
     manifest = json.loads(artifacts.discovery_manifest_json.read_text(encoding="utf-8"))
     assert manifest["candidate_library_contract_version"] == "candidate-library-v1"
     assert manifest["requires_verification_sources"] is True
+
+
+def test_discovery_scores_candidates_with_baseline_evidence_and_readiness_context(tmp_path):
+    from screening.verified_candidate_discovery import VerifiedCandidateDiscovery
+
+    pool = _external_candidate_pool()
+    pool.loc[0, "baseline_pce"] = 22.0
+    pool.loc[0, "baseline_context"] = "matched FA/MA PbI3 control"
+    pool.loc[0, "verification_sources"] = json.dumps([
+        {"kind": "molecule", "source": "pubchem", "pubchem_id": "702"},
+        {"kind": "availability", "source": "vendor_catalog", "vendor_name": "Sigma Aldrich"},
+        {"kind": "synthesis", "source": "reported_protocol"},
+        {"kind": "safety", "source": "sds"},
+    ])
+    pool.loc[1, "baseline_pce"] = 16.0
+    pool.loc[1, "baseline_context"] = ""
+    pool.loc[1, "availability_status"] = "not_assessed"
+    pool.loc[1, "synthesis_status"] = "not_assessed"
+    pool.loc[1, "safety_status"] = "not_assessed"
+    pool.loc[1, "verification_sources"] = json.dumps([
+        {"kind": "molecule", "source": "pubchem", "pubchem_id": "7843"}
+    ])
+
+    def uncertainty_fn(model, features):
+        return [0.05, 1.2]
+
+    artifacts = VerifiedCandidateDiscovery(output_dir=tmp_path).discover(
+        pool,
+        model=LengthModel(),
+        feature_fn=_feature_fn,
+        top_k=2,
+        dataset_id="baseline-aware-scoring-fixture",
+        uncertainty_fn=uncertainty_fn,
+    )
+
+    ranked = pd.read_csv(artifacts.ranked_candidates_csv)
+    assert ranked["candidate_id"].tolist() == ["cand-001", "cand-002"]
+    assert ranked["predicted_delta_pce"].tolist() == [0.5, 1.0]
+    assert "candidate_score" in ranked.columns
+    assert "score_components" in ranked.columns
+    assert ranked.loc[0, "candidate_score"] > ranked.loc[1, "candidate_score"]
+
+    components = json.loads(ranked.loc[0, "score_components"])
+    assert components["predicted_delta_pce"] == 0.5
+    assert components["baseline_context_bonus"] > 0
+    assert components["availability_bonus"] > 0
+    assert components["synthesis_bonus"] > 0
+    assert components["safety_bonus"] > 0
+    assert components["verification_evidence_count"] == 4
+    assert components["verification_evidence_bonus"] > 0
+    assert components["uncertainty_penalty"] < 0
+
+    manifest = json.loads(artifacts.discovery_manifest_json.read_text(encoding="utf-8"))
+    assert manifest["scoring_policy_version"] == "baseline-aware-candidate-scoring-v1"
+    assert manifest["scoring_policy"]["sort_key"] == "candidate_score"
+    assert manifest["scoring_policy"]["uncertainty_penalty"] == "applied_when_uncertainty_column_is_available"

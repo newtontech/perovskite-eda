@@ -30,6 +30,7 @@ class CandidateLibraryContractError(ValueError):
 
 
 CANDIDATE_LIBRARY_CONTRACT_VERSION = "candidate-library-v1"
+SCORING_POLICY_VERSION = "baseline-aware-candidate-scoring-v1"
 CANDIDATE_LIBRARY_REQUIRED_COLUMNS = (
     "candidate_id",
     "smiles",
@@ -205,7 +206,16 @@ def _rank_candidates(
     ranked["predicted_delta_pce"] = predictions
     if uncertainty_fn is not None:
         ranked["uncertainty"] = np.asarray(uncertainty_fn(model, X), dtype=float)
-    ranked = ranked.sort_values("predicted_delta_pce", ascending=False).reset_index(drop=True)
+    scored = ranked.apply(_candidate_score_components, axis=1)
+    ranked["candidate_score"] = [components["candidate_score"] for components in scored]
+    ranked["score_components"] = [
+        json.dumps(components, ensure_ascii=False, sort_keys=True)
+        for components in scored
+    ]
+    ranked = ranked.sort_values(
+        ["candidate_score", "predicted_delta_pce"],
+        ascending=[False, False],
+    ).reset_index(drop=True)
     ranked["rank"] = np.arange(1, len(ranked) + 1)
     return ranked.head(top_k).reset_index(drop=True)
 
@@ -235,6 +245,8 @@ def _manifest(
         "requires_verified_candidates": True,
         "requires_verification_sources": True,
         "candidate_library_contract_version": CANDIDATE_LIBRARY_CONTRACT_VERSION,
+        "scoring_policy_version": SCORING_POLICY_VERSION,
+        "scoring_policy": _scoring_policy(),
         "input_rows": artifacts.input_count,
         "ranked_rows": artifacts.ranked_count,
         "top_k": top_k,
@@ -285,6 +297,105 @@ def _audit_report(
         ]
     )
     return "\n".join(lines)
+
+
+def _candidate_score_components(row: pd.Series) -> dict[str, float | int]:
+    predicted_delta_pce = _number(row.get("predicted_delta_pce"))
+    baseline_pce = _number(row.get("baseline_pce"))
+    baseline_pce_bonus = _baseline_pce_bonus(baseline_pce)
+    baseline_context_bonus = 0.10 if _text(row.get("baseline_context")) else 0.0
+    availability_bonus = _status_bonus(
+        row.get("availability_status"),
+        positive={"commercial", "available", "in_stock", "vendor_confirmed"},
+        negative={"unavailable", "discontinued", "not_available"},
+        positive_bonus=0.20,
+        negative_penalty=-0.25,
+    )
+    synthesis_bonus = _status_bonus(
+        row.get("synthesis_status"),
+        positive={"commercial", "reported_in_literature", "reported_protocol", "known", "available"},
+        negative={"not_reported", "unknown", "failed", "unavailable"},
+        positive_bonus=0.15,
+        negative_penalty=-0.15,
+    )
+    safety_bonus = _status_bonus(
+        row.get("safety_status"),
+        positive={"sds_available", "low_hazard", "acceptable", "available"},
+        negative={"hazardous", "restricted", "not_recommended"},
+        positive_bonus=0.15,
+        negative_penalty=-0.30,
+    )
+    verification_evidence_count = len(_parse_verification_sources(row.get("verification_sources")))
+    verification_evidence_bonus = min(verification_evidence_count, 5) * 0.05
+    uncertainty = _number(row.get("uncertainty"))
+    uncertainty_penalty = -0.50 * uncertainty if uncertainty > 0 else 0.0
+    candidate_score = (
+        predicted_delta_pce
+        + baseline_pce_bonus
+        + baseline_context_bonus
+        + availability_bonus
+        + synthesis_bonus
+        + safety_bonus
+        + verification_evidence_bonus
+        + uncertainty_penalty
+    )
+    return {
+        "predicted_delta_pce": round(predicted_delta_pce, 6),
+        "baseline_pce": round(baseline_pce, 6) if baseline_pce > 0 else 0.0,
+        "baseline_pce_bonus": round(baseline_pce_bonus, 6),
+        "baseline_context_bonus": round(baseline_context_bonus, 6),
+        "availability_bonus": round(availability_bonus, 6),
+        "synthesis_bonus": round(synthesis_bonus, 6),
+        "safety_bonus": round(safety_bonus, 6),
+        "verification_evidence_count": verification_evidence_count,
+        "verification_evidence_bonus": round(verification_evidence_bonus, 6),
+        "uncertainty_penalty": round(uncertainty_penalty, 6),
+        "candidate_score": round(candidate_score, 6),
+    }
+
+
+def _baseline_pce_bonus(value: float) -> float:
+    if value <= 0:
+        return 0.0
+    return min(max((value - 18.0) * 0.02, 0.0), 0.20)
+
+
+def _status_bonus(
+    value: Any,
+    *,
+    positive: set[str],
+    negative: set[str],
+    positive_bonus: float,
+    negative_penalty: float,
+) -> float:
+    status = _text(value).lower()
+    if status in positive:
+        return positive_bonus
+    if status in negative:
+        return negative_penalty
+    return 0.0
+
+
+def _number(value: Any) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if not np.isfinite(number):
+        return 0.0
+    return number
+
+
+def _scoring_policy() -> dict[str, Any]:
+    return {
+        "version": SCORING_POLICY_VERSION,
+        "sort_key": "candidate_score",
+        "base_signal": "predicted_delta_pce",
+        "baseline_context": "baseline_pce and baseline_context add bounded context bonuses when present",
+        "readiness_statuses": "availability_status, synthesis_status, and safety_status add bounded bonuses or penalties",
+        "verification_evidence": "verification_sources contributes a capped evidence-count bonus",
+        "uncertainty_penalty": "applied_when_uncertainty_column_is_available",
+    }
 
 
 def _write_json(payload: dict[str, Any], path: Path) -> None:
