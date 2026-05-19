@@ -8,6 +8,7 @@ files on disk before a package is treated as a complete research deliverable.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,9 @@ ROOT_PROVENANCE_SCHEMA_VERSION = "root-provenance-manifest-v1"
 REQUIRED_PACKAGE_OUTPUTS = {
     "verified_discovery_dir": "dir",
     "source_completeness_dir": "dir",
+    "source_completeness_json": "file",
+    "source_completeness_csv": "file",
+    "source_completeness_md": "file",
     "report_dir": "dir",
     "main_text_report_md": "file",
     "supporting_information_md": "file",
@@ -63,6 +67,37 @@ EVIDENCE_CACHE_FILES = (
     "reference_cache.json",
     "molecule_cache.json",
 )
+
+REQUIRED_WORKFLOW_OUTPUTS = {
+    "verified_train_csv",
+    "quarantine_csv",
+    "candidate_pool_csv",
+    "doi_manifest_json",
+    "provenance_json",
+    "data_audit_report_md",
+    "model_metrics_json",
+    "model_manifest_json",
+    "ranked_candidates_csv",
+    "discovery_manifest_json",
+    "discovery_audit_report_md",
+    "workflow_manifest_json",
+}
+
+JSON_FIELD_REQUIREMENTS = {
+    "package_manifest.json": ("schema_version", "dataset_id", "outputs"),
+    "provenance_manifest.json": ("schema_version", "artifacts"),
+    "verified_discovery/dataset/doi_manifest.json": ("dataset_id", "references"),
+    "verified_discovery/dataset/provenance.json": ("dataset_id", "outputs"),
+    "verified_discovery/model/model_metrics.json": ("dataset_id", "train_rows"),
+    "verified_discovery/model/model_manifest.json": ("dataset_id", "model_class"),
+    "verified_discovery/discovery/candidate_discovery_manifest.json": ("dataset_id", "outputs"),
+    "verified_discovery/workflow_manifest.json": ("dataset_id", "outputs"),
+    "source_completeness/source_completeness.json": ("schema_version", "dataset_id", "groups"),
+    "report_bundle/main_text/review_report.json": ("review", "claim_audit"),
+    "report_bundle/main_text/run_manifest.json": ("generated_at", "best_model"),
+    "candidate_library/source_summary.json": ("dataset_id", "output_rows"),
+    "candidate_library/provenance.json": ("dataset_id", "validation"),
+}
 
 REQUIRED_ROOT_IDS = {
     "dataset": {
@@ -134,8 +169,13 @@ def verify_research_package(
     if not package_manifest or not root_manifest:
         _raise_if_errors(errors)
 
-    package_manifest_check = _check_package_manifest(package_manifest, root, errors)
     candidate_library_required = _candidate_library_required(package_manifest, require_candidate_library)
+    package_manifest_check = _check_package_manifest(
+        package_manifest,
+        root,
+        candidate_library_required=candidate_library_required,
+        errors=errors,
+    )
     required_artifacts_check = _check_required_artifacts(
         package_manifest,
         root,
@@ -144,6 +184,7 @@ def verify_research_package(
     )
     root_provenance_check = _check_root_provenance(
         root_manifest,
+        root,
         candidate_library_required=candidate_library_required,
         errors=errors,
     )
@@ -181,6 +222,8 @@ def verify_research_package(
 def _check_package_manifest(
     manifest: dict[str, Any],
     root: Path,
+    *,
+    candidate_library_required: bool,
     errors: list[str],
 ) -> dict[str, Any]:
     if manifest.get("schema_version") != PACKAGE_SCHEMA_VERSION:
@@ -195,6 +238,12 @@ def _check_package_manifest(
             errors.append(f"{PACKAGE_MANIFEST_NAME}: outputs.{key} is required")
             continue
         _check_path(root, value, kind=kind, errors=errors, context=f"outputs.{key}")
+    if candidate_library_required:
+        value = outputs.get("candidate_library_dir")
+        if not value:
+            errors.append(f"{PACKAGE_MANIFEST_NAME}: outputs.candidate_library_dir is required")
+        else:
+            _check_path(root, value, kind="dir", errors=errors, context="outputs.candidate_library_dir")
     return {
         "status": "passed",
         "path": PACKAGE_MANIFEST_NAME,
@@ -222,15 +271,18 @@ def _check_required_artifacts(
 
     for relative_path in required_paths:
         _check_path(root, relative_path, kind="file", errors=errors, context=relative_path)
+    workflow_outputs = _check_workflow_outputs(manifest, root, errors)
     return {
         "status": "passed",
         "paths": sorted(required_paths),
+        "workflow_outputs": workflow_outputs,
         "candidate_library_required": candidate_library_required,
     }
 
 
 def _check_root_provenance(
     manifest: dict[str, Any],
+    root: Path,
     *,
     candidate_library_required: bool,
     errors: list[str],
@@ -261,11 +313,29 @@ def _check_root_provenance(
         missing = ids - present
         if missing:
             errors.append(f"{ROOT_PROVENANCE_NAME}: artifacts.{category} missing ids {sorted(missing)}")
+        records_by_id = {str(item.get("id")): item for item in records if isinstance(item, dict)}
+        for artifact_id in sorted(ids & present):
+            _check_root_record(
+                root,
+                records_by_id[artifact_id],
+                errors=errors,
+                context=f"{ROOT_PROVENANCE_NAME}: artifacts.{category}.{artifact_id}",
+            )
         artifact_ids_by_category[category] = sorted(present)
 
     source_manifests = manifest.get("source_manifests")
     if not isinstance(source_manifests, dict) or "package_manifest_json" not in source_manifests:
         errors.append(f"{ROOT_PROVENANCE_NAME}: source_manifests.package_manifest_json is required")
+    elif isinstance(source_manifests.get("package_manifest_json"), dict):
+        _check_root_record(
+            root,
+            source_manifests["package_manifest_json"],
+            errors=errors,
+            context=f"{ROOT_PROVENANCE_NAME}: source_manifests.package_manifest_json",
+            expected_path=root / PACKAGE_MANIFEST_NAME,
+        )
+    else:
+        errors.append(f"{ROOT_PROVENANCE_NAME}: source_manifests.package_manifest_json must be an object")
 
     return {
         "status": "passed",
@@ -309,10 +379,18 @@ def _check_evidence_cache(
 
 def _candidate_library_required(manifest: dict[str, Any], require_candidate_library: bool) -> bool:
     outputs = _manifest_outputs(manifest)
+    inputs = manifest.get("inputs")
+    if not isinstance(inputs, dict):
+        inputs = {}
+    runner_args = manifest.get("runner_args")
+    if not isinstance(runner_args, dict):
+        runner_args = {}
     return (
         require_candidate_library
         or outputs.get("candidate_library_dir") is not None
         or manifest.get("candidate_library_rows") is not None
+        or inputs.get("candidate_source") is not None
+        or runner_args.get("candidate_source") is not None
     )
 
 
@@ -341,6 +419,101 @@ def _check_path(root: Path, value: str | Path, *, kind: str, errors: list[str], 
         return
     if not path.is_file():
         errors.append(f"{context}: missing file {relative}")
+        return
+    _check_artifact_payload(root, path, context=context, errors=errors)
+
+
+def _check_workflow_outputs(manifest: dict[str, Any], root: Path, errors: list[str]) -> dict[str, Any]:
+    outputs = _manifest_outputs(manifest)
+    verified_discovery_dir = outputs.get("verified_discovery_dir")
+    if not verified_discovery_dir:
+        errors.append(f"{PACKAGE_MANIFEST_NAME}: outputs.verified_discovery_dir is required for workflow output checks")
+        return {"status": "failed", "output_keys": []}
+
+    discovery_root = _resolve_path(root, verified_discovery_dir)
+    workflow_path = discovery_root / "workflow_manifest.json"
+    workflow_manifest = _read_json_artifact(workflow_path, root, context="verified_discovery/workflow_manifest.json", errors=errors)
+    workflow_outputs = workflow_manifest.get("outputs") if isinstance(workflow_manifest, dict) else None
+    if not isinstance(workflow_outputs, dict):
+        errors.append("verified_discovery/workflow_manifest.json: outputs must be an object")
+        return {"status": "failed", "output_keys": []}
+
+    for key in sorted(REQUIRED_WORKFLOW_OUTPUTS):
+        value = workflow_outputs.get(key)
+        if not value:
+            errors.append(f"verified_discovery/workflow_manifest.json: outputs.{key} is required")
+            continue
+        _check_path(
+            root,
+            discovery_root / str(value),
+            kind="file",
+            errors=errors,
+            context=f"workflow.outputs.{key}",
+        )
+    return {"status": "passed", "output_keys": sorted(workflow_outputs)}
+
+
+def _check_artifact_payload(root: Path, path: Path, *, context: str, errors: list[str]) -> None:
+    relative = _display_path(path, root)
+    if path.suffix == ".json":
+        payload = _read_json_artifact(path, root, context=relative, errors=errors)
+        if payload is None:
+            return
+        expected_fields = JSON_FIELD_REQUIREMENTS.get(relative)
+        if expected_fields and isinstance(payload, dict):
+            missing = [field for field in expected_fields if field not in payload]
+            if missing:
+                errors.append(f"{relative}: missing JSON fields {missing}")
+        elif expected_fields:
+            errors.append(f"{relative}: JSON payload must be an object")
+        elif relative == "report_bundle/main_text/claim_ledger.json" and not isinstance(payload, list):
+            errors.append(f"{relative}: JSON payload must be a claim list")
+        return
+
+    if path.suffix in {".csv", ".md"} and path.stat().st_size == 0:
+        errors.append(f"{context}: empty artifact {relative}")
+
+
+def _read_json_artifact(path: Path, root: Path, *, context: str, errors: list[str]) -> Any:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        errors.append(f"{context}: invalid JSON ({exc})")
+    except OSError as exc:
+        errors.append(f"{context}: cannot read JSON ({exc})")
+    return None
+
+
+def _check_root_record(
+    root: Path,
+    record: dict[str, Any],
+    *,
+    errors: list[str],
+    context: str,
+    expected_path: Path | None = None,
+) -> None:
+    if record.get("exists") is not True:
+        errors.append(f"{context}: exists must be true")
+    path_value = record.get("path")
+    if not path_value:
+        errors.append(f"{context}: path is required")
+        return
+
+    path = _resolve_path(root, str(path_value))
+    if expected_path is not None and path.resolve() != expected_path.resolve():
+        errors.append(
+            f"{context}: path {path_value} does not match expected {_display_path(expected_path, root)}"
+        )
+    if not path.is_file():
+        errors.append(f"{context}: missing file {_display_path(path, root)}")
+        return
+
+    size_bytes = record.get("size_bytes")
+    if isinstance(size_bytes, int) and size_bytes != path.stat().st_size:
+        errors.append(f"{context}: size_bytes={size_bytes} does not match disk size {path.stat().st_size}")
+    sha256_16 = record.get("sha256_16")
+    if isinstance(sha256_16, str) and sha256_16 != _sha256_16(path):
+        errors.append(f"{context}: sha256_16 does not match disk content")
 
 
 def _resolve_path(root: Path, value: str | Path) -> Path:
@@ -358,6 +531,13 @@ def _resolve_cache_dir(root: Path, value: str) -> Path:
     if candidate.exists():
         return candidate
     return root.parent / path
+
+
+def _sha256_16(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        digest.update(handle.read(1024 * 1024))
+    return digest.hexdigest()[:16]
 
 
 def _display_path(path: Path, root: Path) -> str:
