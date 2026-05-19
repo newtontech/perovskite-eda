@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import re
+import hashlib
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -262,6 +263,7 @@ def _provenance(
         "candidate_library_contract_version": CANDIDATE_LIBRARY_CONTRACT_VERSION,
         "source_name": source_name,
         "input_path": str(input_path) if input_path is not None else None,
+        "input_file": _file_facts(Path(input_path)) if input_path is not None else None,
         "input_rows": artifacts.input_count,
         "output_rows": artifacts.output_count,
         "input_columns": list(source_df.columns),
@@ -282,6 +284,24 @@ def _provenance(
 
 def _write_json(payload: dict[str, Any], path: Path) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _file_facts(path: Path) -> dict[str, Any]:
+    exists = path.exists()
+    return {
+        "path": str(path),
+        "exists": exists,
+        "size_bytes": path.stat().st_size if exists and path.is_file() else None,
+        "sha256": _sha256(path) if exists and path.is_file() else None,
+    }
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _text(value: Any) -> str:

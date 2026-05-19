@@ -107,6 +107,10 @@ def test_builder_normalizes_lightweight_source_table_and_writes_provenance(tmp_p
     provenance = json.loads(artifacts.provenance_json.read_text(encoding="utf-8"))
     assert provenance["network_access"] == "not_used"
     assert provenance["does_not_generate_candidates"] is True
+    assert provenance["input_file"]["path"].endswith("real_vendor_fixture.csv")
+    assert provenance["input_file"]["exists"] is True
+    assert provenance["input_file"]["size_bytes"] > 0
+    assert len(provenance["input_file"]["sha256"]) == 64
     assert provenance["outputs"]["candidate_library_csv"] == "candidate_library.csv"
 
 

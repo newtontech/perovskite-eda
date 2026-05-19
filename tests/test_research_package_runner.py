@@ -110,11 +110,25 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert package_manifest["candidate_library_rows"] == 1
     assert package_manifest["ranked_candidates"] == 1
     assert package_manifest["publication_grade"] is False
+    assert package_manifest["schema_version"] == "research-package-manifest-v1"
     assert package_manifest["verification_level"] == "source_columns_only"
     assert package_manifest["source_columns_is_smoke_only"] is True
     assert package_manifest["max_rows"] is None
     assert package_manifest["max_rows_is_smoke_only"] is False
     assert package_manifest["candidate_pool_contract_version"] == "candidate-library-v1"
+    assert package_manifest["runner"]["name"] == "run_research_package"
+    assert package_manifest["runner"]["args"]["dataset_id"] == "package-fixture"
+    assert package_manifest["runner"]["args"]["evidence_mode"] == "source-columns"
+    assert package_manifest["runner"]["args"]["min_verified_rows"] == 4
+    assert package_manifest["runner"]["args"]["top_k"] == 1
+    assert package_manifest["inputs"]["source_table"]["path"].endswith("raw_psc.csv")
+    assert package_manifest["inputs"]["source_table"]["exists"] is True
+    assert package_manifest["inputs"]["source_table"]["size_bytes"] > 0
+    assert len(package_manifest["inputs"]["source_table"]["sha256"]) == 64
+    assert package_manifest["inputs"]["candidate_source"]["path"].endswith("candidate_source.csv")
+    assert package_manifest["inputs"]["candidate_source"]["source_name"] == "fixture-vendor-source"
+    assert package_manifest["inputs"]["candidate_source"]["exists"] is True
+    assert len(package_manifest["inputs"]["candidate_source"]["sha256"]) == 64
     assert package_manifest["outputs"]["root_provenance_manifest_json"] == "provenance_manifest.json"
 
     workflow_manifest = json.loads(
@@ -129,6 +143,9 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     )
     assert candidate_provenance["network_access"] == "not_used"
     assert candidate_provenance["does_not_generate_candidates"] is True
+    assert candidate_provenance["input_file"]["path"].endswith("candidate_source.csv")
+    assert candidate_provenance["input_file"]["exists"] is True
+    assert len(candidate_provenance["input_file"]["sha256"]) == 64
     assert candidate_provenance["validation"]["status"] == "passed"
 
     report_text = (package.report_dir / "main_text" / "main_text_report.md").read_text(encoding="utf-8")
@@ -166,6 +183,12 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert root_manifest["dataset_id"] == "package-fixture"
     assert root_manifest["strict_verified_training_only"] is True
     assert root_manifest["verified_candidate_discovery_only"] is True
+    assert {item["id"] for item in root_manifest["artifacts"]["package"]} == {"package_manifest_json"}
+    assert root_manifest["source_manifests"]["package_manifest_json"]["exists"] is True
+    assert root_manifest["source_inputs"]["input_table"]["path"].endswith("raw_psc.csv")
+    assert len(root_manifest["source_inputs"]["input_table"]["sha256"]) == 64
+    assert root_manifest["source_inputs"]["candidate_source_table"]["path"].endswith("candidate_source.csv")
+    assert len(root_manifest["source_inputs"]["candidate_source_table"]["sha256"]) == 64
     assert "candidate_library:candidate_library_csv" in {
         item["id"] for item in root_manifest["artifacts"]["discovery"]
     }

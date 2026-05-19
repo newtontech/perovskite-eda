@@ -36,21 +36,30 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
     _write(discovery_dir / "model" / "model_manifest.json", '{"strict_verified_training_only": true}\n')
     _write(discovery_dir / "discovery" / "ranked_candidates.csv", "rank,candidate_id\n1,cand-001\n")
     _write(discovery_dir / "discovery" / "audit_report.md", "# Audit\nverified-only\n")
+    input_table = _write(tmp_path / "raw_source.csv", "doi,smiles\n10.1/example,C\n")
     _write(report_dir / "main_text.md", "# Main report\n")
     _write(report_dir / "claim_ledger.json", '[{"evidence_id": "metric:best_model.r2"}]\n')
     _write(report_dir / "review_report.json", '{"review": {"passed": true}}\n')
     _write(si_dir / "supplementary_information.md", "# SI\n")
     _write(si_dir / "audit_summary.json", '{"passed": true}\n')
     candidate_library_dir = tmp_path / "candidate_library"
+    candidate_source = _write(tmp_path / "candidate_source.csv", "candidate_id,smiles\ncand-001,C\n")
     _write(candidate_library_dir / "candidate_library.csv", "candidate_id,smiles\ncand-001,C\n")
     _write(candidate_library_dir / "source_summary.json", '{"output_rows": 1}\n')
     _write(candidate_library_dir / "provenance.json", '{"network_access": "not_used"}\n')
+    package_manifest = _write(
+        tmp_path / "package_manifest.json",
+        '{"schema_version": "research-package-manifest-v1"}\n',
+    )
 
     manifest = generate_root_provenance_manifest(
         discovery_dir,
         report_dir,
         si_dir,
         candidate_library_dir=candidate_library_dir,
+        package_manifest_path=package_manifest,
+        input_path=input_table,
+        candidate_source_path=candidate_source,
     )
 
     output_path = tmp_path / "report_bundle" / "provenance_manifest.json"
@@ -77,6 +86,12 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
     assert {item["id"] for item in manifest["artifacts"]["SI"]} == {"supplementary_information_md"}
     assert {item["id"] for item in manifest["artifacts"]["claim"]} == {"claim_ledger_json"}
     assert {item["id"] for item in manifest["artifacts"]["review"]} == {"review_report_json"}
+    assert {item["id"] for item in manifest["artifacts"]["package"]} == {"package_manifest_json"}
+    assert manifest["source_manifests"]["package_manifest_json"]["exists"] is True
+    assert manifest["source_inputs"]["input_table"]["path"].endswith("raw_source.csv")
+    assert len(manifest["source_inputs"]["input_table"]["sha256"]) == 64
+    assert manifest["source_inputs"]["candidate_source_table"]["path"].endswith("candidate_source.csv")
+    assert len(manifest["source_inputs"]["candidate_source_table"]["sha256"]) == 64
 
     verified_train = manifest["artifacts"]["dataset"][0]
     assert verified_train["exists"] is True
