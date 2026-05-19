@@ -29,6 +29,7 @@ def test_canonical_research_package_targets_are_declared():
     for target in (
         "research-package",
         "research-package-smoke",
+        "research-package-cache-preflight",
         "research-package-pdf",
         "research-package-verify",
         "test-research-package",
@@ -70,6 +71,24 @@ def test_smoke_target_dry_run_caps_rows_in_ignored_artifact_dir():
     assert "hybrid_agent_exploration/results/verified_discovery_runs/" in output
 
 
+def test_cache_preflight_target_dry_run_uses_source_table_cache_and_artifact_dir():
+    output = _make_dry_run(
+        "research-package-cache-preflight",
+        SOURCE_TABLE="/tmp/source.csv",
+        DATASET_ID="unit-dataset",
+        ARTIFACT_DIR="/tmp/artifacts",
+        EVIDENCE_CACHE_DIR="/tmp/cache",
+        SMOKE_MAX_ROWS="25",
+    )
+
+    assert "hybrid_agent_exploration/src/run_evidence_cache_preflight.py" in output
+    assert "--input /tmp/source.csv" in output
+    assert "--dataset-id unit-dataset" in output
+    assert "--cache-dir /tmp/cache" in output
+    assert "--output-dir /tmp/artifacts/evidence_cache_preflight" in output
+    assert "--max-rows 25" in output
+
+
 def test_pdf_target_dry_run_checks_pandoc_and_exports_report_pdfs():
     output = _make_dry_run("research-package-pdf", ARTIFACT_DIR="/tmp/artifacts")
 
@@ -105,6 +124,7 @@ def test_test_research_package_target_runs_canonical_pytest_slice():
 
     assert "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1" in output
     assert "tests/test_canonical_make_targets.py" in output
+    assert "tests/test_evidence_cache_preflight.py" in output
     assert "tests/test_research_package_runner.py" in output
     assert "tests/test_run_verified_discovery_cli.py" in output
     assert "tests/test_root_provenance_manifest.py" in output
