@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -17,6 +18,7 @@ REFERENCE_CACHE_FILE = "reference_cache.json"
 MOLECULE_CACHE_FILE = "molecule_cache.json"
 ReferenceResolver = Callable[[str], ReferenceEvidence | None]
 MoleculeResolver = Callable[[dict[str, Any]], MoleculeEvidence | None]
+ProgressCallback = Callable[[dict[str, Any]], None]
 
 
 @dataclass(frozen=True)
@@ -43,6 +45,8 @@ def collect_evidence_cache(
     retry_attempts: int = 1,
     include_smiles: bool = False,
     write_negative_cache: bool = False,
+    progress_every: int = 0,
+    progress_callback: ProgressCallback | None = None,
 ) -> dict[str, Any]:
     """Fill missing cache entries with a bounded, resumable collection run."""
 
@@ -50,13 +54,18 @@ def collect_evidence_cache(
         raise ValueError("max_requests must be >= 0")
     if retry_attempts < 1:
         raise ValueError("retry_attempts must be >= 1")
+    if progress_every < 0:
+        raise ValueError("progress_every must be >= 0")
     cache_root = Path(cache_dir)
     reference_cache_path = cache_root / REFERENCE_CACHE_FILE
     molecule_cache_path = cache_root / MOLECULE_CACHE_FILE
     reference_cache = _load_cache(reference_cache_path)
     molecule_cache = _load_cache(molecule_cache_path)
     requirements = _load_requirements(requirements_csv, entity_type=entity_type)
-    missing = _select_missing(requirements, reference_cache=reference_cache, molecule_cache=molecule_cache)
+    missing = _select_missing(
+        requirements, reference_cache=reference_cache, molecule_cache=molecule_cache
+    )
+    initial_missing_count = len(missing)
     supported, unsupported = _split_supported(missing, include_smiles=include_smiles)
     planned = supported[:max_requests]
 
@@ -73,6 +82,7 @@ def collect_evidence_cache(
         "write_negative_cache": write_negative_cache,
         "planned_count": len(planned),
         "attempted_count": 0,
+        "remaining_planned_count": len(planned),
         "positive_written_count": 0,
         "negative_written_count": 0,
         "no_evidence_count": 0,
@@ -83,7 +93,9 @@ def collect_evidence_cache(
         "entity_type_counts": {},
         "processed": [],
         "errors": [],
-        "unsupported": [_requirement_summary(requirement) for requirement in unsupported],
+        "unsupported": [
+            _requirement_summary(requirement) for requirement in unsupported
+        ],
     }
     if dry_run or max_requests == 0:
         summary["remaining_missing_count"] = len(missing)
@@ -94,23 +106,53 @@ def collect_evidence_cache(
         evidence: ReferenceEvidence | MoleculeEvidence | None
         error: str | None
         if requirement.entity_type == "reference":
-            evidence, error = _resolve_with_retry(lambda: reference_resolver(requirement.key), retry_attempts)
+            evidence, error = _resolve_with_retry(
+                lambda: reference_resolver(requirement.key), retry_attempts
+            )
             if error is not None:
-                _record_error(summary, requirement, error)
+                _record_error(
+                    summary,
+                    requirement,
+                    error,
+                    initial_missing_count=initial_missing_count,
+                )
+                _emit_progress(
+                    summary,
+                    progress_every=progress_every,
+                    progress_callback=progress_callback,
+                )
                 continue
             should_write_negative = write_negative_cache
             if evidence or should_write_negative:
-                reference_cache[requirement.key] = evidence.to_source() if evidence else None
+                reference_cache[requirement.key] = (
+                    evidence.to_source() if evidence else None
+                )
                 _write_cache(reference_cache, reference_cache_path)
         elif requirement.entity_type == "molecule":
             record = _molecule_record(requirement.key)
-            evidence, error = _resolve_with_retry(lambda: molecule_resolver(record), retry_attempts)
+            evidence, error = _resolve_with_retry(
+                lambda: molecule_resolver(record), retry_attempts
+            )
             if error is not None:
-                _record_error(summary, requirement, error)
+                _record_error(
+                    summary,
+                    requirement,
+                    error,
+                    initial_missing_count=initial_missing_count,
+                )
+                _emit_progress(
+                    summary,
+                    progress_every=progress_every,
+                    progress_callback=progress_callback,
+                )
                 continue
-            should_write_negative = write_negative_cache and not _is_smiles_requirement(requirement)
+            should_write_negative = write_negative_cache and not _is_smiles_requirement(
+                requirement
+            )
             if evidence or should_write_negative:
-                molecule_cache[requirement.key] = evidence.to_source() if evidence else None
+                molecule_cache[requirement.key] = (
+                    evidence.to_source() if evidence else None
+                )
                 _write_cache(molecule_cache, molecule_cache_path)
         else:
             raise ValueError(f"Unsupported entity_type: {requirement.entity_type}")
@@ -134,8 +176,15 @@ def collect_evidence_cache(
                 "record_ids": requirement.record_ids,
             }
         )
+        _update_progress(summary, initial_missing_count=initial_missing_count)
+        _emit_progress(
+            summary, progress_every=progress_every, progress_callback=progress_callback
+        )
 
-    remaining = _select_missing(requirements, reference_cache=reference_cache, molecule_cache=molecule_cache)
+    remaining = _select_missing(
+        requirements, reference_cache=reference_cache, molecule_cache=molecule_cache
+    )
+    summary["remaining_planned_count"] = 0
     summary["remaining_missing_count"] = len(remaining)
     summary["entity_type_counts"] = _entity_counts(summary["processed"])
     return summary
@@ -146,7 +195,10 @@ def write_collection_report(summary: dict[str, Any], output_path: str | Path) ->
 
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
     return path
 
 
@@ -179,7 +231,11 @@ def _select_missing(
 ) -> list[CacheRequirement]:
     selected: list[CacheRequirement] = []
     for requirement in requirements:
-        cache = reference_cache if requirement.entity_type == "reference" else molecule_cache
+        cache = (
+            reference_cache
+            if requirement.entity_type == "reference"
+            else molecule_cache
+        )
         if requirement.key not in cache:
             selected.append(requirement)
     return selected
@@ -217,10 +273,51 @@ def _resolve_with_retry(
     return None, str(last_error)
 
 
-def _record_error(summary: dict[str, Any], requirement: CacheRequirement, error: str) -> None:
+def _record_error(
+    summary: dict[str, Any],
+    requirement: CacheRequirement,
+    error: str,
+    *,
+    initial_missing_count: int,
+) -> None:
     summary["attempted_count"] += 1
     summary["error_count"] += 1
     summary["errors"].append({**_requirement_summary(requirement), "error": error})
+    _update_progress(summary, initial_missing_count=initial_missing_count)
+
+
+def _update_progress(summary: dict[str, Any], *, initial_missing_count: int) -> None:
+    planned_count = int(summary["planned_count"])
+    attempted_count = int(summary["attempted_count"])
+    resolved_missing_count = int(summary["positive_written_count"]) + int(
+        summary["negative_written_count"]
+    )
+    summary["remaining_planned_count"] = max(planned_count - attempted_count, 0)
+    summary["remaining_missing_count"] = max(
+        initial_missing_count - resolved_missing_count, 0
+    )
+    summary["entity_type_counts"] = _entity_counts(summary["processed"])
+
+
+def _emit_progress(
+    summary: dict[str, Any],
+    *,
+    progress_every: int,
+    progress_callback: ProgressCallback | None,
+) -> None:
+    if progress_callback is None or progress_every <= 0:
+        return
+    attempted_count = int(summary["attempted_count"])
+    planned_count = int(summary["planned_count"])
+    if attempted_count <= 0:
+        return
+    if attempted_count % progress_every != 0 and attempted_count != planned_count:
+        return
+    progress_callback(_summary_snapshot(summary))
+
+
+def _summary_snapshot(summary: dict[str, Any]) -> dict[str, Any]:
+    return deepcopy(summary)
 
 
 def _requirement_summary(requirement: CacheRequirement) -> dict[str, Any]:
@@ -243,7 +340,10 @@ def _load_cache(path: Path) -> dict[str, Any]:
 
 def _write_cache(cache: dict[str, Any], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(cache, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(cache, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
 
 def _molecule_record(key: str) -> dict[str, Any]:
@@ -255,7 +355,9 @@ def _molecule_record(key: str) -> dict[str, Any]:
 
 
 def _is_smiles_requirement(requirement: CacheRequirement) -> bool:
-    return requirement.entity_type == "molecule" and requirement.key.startswith("smiles:")
+    return requirement.entity_type == "molecule" and requirement.key.startswith(
+        "smiles:"
+    )
 
 
 def _record_ids(record: dict[str, Any]) -> list[str]:
@@ -274,7 +376,11 @@ def _record_ids(record: dict[str, Any]) -> list[str]:
 def _entity_counts(items: Iterable[Any]) -> dict[str, int]:
     counts: dict[str, int] = {}
     for item in items:
-        entity = item.entity_type if isinstance(item, CacheRequirement) else item["entity_type"]
+        entity = (
+            item.entity_type
+            if isinstance(item, CacheRequirement)
+            else item["entity_type"]
+        )
         counts[entity] = counts.get(entity, 0) + 1
     return counts
 
