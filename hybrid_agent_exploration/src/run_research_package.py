@@ -188,7 +188,10 @@ def run_research_package(
             "source_columns_is_smoke_only": evidence_mode == "source-columns",
             "max_rows": max_rows,
             "max_rows_is_smoke_only": max_rows is not None,
-            "metric_scope": "training_only",
+            "metric_scope": "training_and_internal_holdout",
+            "internal_validation": True,
+            "external_validation": False,
+            "validation_scope": "internal_random_holdout_verified_rows",
             "candidate_pool_contract_version": CANDIDATE_LIBRARY_CONTRACT_VERSION,
         },
     )
@@ -273,6 +276,7 @@ def _report_inputs(
     evidence_context: dict[str, Any],
 ) -> dict[str, Any]:
     metrics = _read_json(verified_discovery_dir / "model" / "model_metrics.json")
+    validation_metrics = _read_json(verified_discovery_dir / "model" / "model_validation_metrics.json")
     workflow = _read_json(verified_discovery_dir / "workflow_manifest.json")
     feature_columns = metrics.get("feature_columns", [])
     result = {
@@ -285,23 +289,27 @@ def _report_inputs(
             "layer1": {"method_id": "strict_verified_data"},
             "layer2": {"method_id": "default_smiles_features"},
             "layer3": {"method_id": metrics.get("model_class", "model")},
-            "layer4": {"method_id": "training_only_fit"},
+            "layer4": {"method_id": validation_metrics.get("split_strategy", "internal_random_holdout")},
             "layer5": {"method_id": "candidate_discovery_report"},
             "target": metrics.get("target_column", "delta_pce"),
             "baseline_as_feature": False,
             "_hash": f"verified_discovery_{workflow.get('dataset_id', 'dataset')}",
         },
         "metrics": {
-            "r2": metrics.get("train_r2", 0.0),
-            "rmse": metrics.get("train_rmse"),
-            "mae": metrics.get("train_mae"),
-            "pearson_r": metrics.get("train_pearson_r"),
-            "metric_scope": "training_only",
+            "r2": validation_metrics.get("validation_r2")
+            if validation_metrics.get("validation_r2") is not None
+            else metrics.get("train_r2", 0.0),
+            "rmse": validation_metrics.get("validation_rmse"),
+            "mae": validation_metrics.get("validation_mae"),
+            "pearson_r": validation_metrics.get("validation_pearson_r"),
+            "metric_scope": "training_and_internal_holdout",
+            "display_r2_fallback": validation_metrics.get("validation_r2") is None,
         },
     }
     artifacts = {
         "verified_discovery_artifact_dir": verified_discovery_dir,
         "verified_discovery_top_n": top_n,
+        "model_validation_metrics": validation_metrics,
         "source_completeness": source_completeness,
         "evidence_context": evidence_context,
         "multi_model_results": [
@@ -389,6 +397,14 @@ def _package_manifest(
     if evidence_cache_manifest_path is not None:
         outputs["evidence_cache_dir"] = _relative(evidence_cache_manifest_path.parent, output_root)
         outputs["evidence_cache_manifest_json"] = _relative(evidence_cache_manifest_path, output_root)
+    outputs["model_validation_metrics_json"] = _relative(
+        discovery_artifacts.model_validation_metrics_json,
+        output_root,
+    )
+    outputs["model_validation_predictions_csv"] = _relative(
+        discovery_artifacts.model_validation_predictions_csv,
+        output_root,
+    )
     return {
         "schema_version": PACKAGE_MANIFEST_SCHEMA_VERSION,
         "dataset_id": dataset_id,

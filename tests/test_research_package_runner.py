@@ -174,7 +174,7 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert candidate_provenance["validation"]["status"] == "passed"
 
     report_text = (package.report_dir / "main_text" / "main_text_report.md").read_text(encoding="utf-8")
-    assert "training-only" in report_text
+    assert "internal random holdout" in report_text
     unsupported_phrases = [
         "substructural fingerprints (Morgan) outperform",
         "incorporating baseline device PCE as a feature helps",

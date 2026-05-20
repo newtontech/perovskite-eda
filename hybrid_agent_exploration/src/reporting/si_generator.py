@@ -324,6 +324,21 @@ class SIGenerator:
         return "\n".join(lines)
 
     def _cv_section(self) -> str:
+        holdout = self.artifacts.get("model_validation_metrics")
+        if isinstance(holdout, dict) and holdout:
+            r2 = holdout.get("validation_r2")
+            rmse = holdout.get("validation_rmse")
+            mae = holdout.get("validation_mae")
+            r2_text = f"{r2:.4f}" if r2 is not None else "not defined for the validation sample size"
+            rmse_text = f"{rmse:.3f}" if rmse is not None else "N/A"
+            mae_text = f"{mae:.3f}" if mae is not None else "N/A"
+            return (
+                "Cross-validation was not supplied for this research-package run. "
+                "internal random holdout validation was performed on verified rows "
+                f"({holdout.get('train_rows')} train, {holdout.get('validation_rows')} validation; "
+                f"R² = {r2_text}, RMSE = {rmse_text}, MAE = {mae_text}). "
+                "This diagnostic is not independent external-validation and does not establish experimental performance."
+            )
         if self._has_training_only_metrics():
             return (
                 "Cross-validation was not supplied for this research-package run. "
