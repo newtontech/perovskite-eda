@@ -186,7 +186,8 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert closure_readiness["publication_grade"] is False
     assert closure_readiness["publication_grade_false_reasons"]
     assert closure_readiness["gates"]["validation_artifacts"]["passed"] is True
-    assert closure_readiness["gates"]["chemical_generalization_validation"]["passed"] is True
+    assert closure_readiness["gates"]["chemical_generalization_validation"]["passed"] is False
+    assert "validation_rows" in closure_readiness["gates"]["chemical_generalization_validation"]["reason"]
     assert closure_readiness["gates"]["closed_loop_packet"]["passed"] is True
     assert closure_readiness["gates"]["external_validation"]["passed"] is False
     assert closure_readiness["gates"]["experimental_feedback"]["passed"] is False
