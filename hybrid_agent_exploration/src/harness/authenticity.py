@@ -128,13 +128,19 @@ class RealDataAuthenticator:
         else:
             reasons.append("missing_smiles")
 
-        reference = self.reference_verifier(doi) if doi and self.reference_verifier else None
+        reference = (
+            self.reference_verifier(doi) if doi and self.reference_verifier else None
+        )
         if reference:
             sources.append(reference.to_source())
             if title and not _titles_match(title, reference.title):
                 reasons.append("reference_title_mismatch")
             record_year = _extract_year(record)
-            if record_year is not None and reference.year is not None and record_year != reference.year:
+            if (
+                record_year is not None
+                and reference.year is not None
+                and record_year != reference.year
+            ):
                 reasons.append("reference_year_mismatch")
         elif self.strict:
             reasons.append("missing_reference_evidence")
@@ -142,14 +148,22 @@ class RealDataAuthenticator:
         molecule = self.molecule_verifier(record) if self.molecule_verifier else None
         if molecule:
             sources.append(molecule.to_source())
-            if smiles and molecule.smiles and not _smiles_match(smiles, molecule.smiles):
+            if (
+                smiles
+                and molecule.smiles
+                and not _smiles_match(smiles, molecule.smiles)
+            ):
                 reasons.append("molecule_smiles_mismatch")
             pubchem_id = _normalize_pubchem_id(record.get("pubchem_id"))
             molecule_pubchem_id = _normalize_pubchem_id(molecule.pubchem_id)
             if pubchem_id and molecule_pubchem_id and pubchem_id != molecule_pubchem_id:
                 reasons.append("pubchem_id_mismatch")
             cas_number = _clean_text(record.get("cas_number"))
-            if cas_number and molecule.cas_number and cas_number != str(molecule.cas_number):
+            if (
+                cas_number
+                and molecule.cas_number
+                and cas_number != str(molecule.cas_number)
+            ):
                 reasons.append("cas_number_mismatch")
         elif self.strict:
             reasons.append("missing_molecule_evidence")
@@ -162,7 +176,9 @@ class RealDataAuthenticator:
             normalized["quarantine_reason"] = ";".join(reasons)
         normalized["verification_sources"] = sources
 
-        return VerificationResult(status=status, reasons=reasons, sources=sources, normalized=normalized)
+        return VerificationResult(
+            status=status, reasons=reasons, sources=sources, normalized=normalized
+        )
 
     def split_records(self, records: Iterable[dict[str, Any]]) -> VerificationSplit:
         verified: list[dict[str, Any]] = []
@@ -308,7 +324,9 @@ class CachedReferenceVerifier:
             return {}
         payload = json.loads(self.cache_path.read_text(encoding="utf-8"))
         if not isinstance(payload, dict):
-            raise ValueError(f"Reference cache must be a JSON object: {self.cache_path}")
+            raise ValueError(
+                f"Reference cache must be a JSON object: {self.cache_path}"
+            )
         return payload
 
     def _write_cache(self) -> None:
@@ -476,6 +494,13 @@ def _pubchem_smiles(properties: dict[str, Any]) -> str:
 def _crossref_year(message: dict[str, Any]) -> int | None:
     for key in ("published-print", "published-online", "issued"):
         parts = message.get(key, {}).get("date-parts", [])
-        if parts and parts[0]:
-            return int(parts[0][0])
+        if not parts or not parts[0]:
+            continue
+        year = parts[0][0]
+        if year is None:
+            continue
+        try:
+            return int(year)
+        except (TypeError, ValueError):
+            continue
     return None
