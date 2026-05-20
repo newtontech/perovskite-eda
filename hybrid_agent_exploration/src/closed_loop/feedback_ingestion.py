@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -22,6 +23,8 @@ INGESTION_SCHEMA_VERSION = "closed-loop-feedback-ingestion-manifest-v1"
 VALIDATION_SCHEMA_VERSION = "closed-loop-feedback-validation-report-v1"
 DEFAULT_FEEDBACK_DIRNAME = "experimental_feedback"
 DELTA_TOLERANCE = 1e-6
+MIN_ABSOLUTE_PCE = 0.0
+MAX_ABSOLUTE_PCE = 100.0
 REQUIRED_COLUMNS = (
     "iteration_id",
     "candidate_id",
@@ -229,6 +232,28 @@ def _validate_feedback_rows(
     bad_statuses = sorted(set(feedback["experimental_status"].astype(str)) - {"measured"})
     if bad_statuses:
         errors.append(f"experimental_status must be 'measured'; observed {bad_statuses}")
+    selected_identity = {
+        (
+            str(row["iteration_id"]),
+            str(row["candidate_id"]),
+            str(row["smiles"]),
+        )
+        for row in selected[["iteration_id", "candidate_id", "smiles"]].to_dict(orient="records")
+    }
+    feedback_identity = {
+        (
+            str(row["iteration_id"]),
+            str(row["candidate_id"]),
+            str(row["smiles"]),
+        )
+        for row in feedback[["iteration_id", "candidate_id", "smiles"]].to_dict(orient="records")
+    }
+    mismatched_identity = sorted(feedback_identity - selected_identity)
+    if mismatched_identity:
+        errors.append(
+            "feedback rows must match selected candidate identity "
+            f"(iteration_id, candidate_id, smiles): {mismatched_identity}"
+        )
 
     for idx, row in feedback.iterrows():
         row_id = str(row.get("candidate_id", f"row-{idx}"))
@@ -248,6 +273,11 @@ def _validate_feedback_rows(
                 continue
             if not math.isfinite(value):
                 errors.append(f"{column} must be a finite numeric value for candidate_id={row_id}")
+                continue
+            if column in {"measured_pce_without_modulator", "measured_pce_with_modulator"} and not (
+                MIN_ABSOLUTE_PCE <= value <= MAX_ABSOLUTE_PCE
+            ):
+                errors.append(f"{column} must be between 0 and 100 for candidate_id={row_id}")
                 continue
             values[column] = value
         if set(NUMERIC_COLUMNS).issubset(values):
@@ -275,12 +305,10 @@ def _check_external_lab_fake_markers(feedback: pd.DataFrame, *, feedback_csv: Pa
     fields = [feedback_csv.name]
     for column in TEXT_PROVENANCE_COLUMNS + ("notes",):
         fields.extend(feedback[column].astype(str).tolist())
-    lower_fields = [field.lower() for field in fields]
-    matches = sorted(
-        token
-        for token in EXTERNAL_LAB_FORBIDDEN_TOKENS
-        if any(token in field for field in lower_fields)
-    )
+    field_tokens = set()
+    for field in fields:
+        field_tokens.update(token for token in re.split(r"[^a-z0-9]+", field.lower()) if token)
+    matches = sorted(set(EXTERNAL_LAB_FORBIDDEN_TOKENS) & field_tokens)
     if matches:
         errors.append(
             "external_lab feedback cannot contain fixture/mock/test markers; "

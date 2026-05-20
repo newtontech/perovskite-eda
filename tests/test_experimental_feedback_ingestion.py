@@ -131,6 +131,19 @@ def test_ingestion_rejects_unknown_candidate_id(tmp_path):
         ingest_experimental_feedback(iteration_dir=iteration_dir, feedback_csv=feedback_csv)
 
 
+def test_ingestion_rejects_candidate_smiles_mismatch(tmp_path):
+    from closed_loop.feedback_ingestion import ExperimentalFeedbackIngestionError, ingest_experimental_feedback
+
+    iteration_dir = _iteration_dir(tmp_path)
+    feedback_csv = _write_feedback(
+        tmp_path / "feedback.csv",
+        _feedback_rows(smiles="CCN", data_source="lab-a", notes="independent lab measurement row"),
+    )
+
+    with pytest.raises(ExperimentalFeedbackIngestionError, match="selected candidate identity"):
+        ingest_experimental_feedback(iteration_dir=iteration_dir, feedback_csv=feedback_csv)
+
+
 def test_ingestion_rejects_duplicate_candidate_id(tmp_path):
     from closed_loop.feedback_ingestion import ExperimentalFeedbackIngestionError, ingest_experimental_feedback
 
@@ -139,7 +152,11 @@ def test_ingestion_rejects_duplicate_candidate_id(tmp_path):
     feedback_csv = _write_feedback(tmp_path / "feedback.csv", rows)
 
     with pytest.raises(ExperimentalFeedbackIngestionError, match="duplicate candidate_id"):
-        ingest_experimental_feedback(iteration_dir=iteration_dir, feedback_csv=feedback_csv)
+        ingest_experimental_feedback(
+            iteration_dir=iteration_dir,
+            feedback_csv=feedback_csv,
+            feedback_data_scope="unit_test_fixture",
+        )
 
 
 @pytest.mark.parametrize(
@@ -153,6 +170,8 @@ def test_ingestion_rejects_duplicate_candidate_id(tmp_path):
         ("measurement_date", "20-05-2026", "measurement_date"),
         ("measured_delta_pce", "nan", "finite numeric"),
         ("measured_pce_with_modulator", "inf", "finite numeric"),
+        ("measured_pce_without_modulator", "-0.1", "between 0 and 100"),
+        ("measured_pce_with_modulator", "101", "between 0 and 100"),
     ],
 )
 def test_ingestion_rejects_invalid_required_feedback_fields(
@@ -167,7 +186,11 @@ def test_ingestion_rejects_invalid_required_feedback_fields(
     feedback_csv = _write_feedback(tmp_path / "feedback.csv", _feedback_rows(**{column: value}))
 
     with pytest.raises(ExperimentalFeedbackIngestionError, match=message):
-        ingest_experimental_feedback(iteration_dir=iteration_dir, feedback_csv=feedback_csv)
+        ingest_experimental_feedback(
+            iteration_dir=iteration_dir,
+            feedback_csv=feedback_csv,
+            feedback_data_scope="unit_test_fixture",
+        )
 
 
 def test_ingestion_rejects_delta_that_does_not_match_reported_pces(tmp_path):
