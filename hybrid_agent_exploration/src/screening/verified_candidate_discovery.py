@@ -1,0 +1,516 @@
+"""Verified-only candidate discovery outputs.
+
+Candidate discovery must not silently mix quarantined or unverifiable rows into
+screening results. This module enforces `verification_status == "verified"`
+before ranking and writes a small, Git-trackable discovery bundle.
+"""
+
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Callable
+
+import numpy as np
+import pandas as pd
+
+
+FeatureFn = Callable[[pd.Series], Any]
+UncertaintyFn = Callable[[Any, np.ndarray], Any]
+
+
+class UnverifiedCandidatePoolError(ValueError):
+    """Raised when a candidate pool contains non-verified rows."""
+
+
+class CandidateLibraryContractError(ValueError):
+    """Raised when a candidate pool is not provenance-complete."""
+
+
+CANDIDATE_LIBRARY_CONTRACT_VERSION = "candidate-library-v1"
+SCORING_POLICY_VERSION = "baseline-aware-candidate-scoring-v1"
+CANDIDATE_LIBRARY_REQUIRED_COLUMNS = (
+    "candidate_id",
+    "smiles",
+    "source_name",
+    "source_url",
+    "availability_status",
+    "synthesis_status",
+    "safety_status",
+    "verification_status",
+    "verification_sources",
+)
+ALLOWED_VERIFICATION_SOURCE_KINDS = {
+    "availability",
+    "literature",
+    "molecule",
+    "reference",
+    "safety",
+    "synthesis",
+}
+RANKING_EVIDENCE_SOURCE_KINDS = {"literature", "molecule", "reference"}
+SYNTHESIS_EVIDENCE_SOURCE_KINDS = {"literature", "reference", "synthesis"}
+COMMERCIAL_SYNTHESIS_SOURCE_KINDS = {"availability", "synthesis"}
+
+
+@dataclass(frozen=True)
+class CandidateDiscoveryArtifacts:
+    """Paths and counts emitted by a verified candidate discovery run."""
+
+    output_dir: Path
+    ranked_candidates_csv: Path
+    discovery_manifest_json: Path
+    audit_report_md: Path
+    input_count: int
+    ranked_count: int
+
+
+class VerifiedCandidateDiscovery:
+    """Rank candidates only after strict verification status checks pass."""
+
+    def __init__(self, *, output_dir: str | Path) -> None:
+        self.output_dir = Path(output_dir)
+
+    def discover(
+        self,
+        candidate_pool: pd.DataFrame | str | Path,
+        *,
+        model: Any,
+        feature_fn: FeatureFn,
+        top_k: int = 100,
+        dataset_id: str,
+        uncertainty_fn: UncertaintyFn | None = None,
+    ) -> CandidateDiscoveryArtifacts:
+        """Rank a verified candidate pool and write discovery artifacts."""
+
+        df = _load_candidate_pool(candidate_pool)
+        validate_candidate_library_contract(df)
+        _require_verified(df)
+        ranked = _rank_candidates(
+            df,
+            model=model,
+            feature_fn=feature_fn,
+            top_k=top_k,
+            uncertainty_fn=uncertainty_fn,
+        )
+
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        artifacts = CandidateDiscoveryArtifacts(
+            output_dir=self.output_dir,
+            ranked_candidates_csv=self.output_dir / "ranked_candidates.csv",
+            discovery_manifest_json=self.output_dir / "candidate_discovery_manifest.json",
+            audit_report_md=self.output_dir / "candidate_discovery_audit.md",
+            input_count=len(df),
+            ranked_count=len(ranked),
+        )
+        ranked.to_csv(artifacts.ranked_candidates_csv, index=False)
+        _write_json(_manifest(dataset_id, artifacts, df, ranked, top_k, model), artifacts.discovery_manifest_json)
+        artifacts.audit_report_md.write_text(
+            _audit_report(dataset_id, artifacts, ranked),
+            encoding="utf-8",
+        )
+        return artifacts
+
+
+def _load_candidate_pool(candidate_pool: pd.DataFrame | str | Path) -> pd.DataFrame:
+    if isinstance(candidate_pool, pd.DataFrame):
+        return candidate_pool.copy()
+    path = Path(candidate_pool)
+    if not path.exists():
+        raise FileNotFoundError(f"Candidate pool not found: {path}")
+    if path.suffix.lower() == ".csv":
+        return pd.read_csv(path, low_memory=False)
+    if path.suffix.lower() in {".xlsx", ".xls"}:
+        return pd.read_excel(path)
+    raise ValueError(f"Unsupported candidate pool format: {path.suffix}")
+
+
+def validate_candidate_library_contract(df: pd.DataFrame) -> None:
+    """Ensure candidate rows carry enough identity and provenance for ranking."""
+
+    missing = [column for column in CANDIDATE_LIBRARY_REQUIRED_COLUMNS if column not in df.columns]
+    if missing:
+        raise CandidateLibraryContractError(
+            "Candidate library contract missing required columns: " + ", ".join(missing)
+        )
+
+    empty_errors: list[str] = []
+    for column in CANDIDATE_LIBRARY_REQUIRED_COLUMNS:
+        empty = df[column].map(_text) == ""
+        if empty.any():
+            empty_errors.append(f"{column} empty for rows: {', '.join(_row_identifiers(df[empty]))}")
+    if empty_errors:
+        raise CandidateLibraryContractError("; ".join(empty_errors))
+
+    source_errors: list[str] = []
+    source_shape_errors: list[str] = []
+    status_source_errors: list[str] = []
+    identity_errors: list[str] = []
+    for idx, row in df.iterrows():
+        identifier = _row_identifiers(df.loc[[idx]])[0]
+        source_items, source_parse_error = _parse_verification_source_items(row.get("verification_sources"))
+        if source_parse_error:
+            source_shape_errors.append(f"{identifier} verification_sources {source_parse_error}")
+        source_shape_errors.extend(_verification_source_item_errors(identifier, source_items))
+        sources = [source for source in source_items if isinstance(source, dict)]
+        if not sources:
+            source_errors.append(f"{identifier} has empty verification_sources")
+            continue
+        source_shape_errors.extend(_verification_source_shape_errors(identifier, sources))
+        has_identity = _text(row.get("pubchem_id")) or _text(row.get("cas_number"))
+        has_molecule_source = any(_text(source.get("kind")) == "molecule" for source in sources)
+        if not has_identity and not has_molecule_source:
+            identity_errors.append(f"{identifier} lacks molecule identity")
+        source_kinds = {_text(source.get("kind")) for source in sources}
+        if _text(row.get("availability_status")).lower() != "not_assessed" and "availability" not in source_kinds:
+            status_source_errors.append(f"{identifier} availability_status requires kind=availability source")
+        if _text(row.get("safety_status")).lower() != "not_assessed" and "safety" not in source_kinds:
+            status_source_errors.append(f"{identifier} safety_status requires kind=safety source")
+        if _text(row.get("synthesis_status")).lower() != "not_assessed" and not _has_synthesis_backing_source(
+            row.get("synthesis_status"),
+            source_kinds,
+        ):
+            status_source_errors.append(f"{identifier} synthesis_status requires synthesis, literature, or availability source evidence")
+    if source_errors:
+        raise CandidateLibraryContractError("; ".join(source_errors))
+    if source_shape_errors:
+        raise CandidateLibraryContractError("; ".join(source_shape_errors))
+    if status_source_errors:
+        raise CandidateLibraryContractError("; ".join(status_source_errors))
+    if identity_errors:
+        raise CandidateLibraryContractError("; ".join(identity_errors))
+
+
+def _require_verified(df: pd.DataFrame) -> None:
+    if "verification_status" not in df.columns:
+        raise UnverifiedCandidatePoolError(
+            "Candidate discovery requires verification_status=verified for every row; "
+            "missing column verification_status."
+        )
+    status = df["verification_status"].fillna("").astype(str)
+    bad = df[status != "verified"]
+    if bad.empty:
+        return
+    identifiers = _row_identifiers(bad)
+    raise UnverifiedCandidatePoolError(
+        "Candidate discovery requires verification_status=verified for every row; "
+        f"blocked rows: {', '.join(identifiers)}"
+    )
+
+
+def _row_identifiers(df: pd.DataFrame, limit: int = 10) -> list[str]:
+    if "candidate_id" in df.columns:
+        values = df["candidate_id"].fillna("").astype(str)
+        ids = [value.strip() for value in values.tolist() if value.strip()]
+        if ids:
+            return ids[:limit]
+    if "record_id" in df.columns:
+        values = df["record_id"].fillna("").astype(str)
+        ids = [value.strip() for value in values.tolist() if value.strip()]
+    else:
+        ids = [f"index:{idx}" for idx in df.index.tolist()]
+    return ids[:limit]
+
+
+def _rank_candidates(
+    df: pd.DataFrame,
+    *,
+    model: Any,
+    feature_fn: FeatureFn,
+    top_k: int,
+    uncertainty_fn: UncertaintyFn | None,
+) -> pd.DataFrame:
+    if "smiles" not in df.columns:
+        raise ValueError("Candidate pool must contain a smiles column.")
+    if top_k < 1:
+        raise ValueError("top_k must be >= 1.")
+
+    features = feature_fn(df["smiles"])
+    X = _as_feature_array(features)
+    predictions = np.asarray(model.predict(X), dtype=float)
+    if len(predictions) != len(df):
+        raise ValueError("Model prediction length does not match candidate pool length.")
+
+    ranked = df.copy()
+    ranked["predicted_delta_pce"] = predictions
+    if uncertainty_fn is not None:
+        ranked["uncertainty"] = np.asarray(uncertainty_fn(model, X), dtype=float)
+    scored = ranked.apply(_candidate_score_components, axis=1)
+    ranked["candidate_score"] = [components["candidate_score"] for components in scored]
+    ranked["score_components"] = [
+        json.dumps(components, ensure_ascii=False, sort_keys=True)
+        for components in scored
+    ]
+    ranked = ranked.sort_values(
+        ["candidate_score", "predicted_delta_pce"],
+        ascending=[False, False],
+    ).reset_index(drop=True)
+    ranked["rank"] = np.arange(1, len(ranked) + 1)
+    return ranked.head(top_k).reset_index(drop=True)
+
+
+def _as_feature_array(features: Any) -> np.ndarray:
+    if isinstance(features, pd.DataFrame):
+        return features.fillna(0).to_numpy()
+    if isinstance(features, pd.Series):
+        return features.fillna(0).to_numpy().reshape(-1, 1)
+    array = np.asarray(features)
+    if array.ndim == 1:
+        array = array.reshape(-1, 1)
+    return array
+
+
+def _manifest(
+    dataset_id: str,
+    artifacts: CandidateDiscoveryArtifacts,
+    source_df: pd.DataFrame,
+    ranked_df: pd.DataFrame,
+    top_k: int,
+    model: Any,
+) -> dict[str, Any]:
+    return {
+        "dataset_id": dataset_id,
+        "generated_at": _now_iso(),
+        "requires_verified_candidates": True,
+        "requires_verification_sources": True,
+        "candidate_library_contract_version": CANDIDATE_LIBRARY_CONTRACT_VERSION,
+        "scoring_policy_version": SCORING_POLICY_VERSION,
+        "scoring_policy": _scoring_policy(),
+        "input_rows": artifacts.input_count,
+        "ranked_rows": artifacts.ranked_count,
+        "top_k": top_k,
+        "model_class": model.__class__.__name__,
+        "input_columns": list(source_df.columns),
+        "ranked_columns": list(ranked_df.columns),
+        "outputs": {
+            "ranked_candidates_csv": artifacts.ranked_candidates_csv.name,
+            "discovery_manifest_json": artifacts.discovery_manifest_json.name,
+            "audit_report_md": artifacts.audit_report_md.name,
+        },
+    }
+
+
+def _audit_report(
+    dataset_id: str,
+    artifacts: CandidateDiscoveryArtifacts,
+    ranked_df: pd.DataFrame,
+) -> str:
+    lines = [
+        f"# Verified Candidate Discovery Audit: {dataset_id}",
+        "",
+        "- Gate: verified-only candidate pool (`verification_status=verified`).",
+        f"- Candidate library contract: `{CANDIDATE_LIBRARY_CONTRACT_VERSION}`.",
+        f"- Input candidates: {artifacts.input_count}",
+        f"- Ranked candidates emitted: {artifacts.ranked_count}",
+        "",
+        "## Top Candidates",
+        "",
+    ]
+    if ranked_df.empty:
+        lines.append("- None")
+    else:
+        for _, row in ranked_df.head(10).iterrows():
+            record_id = _text(row.get("candidate_id")) or _text(row.get("record_id")) or "unknown"
+            smiles = _text(row.get("smiles")) or "unknown"
+            score = row.get("predicted_delta_pce")
+            lines.append(f"- {record_id}: `{smiles}` predicted_delta_pce={score}")
+    lines.extend(
+        [
+            "",
+            "## Outputs",
+            "",
+            f"- `{artifacts.ranked_candidates_csv.name}`",
+            f"- `{artifacts.discovery_manifest_json.name}`",
+            f"- `{artifacts.audit_report_md.name}`",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _candidate_score_components(row: pd.Series) -> dict[str, float | int]:
+    predicted_delta_pce = _number(row.get("predicted_delta_pce"))
+    baseline_pce = _number(row.get("baseline_pce"))
+    baseline_pce_bonus = _baseline_pce_bonus(baseline_pce)
+    baseline_context_bonus = 0.10 if _text(row.get("baseline_context")) else 0.0
+    availability_bonus = _status_bonus(
+        row.get("availability_status"),
+        positive={"commercial", "available", "in_stock", "vendor_confirmed"},
+        negative={"unavailable", "discontinued", "not_available"},
+        positive_bonus=0.20,
+        negative_penalty=-0.25,
+    )
+    synthesis_bonus = _status_bonus(
+        row.get("synthesis_status"),
+        positive={"commercial", "reported_in_literature", "reported_protocol", "known", "available"},
+        negative={"not_reported", "unknown", "failed", "unavailable"},
+        positive_bonus=0.15,
+        negative_penalty=-0.15,
+    )
+    safety_bonus = _status_bonus(
+        row.get("safety_status"),
+        positive={"sds_available", "low_hazard", "acceptable", "available"},
+        negative={"hazardous", "restricted", "not_recommended"},
+        positive_bonus=0.15,
+        negative_penalty=-0.30,
+    )
+    verification_evidence_count = _ranking_evidence_count(row.get("verification_sources"))
+    verification_evidence_bonus = min(verification_evidence_count, 5) * 0.05
+    uncertainty = _number(row.get("uncertainty"))
+    uncertainty_penalty = -0.50 * uncertainty if uncertainty > 0 else 0.0
+    candidate_score = (
+        predicted_delta_pce
+        + baseline_pce_bonus
+        + baseline_context_bonus
+        + availability_bonus
+        + synthesis_bonus
+        + safety_bonus
+        + verification_evidence_bonus
+        + uncertainty_penalty
+    )
+    return {
+        "predicted_delta_pce": round(predicted_delta_pce, 6),
+        "baseline_pce": round(baseline_pce, 6) if baseline_pce > 0 else 0.0,
+        "baseline_pce_bonus": round(baseline_pce_bonus, 6),
+        "baseline_context_bonus": round(baseline_context_bonus, 6),
+        "availability_bonus": round(availability_bonus, 6),
+        "synthesis_bonus": round(synthesis_bonus, 6),
+        "safety_bonus": round(safety_bonus, 6),
+        "verification_evidence_count": verification_evidence_count,
+        "verification_evidence_bonus": round(verification_evidence_bonus, 6),
+        "uncertainty_penalty": round(uncertainty_penalty, 6),
+        "candidate_score": round(candidate_score, 6),
+    }
+
+
+def _baseline_pce_bonus(value: float) -> float:
+    if value <= 0:
+        return 0.0
+    return min(max((value - 18.0) * 0.02, 0.0), 0.20)
+
+
+def _status_bonus(
+    value: Any,
+    *,
+    positive: set[str],
+    negative: set[str],
+    positive_bonus: float,
+    negative_penalty: float,
+) -> float:
+    status = _text(value).lower()
+    if status in positive:
+        return positive_bonus
+    if status in negative:
+        return negative_penalty
+    return 0.0
+
+
+def _number(value: Any) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if not np.isfinite(number):
+        return 0.0
+    return number
+
+
+def _scoring_policy() -> dict[str, Any]:
+    return {
+        "version": SCORING_POLICY_VERSION,
+        "sort_key": "candidate_score",
+        "base_signal": "predicted_delta_pce",
+        "baseline_context": "baseline_pce and baseline_context add bounded context bonuses when present",
+        "readiness_statuses": "availability_status, synthesis_status, and safety_status add bounded bonuses or penalties",
+        "verification_evidence": (
+            "only molecule/literature/reference verification_sources contribute a capped evidence-count bonus; "
+            "availability/safety sources are audited but do not increase ranking"
+        ),
+        "uncertainty_penalty": "applied_when_uncertainty_column_is_available",
+    }
+
+
+def _write_json(payload: dict[str, Any], path: Path) -> None:
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _text(value: Any) -> str:
+    if value is None:
+        return ""
+    try:
+        if pd.isna(value):
+            return ""
+    except (TypeError, ValueError):
+        pass
+    return str(value).strip()
+
+
+def _parse_verification_sources(value: Any) -> list[dict[str, Any]]:
+    items, _ = _parse_verification_source_items(value)
+    return [source for source in items if isinstance(source, dict)]
+
+
+def _parse_verification_source_items(value: Any) -> tuple[list[Any], str | None]:
+    if isinstance(value, list):
+        return value, None
+    if not _text(value):
+        return [], None
+    try:
+        parsed = json.loads(str(value))
+    except json.JSONDecodeError:
+        return [], "must be valid JSON"
+    if not isinstance(parsed, list):
+        return [], "must be a JSON list"
+    return parsed, None
+
+
+def _verification_source_item_errors(identifier: str, sources: list[Any]) -> list[str]:
+    errors: list[str] = []
+    for idx, source in enumerate(sources):
+        if not isinstance(source, dict):
+            errors.append(f"{identifier} verification_sources[{idx}] must be an object")
+    return errors
+
+
+def _verification_source_shape_errors(identifier: str, sources: list[dict[str, Any]]) -> list[str]:
+    errors: list[str] = []
+    for idx, source in enumerate(sources):
+        context = f"{identifier} verification_sources[{idx}]"
+        kind = _text(source.get("kind"))
+        if not kind:
+            errors.append(f"{context} missing kind")
+            continue
+        if kind not in ALLOWED_VERIFICATION_SOURCE_KINDS:
+            errors.append(f"{context} unsupported verification source kind: {kind}")
+        if not _text(source.get("source")):
+            errors.append(f"{context} missing source")
+        url = _text(source.get("url"))
+        doi = _text(source.get("doi"))
+        pubchem_id = _text(source.get("pubchem_id"))
+        if kind in {"availability", "safety"} and not url:
+            errors.append(f"{context} kind={kind} requires url")
+        if kind == "molecule" and not (pubchem_id or url):
+            errors.append(f"{context} kind=molecule requires pubchem_id or url")
+        if kind in {"literature", "reference", "synthesis"} and not (doi or url):
+            errors.append(f"{context} kind={kind} requires doi or url")
+    return errors
+
+
+def _has_synthesis_backing_source(status_value: Any, source_kinds: set[str]) -> bool:
+    status = _text(status_value).lower()
+    if status in {"commercial", "available"}:
+        return bool(source_kinds & COMMERCIAL_SYNTHESIS_SOURCE_KINDS)
+    return bool(source_kinds & SYNTHESIS_EVIDENCE_SOURCE_KINDS)
+
+
+def _ranking_evidence_count(value: Any) -> int:
+    return sum(
+        _text(source.get("kind")) in RANKING_EVIDENCE_SOURCE_KINDS
+        for source in _parse_verification_sources(value)
+    )
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()

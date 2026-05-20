@@ -1,0 +1,89 @@
+{
+  "data_info": {
+    "n_samples": 200,
+    "target_column": "delta_pce",
+    "smiles_column": "smiles",
+    "source": "data_cache.csv"
+  },
+  "dimensionality_summary": {
+    "Descriptors_basic": {
+      "n_samples": 200,
+      "n_features": 12,
+      "nan_fraction": 0.0,
+      "zero_fraction": 0.3391666666666666
+    },
+    "FP_ECFP4": {
+      "n_samples": 200,
+      "n_features": 2048,
+      "nan_fraction": 0.0,
+      "zero_fraction": 0.9941357421875
+    },
+    "FP_ECFP6": {
+      "n_samples": 200,
+      "n_features": 2048,
+      "nan_fraction": 0.0,
+      "zero_fraction": 0.9924999999999999
+    },
+    "FP_MACCS": {
+      "n_samples": 200,
+      "n_features": 167,
+      "nan_fraction": 0.0,
+      "zero_fraction": 0.9072754491017964
+    },
+    "FP_KRFP": {
+      "n_samples": 200,
+      "n_features": 2048,
+      "nan_fraction": 0.0,
+      "zero_fraction": 0.9705810546875
+    },
+    "FP_AtomPair": {
+      "n_samples": 200,
+      "n_features": 2048,
+      "nan_fraction": 0.0,
+      "zero_fraction": 0.9705810546875
+    },
+    "FP_TopologicalTorsion": {
+      "n_samples": 200,
+      "n_features": 2048,
+      "nan_fraction": 0.0,
+      "zero_fraction": 0.9971435546874999
+    }
+  },
+  "variance_threshold_analysis": {
+    "Descriptors_basic": {
+      "0.0": 12,
+      "0.01": 12,
+      "0.05": 12
+    },
+    "FP_ECFP4": {
+      "0.0": 736,
+      "0.01": 228,
+      "0.05": 32
+    },
+    "FP_ECFP6": {
+      "0.0": 996,
+      "0.01": 310,
+      "0.05": 36
+    },
+    "FP_MACCS": {
+      "0.0": 157,
+      "0.01": 139,
+      "0.05": 93
+    },
+    "FP_KRFP": {
+      "0.0": 1727,
+      "0.01": 1192,
+      "0.05": 347
+    },
+    "FP_AtomPair": {
+      "0.0": 1727,
+      "0.01": 1192,
+      "0.05": 347
+    },
+    "FP_TopologicalTorsion": {
+      "0.0": 414,
+      "0.01": 230,
+      "0.05": 114
+    }
+  }
+}

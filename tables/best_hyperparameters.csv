@@ -1,0 +1,5 @@
+alpha,model,best_cv_r2,max_depth,n_estimators,learning_rate,C,kernel
+100.0,Ridge,0.005433161046690449,,,,,
+,Random Forest,0.1342693536593308,10.0,200.0,,,
+,XGBoost,0.11465951406504289,7.0,200.0,0.01,,
+,SVR,0.01923267912895747,,,,1.0,rbf
