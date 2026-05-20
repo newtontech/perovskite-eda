@@ -54,20 +54,26 @@ def test_tracked_psc_passivator_seed_source_normalizes_to_candidate_library_v1(t
     assert evidence_audit["summary"]["candidates_with_molecule_source"] == len(library)
     assert evidence_audit["summary"]["candidates_with_pubchem_id"] == len(library)
     assert evidence_audit["summary"]["candidates_with_pubchem_url"] == len(library)
-    assert evidence_audit["summary"]["candidates_with_literature_source"] == 4
+    assert evidence_audit["summary"]["candidates_with_literature_source"] == len(library)
     assert evidence_audit["summary"]["candidates_with_availability_source"] == len(library)
     assert evidence_audit["summary"]["candidates_with_safety_source"] == len(library)
+    assert evidence_audit["missing_requirements_by_kind"]["literature"] == 0
     assert evidence_audit["missing_requirements_by_kind"]["availability"] == 0
     assert evidence_audit["missing_requirements_by_kind"]["safety"] == 0
+    assert summary["verification_source_kinds"]["literature"] == len(library)
     assert summary["verification_source_kinds"]["availability"] == len(library)
     assert summary["verification_source_kinds"]["safety"] == len(library)
     assert set(library["safety_status"]) == {"pubchem_hazards_section_present"}
+    assert set(library["synthesis_status"]) == {"literature_reported"}
     for row in library.to_dict(orient="records"):
         sources = json.loads(row["verification_sources"])
         assert any(source.get("kind") == "availability" for source in sources), row["candidate_id"]
         assert any(source.get("kind") == "safety" for source in sources), row["candidate_id"]
+        assert any(source.get("kind") == "literature" for source in sources), row["candidate_id"]
         assert any("Chemical-Vendors" in source.get("url", "") for source in sources), row["candidate_id"]
         assert any("Safety-and-Hazards" in source.get("url", "") for source in sources), row["candidate_id"]
+    bai_sources = json.loads(library.loc[library["candidate_id"] == "bai-pubchem-88075134", "verification_sources"].iloc[0])
+    assert any(source.get("doi") == "10.1039/C7RA11286F" for source in bai_sources)
     assert "not sufficient to mark candidate_library_publication_grade true" in evidence_audit["limitations"]
     serialized = json.dumps(evidence_audit, ensure_ascii=False)
     assert "example.com" not in serialized
