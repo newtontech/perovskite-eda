@@ -171,6 +171,8 @@ research-package-pdf:
 	if [ -n "$(CANDIDATE_SOURCE)" ]; then candidate_source_args="--candidate-source-path $(CANDIDATE_SOURCE)"; fi; \
 	evidence_cache_args=""; \
 	if [ -f "$(EVIDENCE_CACHE_MANIFEST)" ]; then evidence_cache_args="--evidence-cache-manifest-path $(EVIDENCE_CACHE_MANIFEST)"; fi; \
+	closed_loop_args=""; \
+	if [ -d "$(ARTIFACT_DIR)/closed_loop/iteration_000" ]; then closed_loop_args="--closed-loop-iteration-dir $(ARTIFACT_DIR)/closed_loop/iteration_000"; fi; \
 	$(PYTHON) $(ROOT_PROVENANCE_MANIFEST) \
 		--verified-discovery-artifact-dir $(VERIFIED_DISCOVERY_DIR) \
 		--report-dir $(REPORT_DIR) \
@@ -181,7 +183,8 @@ research-package-pdf:
 		--output-path $(ROOT_PROVENANCE_JSON) \
 		$$candidate_library_args \
 		$$candidate_source_args \
-		$$evidence_cache_args
+		$$evidence_cache_args \
+		$$closed_loop_args
 
 research-package-verify:
 	$(PYTHON) $(VERIFY_RESEARCH_PACKAGE) \

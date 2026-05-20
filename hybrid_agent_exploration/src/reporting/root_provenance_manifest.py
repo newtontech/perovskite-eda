@@ -29,6 +29,7 @@ ARTIFACT_CATEGORIES = (
     "review",
     "audit",
     "source_completeness",
+    "closed_loop",
     "evidence_cache",
     "package",
 )
@@ -41,6 +42,7 @@ def generate_root_provenance_manifest(
     *,
     candidate_library_dir: str | Path | None = None,
     source_completeness_dir: str | Path | None = None,
+    closed_loop_iteration_dir: str | Path | None = None,
     evidence_cache_manifest_path: str | Path | None = None,
     package_manifest_path: str | Path | None = None,
     input_path: str | Path | None = None,
@@ -57,6 +59,8 @@ def generate_root_provenance_manifest(
             source_summary.json, and provenance.json from CandidateLibraryBuilder.
         source_completeness_dir: Optional directory containing source_completeness
             JSON, CSV, and Markdown artifacts from the package runner.
+        closed_loop_iteration_dir: Optional directory containing the closed-loop
+            iteration handoff packet.
         evidence_cache_manifest_path: Optional package-local evidence cache
             manifest emitted by run_research_package for external-cached runs.
         package_manifest_path: Optional top-level package_manifest.json emitted by
@@ -76,6 +80,7 @@ def generate_root_provenance_manifest(
     si_root = Path(si_dir)
     candidate_root = Path(candidate_library_dir) if candidate_library_dir is not None else None
     source_completeness_root = Path(source_completeness_dir) if source_completeness_dir is not None else None
+    closed_loop_root = Path(closed_loop_iteration_dir) if closed_loop_iteration_dir is not None else None
     evidence_cache_manifest = (
         Path(evidence_cache_manifest_path) if evidence_cache_manifest_path is not None else None
     )
@@ -153,6 +158,18 @@ def generate_root_provenance_manifest(
                 )
             )
 
+    if closed_loop_root is not None:
+        for path in _iter_files(closed_loop_root):
+            artifacts["closed_loop"].append(
+                _artifact_record(
+                    _artifact_id_from_path(path),
+                    path,
+                    root_dir=root_dir,
+                    source_root=closed_loop_root,
+                    declared_in="closed_loop_iteration_dir",
+                )
+            )
+
     if package_manifest is not None:
         artifacts["package"].append(
             _artifact_record(
@@ -209,6 +226,8 @@ def generate_root_provenance_manifest(
         manifest["roots"]["candidate_library_dir"] = _display_path(candidate_root, root_dir)
     if source_completeness_root is not None:
         manifest["roots"]["source_completeness_dir"] = _display_path(source_completeness_root, root_dir)
+    if closed_loop_root is not None:
+        manifest["roots"]["closed_loop_iteration_dir"] = _display_path(closed_loop_root, root_dir)
     if evidence_cache_manifest is not None:
         manifest["roots"]["evidence_cache_dir"] = _display_path(evidence_cache_manifest.parent, root_dir)
     if package_manifest is not None:
@@ -228,6 +247,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--si-dir", required=True)
     parser.add_argument("--candidate-library-dir")
     parser.add_argument("--source-completeness-dir")
+    parser.add_argument("--closed-loop-iteration-dir")
     parser.add_argument("--evidence-cache-manifest-path")
     parser.add_argument("--package-manifest-path")
     parser.add_argument("--input-path")
@@ -240,6 +260,7 @@ def main(argv: list[str] | None = None) -> int:
         args.si_dir,
         candidate_library_dir=args.candidate_library_dir,
         source_completeness_dir=args.source_completeness_dir,
+        closed_loop_iteration_dir=args.closed_loop_iteration_dir,
         evidence_cache_manifest_path=args.evidence_cache_manifest_path,
         package_manifest_path=args.package_manifest_path,
         input_path=args.input_path,

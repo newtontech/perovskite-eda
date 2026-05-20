@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from closed_loop.iteration_packet import generate_iteration_packet
 from data.source_completeness import (
     summarize_source_completeness,
     write_source_completeness_artifacts,
@@ -49,6 +50,7 @@ class ResearchPackageArtifacts:
     source_completeness_dir: Path
     evidence_cache_dir: Path | None
     candidate_library_dir: Path | None
+    closed_loop_iteration_dir: Path
     report_dir: Path
     root_provenance_manifest_json: Path
     package_manifest_json: Path
@@ -69,6 +71,8 @@ def run_research_package(
     top_k: int = 100,
     report_quality_target: str = "top-journal",
     verified_discovery_top_n: int | None = None,
+    iteration_index: int = 0,
+    iteration_top_k: int = 10,
 ) -> ResearchPackageArtifacts:
     """Generate the full verified-discovery research artifact package."""
 
@@ -169,6 +173,13 @@ def run_research_package(
             _evidence_cache_manifest(dataset_id=dataset_id, cache_root=cache_root),
             evidence_cache_manifest_path,
         )
+    closed_loop_artifacts = generate_iteration_packet(
+        ranked_candidates_csv=discovery_artifacts.ranked_candidates_csv,
+        output_dir=output_root / "closed_loop" / f"iteration_{iteration_index:03d}",
+        dataset_id=dataset_id,
+        iteration_index=iteration_index,
+        top_k=min(iteration_top_k, max(discovery_artifacts.ranked_candidates, 1)),
+    )
 
     report_inputs = _report_inputs(
         verified_discovery_dir,
@@ -230,11 +241,14 @@ def run_research_package(
             top_k=top_k,
             report_quality_target=report_quality_target,
             verified_discovery_top_n=verified_discovery_top_n,
+            iteration_index=iteration_index,
+            iteration_top_k=iteration_top_k,
             discovery_artifacts=discovery_artifacts,
             source_completeness_dir=source_completeness_artifacts.output_dir,
             evidence_cache_manifest_path=evidence_cache_manifest_path,
             candidate_library_dir=candidate_library_dir,
             candidate_library_rows=candidate_library_rows,
+            closed_loop_iteration_dir=closed_loop_artifacts.output_dir,
             report_dir=report_dir,
             report_quality_score=main_bundle.quality_score,
             root_manifest_path=root_manifest_path,
@@ -250,6 +264,7 @@ def run_research_package(
         si_path.parent,
         candidate_library_dir=candidate_library_dir,
         source_completeness_dir=source_completeness_artifacts.output_dir,
+        closed_loop_iteration_dir=closed_loop_artifacts.output_dir,
         evidence_cache_manifest_path=evidence_cache_manifest_path,
         package_manifest_path=package_manifest_path,
         input_path=input_path,
@@ -262,6 +277,7 @@ def run_research_package(
         source_completeness_dir=source_completeness_artifacts.output_dir,
         evidence_cache_dir=evidence_cache_dir,
         candidate_library_dir=candidate_library_dir,
+        closed_loop_iteration_dir=closed_loop_artifacts.output_dir,
         report_dir=report_dir,
         root_provenance_manifest_json=root_manifest_path,
         package_manifest_json=package_manifest_path,
@@ -349,11 +365,14 @@ def _package_manifest(
     top_k: int,
     report_quality_target: str,
     verified_discovery_top_n: int | None,
+    iteration_index: int,
+    iteration_top_k: int,
     discovery_artifacts,
     source_completeness_dir: Path,
     evidence_cache_manifest_path: Path | None,
     candidate_library_dir: Path | None,
     candidate_library_rows: int | None,
+    closed_loop_iteration_dir: Path,
     report_dir: Path,
     report_quality_score: float,
     root_manifest_path: Path,
@@ -376,6 +395,8 @@ def _package_manifest(
         "top_k": top_k,
         "report_quality_target": report_quality_target,
         "verified_discovery_top_n": verified_discovery_top_n,
+        "iteration_index": iteration_index,
+        "iteration_top_k": iteration_top_k,
     }
     source_table_facts = _file_facts(input_path)
     candidate_source_facts = _file_facts(candidate_source_path) if candidate_source_path else None
@@ -388,6 +409,31 @@ def _package_manifest(
         "source_completeness_csv": _relative(source_completeness_dir / "source_completeness.csv", output_root),
         "source_completeness_md": _relative(source_completeness_dir / "source_completeness.md", output_root),
         "candidate_library_dir": _relative(candidate_library_dir, output_root) if candidate_library_dir else None,
+        "closed_loop_iteration_dir": _relative(closed_loop_iteration_dir, output_root),
+        "closed_loop_iteration_manifest_json": _relative(
+            closed_loop_iteration_dir / "iteration_manifest.json",
+            output_root,
+        ),
+        "closed_loop_selected_candidates_csv": _relative(
+            closed_loop_iteration_dir / "selected_candidates.csv",
+            output_root,
+        ),
+        "closed_loop_candidate_packet_md": _relative(
+            closed_loop_iteration_dir / "candidate_packet.md",
+            output_root,
+        ),
+        "closed_loop_feedback_schema_json": _relative(
+            closed_loop_iteration_dir / "feedback_schema.json",
+            output_root,
+        ),
+        "closed_loop_feedback_template_csv": _relative(
+            closed_loop_iteration_dir / "feedback_template.csv",
+            output_root,
+        ),
+        "closed_loop_verification_report_json": _relative(
+            closed_loop_iteration_dir / "verification_report.json",
+            output_root,
+        ),
         "report_dir": _relative(report_dir, output_root),
         "main_text_report_md": _relative(report_dir / "main_text" / "main_text_report.md", output_root),
         "supporting_information_md": _relative(report_dir / "si" / "supporting_information.md", output_root),
@@ -567,6 +613,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--min-verified-rows", type=int, default=10)
     parser.add_argument("--top-k", type=int, default=100)
+    parser.add_argument("--iteration-index", type=int, default=0)
+    parser.add_argument("--iteration-top-k", type=int, default=10)
     parser.add_argument("--report-quality-target", choices=("standard", "top-journal"), default="top-journal")
     return parser.parse_args(argv)
 
@@ -586,6 +634,8 @@ def main(argv: list[str] | None = None) -> int:
         min_verified_rows=args.min_verified_rows,
         top_k=args.top_k,
         report_quality_target=args.report_quality_target,
+        iteration_index=args.iteration_index,
+        iteration_top_k=args.iteration_top_k,
     )
     print(f"[research-package] package_manifest={artifacts.package_manifest_json}")
     print(f"[research-package] root_provenance_manifest={artifacts.root_provenance_manifest_json}")
