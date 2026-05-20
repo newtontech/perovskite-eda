@@ -73,6 +73,14 @@ def test_research_package_dry_run_uses_canonical_runner_and_ignored_artifact_dir
 
 def test_psc_candidate_closure_target_uses_real_seed_source_and_strict_verify():
     output = _make_dry_run("research-package-psc-candidate-closure")
+    cache_dir = (
+        ROOT
+        / "hybrid_agent_exploration"
+        / ".cache"
+        / "verified_discovery"
+        / "psc-additive-closure-external-cached-full-source"
+        / "evidence_cache"
+    )
 
     assert "research-package" in output
     assert "research-package-pdf" in output
@@ -80,11 +88,9 @@ def test_psc_candidate_closure_target_uses_real_seed_source_and_strict_verify():
     assert "DATASET_ID=psc-additive-closure-candidate-loop" in output
     assert "EVIDENCE_MODE=external-cached" in output
     assert "INPUT_SCOPE=full-source" in output
-    assert (
-        "--cache-dir hybrid_agent_exploration/.cache/verified_discovery/"
-        "psc-additive-closure-external-cached-full-source/evidence_cache"
-        in output
-    )
+    assert f"test -f {cache_dir}/reference_cache.json" in output
+    assert f"test -f {cache_dir}/molecule_cache.json" in output
+    assert f"--cache-dir {cache_dir}" in output
     assert (
         "CANDIDATE_SOURCE=hybrid_agent_exploration/candidate_sources/"
         "psc_passivator_seed_candidates.csv"

@@ -28,7 +28,7 @@ PANDOC_PDF_ENGINE ?= xelatex
 PANDOC_MAINFONT ?= DejaVu Serif
 PSC_CANDIDATE_CLOSURE_DATASET_ID ?= psc-additive-closure-candidate-loop
 PSC_CANDIDATE_CLOSURE_ARTIFACT_DIR ?= hybrid_agent_exploration/results/verified_discovery_runs/$(PSC_CANDIDATE_CLOSURE_DATASET_ID)
-PSC_CANDIDATE_CLOSURE_CACHE_DIR ?= hybrid_agent_exploration/.cache/verified_discovery/psc-additive-closure-external-cached-full-source/evidence_cache
+PSC_CANDIDATE_CLOSURE_CACHE_DIR ?= $(abspath hybrid_agent_exploration/.cache/verified_discovery/psc-additive-closure-external-cached-full-source/evidence_cache)
 PSC_CANDIDATE_SOURCE ?= hybrid_agent_exploration/candidate_sources/psc_passivator_seed_candidates.csv
 PSC_CANDIDATE_SOURCE_NAME ?= psc-passivator-seed
 
@@ -96,6 +96,8 @@ research-package-smoke:
 		EXTRA_RUN_ARGS="--max-rows $(SMOKE_MAX_ROWS)"
 
 research-package-psc-candidate-closure:
+	@test -f $(PSC_CANDIDATE_CLOSURE_CACHE_DIR)/reference_cache.json || { echo "missing PSC candidate closure reference cache: $(PSC_CANDIDATE_CLOSURE_CACHE_DIR)/reference_cache.json. Run the full-source evidence cache preflight/collector first or set PSC_CANDIDATE_CLOSURE_CACHE_DIR to the completed cache." >&2; exit 2; }
+	@test -f $(PSC_CANDIDATE_CLOSURE_CACHE_DIR)/molecule_cache.json || { echo "missing PSC candidate closure molecule cache: $(PSC_CANDIDATE_CLOSURE_CACHE_DIR)/molecule_cache.json. Run the full-source evidence cache preflight/collector first or set PSC_CANDIDATE_CLOSURE_CACHE_DIR to the completed cache." >&2; exit 2; }
 	$(MAKE) research-package \
 		DATASET_ID=$(PSC_CANDIDATE_CLOSURE_DATASET_ID) \
 		ARTIFACT_DIR=$(PSC_CANDIDATE_CLOSURE_ARTIFACT_DIR) \
