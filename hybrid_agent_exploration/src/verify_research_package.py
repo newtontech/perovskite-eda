@@ -22,6 +22,7 @@ PACKAGE_SCHEMA_VERSION = "research-package-manifest-v1"
 ROOT_PROVENANCE_SCHEMA_VERSION = "root-provenance-manifest-v1"
 EVIDENCE_CACHE_MANIFEST_SCHEMA_VERSION = "evidence-cache-manifest-v1"
 EVIDENCE_CACHE_MANIFEST_PATH = "evidence_cache/evidence_cache_manifest.json"
+CLOSURE_READINESS_REPORT_PATH = "closure_readiness_report.json"
 
 REQUIRED_PACKAGE_OUTPUTS = {
     "verified_discovery_dir": "dir",
@@ -39,6 +40,7 @@ REQUIRED_PACKAGE_OUTPUTS = {
     "closed_loop_feedback_schema_json": "file",
     "closed_loop_feedback_template_csv": "file",
     "closed_loop_verification_report_json": "file",
+    "closure_readiness_report_json": "file",
     "root_provenance_manifest_json": "file",
     "package_manifest_json": "file",
 }
@@ -74,6 +76,7 @@ REQUIRED_ARTIFACT_FILES = (
     "closed_loop/iteration_000/feedback_schema.json",
     "closed_loop/iteration_000/feedback_template.csv",
     "closed_loop/iteration_000/verification_report.json",
+    "closure_readiness_report.json",
 )
 
 CANDIDATE_LIBRARY_FILES = (
@@ -133,6 +136,14 @@ JSON_FIELD_REQUIREMENTS = {
     ),
     "closed_loop/iteration_000/feedback_schema.json": ("schema_version", "properties"),
     "closed_loop/iteration_000/verification_report.json": ("schema_version", "status", "checks"),
+    "closure_readiness_report.json": (
+        "schema_version",
+        "dataset_id",
+        "overall_ready",
+        "publication_grade",
+        "publication_grade_false_reasons",
+        "gates",
+    ),
 }
 
 REQUIRED_ROOT_IDS = {
@@ -169,6 +180,7 @@ REQUIRED_ROOT_IDS = {
         "selected_candidates_csv",
         "verification_report_json",
     },
+    "closure_readiness": {"closure_readiness_report_json"},
     "package": {"package_manifest_json"},
 }
 
@@ -194,6 +206,7 @@ def verify_research_package(
     *,
     require_candidate_library: bool = False,
     require_evidence_cache: bool = False,
+    require_closure_readiness: bool = False,
 ) -> dict[str, Any]:
     """Verify that a research package contains every required deliverable.
 
@@ -251,6 +264,12 @@ def verify_research_package(
         errors=errors,
     )
     closed_loop_check = _check_closed_loop_iteration_packet(package_manifest, root, errors=errors)
+    closure_readiness_check = _check_closure_readiness(
+        package_manifest,
+        root,
+        require_closure_readiness=require_closure_readiness,
+        errors=errors,
+    )
     _raise_if_errors(errors)
 
     return {
@@ -273,6 +292,7 @@ def verify_research_package(
             "root_provenance": root_provenance_check,
             "evidence_cache": evidence_cache_check,
             "closed_loop_iteration_packet": closed_loop_check,
+            "closure_readiness": closure_readiness_check,
         },
     }
 
@@ -525,6 +545,55 @@ def _check_closed_loop_iteration_packet(
     return report
 
 
+def _check_closure_readiness(
+    manifest: dict[str, Any],
+    root: Path,
+    *,
+    require_closure_readiness: bool,
+    errors: list[str],
+) -> dict[str, Any]:
+    outputs = _manifest_outputs(manifest)
+    value = outputs.get("closure_readiness_report_json", CLOSURE_READINESS_REPORT_PATH)
+    report_path = _resolve_path(root, str(value))
+    report = _read_json_artifact(
+        report_path,
+        root,
+        context=CLOSURE_READINESS_REPORT_PATH,
+        errors=errors,
+    )
+    if not isinstance(report, dict):
+        return {"status": "failed", "reason": "closure readiness report missing or invalid"}
+    if report.get("schema_version") != "closure-readiness-report-v1":
+        errors.append(
+            f"{CLOSURE_READINESS_REPORT_PATH}: schema_version={report.get('schema_version')!r}; "
+            "expected 'closure-readiness-report-v1'"
+        )
+    if report.get("dataset_id") != manifest.get("dataset_id"):
+        errors.append(
+            f"{CLOSURE_READINESS_REPORT_PATH}: dataset_id={report.get('dataset_id')!r} "
+            f"does not match package dataset_id={manifest.get('dataset_id')!r}"
+        )
+    if report.get("publication_grade") is not True:
+        reasons = report.get("publication_grade_false_reasons")
+        if not isinstance(reasons, list) or not reasons:
+            errors.append(f"{CLOSURE_READINESS_REPORT_PATH}: publication_grade_false_reasons must be non-empty")
+    gates = report.get("gates")
+    if not isinstance(gates, dict):
+        errors.append(f"{CLOSURE_READINESS_REPORT_PATH}: gates must be an object")
+    overall_ready = report.get("overall_ready")
+    if require_closure_readiness and overall_ready is not True:
+        errors.append(
+            "closure readiness required overall_ready=true; "
+            f"observed overall_ready={overall_ready!r}"
+        )
+    return {
+        "status": "passed",
+        "path": _display_path(report_path, root),
+        "overall_ready": overall_ready,
+        "blocking_reasons": report.get("blocking_reasons", []),
+    }
+
+
 def _candidate_library_required(manifest: dict[str, Any], require_candidate_library: bool) -> bool:
     outputs = _manifest_outputs(manifest)
     inputs = manifest.get("inputs")
@@ -769,6 +838,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--package-dir", required=True, help="Directory emitted by run_research_package.")
     parser.add_argument("--require-candidate-library", action="store_true")
     parser.add_argument("--require-evidence-cache", action="store_true")
+    parser.add_argument("--require-closure-readiness", action="store_true")
     return parser.parse_args(argv)
 
 
@@ -779,6 +849,7 @@ def main(argv: list[str] | None = None) -> int:
             args.package_dir,
             require_candidate_library=args.require_candidate_library,
             require_evidence_cache=args.require_evidence_cache,
+            require_closure_readiness=args.require_closure_readiness,
         )
     except ResearchPackageContractError as exc:
         print(json.dumps({"status": "failed", "error": str(exc)}, ensure_ascii=False, indent=2))

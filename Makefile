@@ -51,6 +51,7 @@ EVIDENCE_CACHE_PACKAGE_DIR := $(ARTIFACT_DIR)/evidence_cache
 EVIDENCE_CACHE_MANIFEST := $(EVIDENCE_CACHE_PACKAGE_DIR)/evidence_cache_manifest.json
 PACKAGE_MANIFEST := $(ARTIFACT_DIR)/package_manifest.json
 ROOT_PROVENANCE_JSON := $(ARTIFACT_DIR)/provenance_manifest.json
+CLOSURE_READINESS_REPORT := $(ARTIFACT_DIR)/closure_readiness_report.json
 MAIN_TEXT_MD := $(ARTIFACT_DIR)/report_bundle/main_text/main_text_report.md
 MAIN_TEXT_PDF := $(ARTIFACT_DIR)/report_bundle/main_text/main_text_report.pdf
 SI_MD := $(ARTIFACT_DIR)/report_bundle/si/supporting_information.md
@@ -72,6 +73,7 @@ CACHE_MERGE_SHARD_ARGS := $(foreach dir,$(CACHE_SHARD_DIRS),--shard-cache-dir $(
 PSC_CANDIDATE_CLOSURE_CACHE_ARGS := $(if $(PSC_CANDIDATE_CLOSURE_CACHE_DIR),--cache-dir $(PSC_CANDIDATE_CLOSURE_CACHE_DIR),)
 VERIFY_CANDIDATE_LIBRARY_ARGS := $(if $(REQUIRE_CANDIDATE_LIBRARY),--require-candidate-library,)
 VERIFY_EVIDENCE_CACHE_ARGS := $(if $(REQUIRE_EVIDENCE_CACHE),--require-evidence-cache,)
+VERIFY_CLOSURE_READINESS_ARGS := $(if $(REQUIRE_CLOSURE_READINESS),--require-closure-readiness,)
 
 .PHONY: research-package research-package-smoke research-package-cache-preflight research-package-cache-preflight-smoke research-package-cache-collect research-package-cache-collect-dry-run research-package-cache-merge research-package-psc-candidate-closure research-package-pdf research-package-verify test-research-package
 
@@ -173,6 +175,8 @@ research-package-pdf:
 	if [ -f "$(EVIDENCE_CACHE_MANIFEST)" ]; then evidence_cache_args="--evidence-cache-manifest-path $(EVIDENCE_CACHE_MANIFEST)"; fi; \
 	closed_loop_args=""; \
 	if [ -d "$(ARTIFACT_DIR)/closed_loop/iteration_000" ]; then closed_loop_args="--closed-loop-iteration-dir $(ARTIFACT_DIR)/closed_loop/iteration_000"; fi; \
+	closure_readiness_args=""; \
+	if [ -f "$(CLOSURE_READINESS_REPORT)" ]; then closure_readiness_args="--closure-readiness-report-path $(CLOSURE_READINESS_REPORT)"; fi; \
 	$(PYTHON) $(ROOT_PROVENANCE_MANIFEST) \
 		--verified-discovery-artifact-dir $(VERIFIED_DISCOVERY_DIR) \
 		--report-dir $(REPORT_DIR) \
@@ -184,13 +188,15 @@ research-package-pdf:
 		$$candidate_library_args \
 		$$candidate_source_args \
 		$$evidence_cache_args \
-		$$closed_loop_args
+		$$closed_loop_args \
+		$$closure_readiness_args
 
 research-package-verify:
 	$(PYTHON) $(VERIFY_RESEARCH_PACKAGE) \
 		--package-dir $(ARTIFACT_DIR) \
 		$(VERIFY_CANDIDATE_LIBRARY_ARGS) \
-		$(VERIFY_EVIDENCE_CACHE_ARGS)
+		$(VERIFY_EVIDENCE_CACHE_ARGS) \
+		$(VERIFY_CLOSURE_READINESS_ARGS)
 
 test-research-package:
 	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 $(PYTHON) -m pytest -q \

@@ -30,6 +30,7 @@ ARTIFACT_CATEGORIES = (
     "audit",
     "source_completeness",
     "closed_loop",
+    "closure_readiness",
     "evidence_cache",
     "package",
 )
@@ -43,6 +44,7 @@ def generate_root_provenance_manifest(
     candidate_library_dir: str | Path | None = None,
     source_completeness_dir: str | Path | None = None,
     closed_loop_iteration_dir: str | Path | None = None,
+    closure_readiness_report_path: str | Path | None = None,
     evidence_cache_manifest_path: str | Path | None = None,
     package_manifest_path: str | Path | None = None,
     input_path: str | Path | None = None,
@@ -61,6 +63,7 @@ def generate_root_provenance_manifest(
             JSON, CSV, and Markdown artifacts from the package runner.
         closed_loop_iteration_dir: Optional directory containing the closed-loop
             iteration handoff packet.
+        closure_readiness_report_path: Optional closure-readiness gate report.
         evidence_cache_manifest_path: Optional package-local evidence cache
             manifest emitted by run_research_package for external-cached runs.
         package_manifest_path: Optional top-level package_manifest.json emitted by
@@ -81,6 +84,9 @@ def generate_root_provenance_manifest(
     candidate_root = Path(candidate_library_dir) if candidate_library_dir is not None else None
     source_completeness_root = Path(source_completeness_dir) if source_completeness_dir is not None else None
     closed_loop_root = Path(closed_loop_iteration_dir) if closed_loop_iteration_dir is not None else None
+    closure_readiness_report = (
+        Path(closure_readiness_report_path) if closure_readiness_report_path is not None else None
+    )
     evidence_cache_manifest = (
         Path(evidence_cache_manifest_path) if evidence_cache_manifest_path is not None else None
     )
@@ -170,6 +176,17 @@ def generate_root_provenance_manifest(
                 )
             )
 
+    if closure_readiness_report is not None:
+        artifacts["closure_readiness"].append(
+            _artifact_record(
+                "closure_readiness_report_json",
+                closure_readiness_report,
+                root_dir=root_dir,
+                source_root=closure_readiness_report.parent,
+                declared_in="closure_readiness_report_path",
+            )
+        )
+
     if package_manifest is not None:
         artifacts["package"].append(
             _artifact_record(
@@ -228,6 +245,8 @@ def generate_root_provenance_manifest(
         manifest["roots"]["source_completeness_dir"] = _display_path(source_completeness_root, root_dir)
     if closed_loop_root is not None:
         manifest["roots"]["closed_loop_iteration_dir"] = _display_path(closed_loop_root, root_dir)
+    if closure_readiness_report is not None:
+        manifest["roots"]["closure_readiness_report_path"] = _display_path(closure_readiness_report, root_dir)
     if evidence_cache_manifest is not None:
         manifest["roots"]["evidence_cache_dir"] = _display_path(evidence_cache_manifest.parent, root_dir)
     if package_manifest is not None:
@@ -248,6 +267,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--candidate-library-dir")
     parser.add_argument("--source-completeness-dir")
     parser.add_argument("--closed-loop-iteration-dir")
+    parser.add_argument("--closure-readiness-report-path")
     parser.add_argument("--evidence-cache-manifest-path")
     parser.add_argument("--package-manifest-path")
     parser.add_argument("--input-path")
@@ -261,6 +281,7 @@ def main(argv: list[str] | None = None) -> int:
         candidate_library_dir=args.candidate_library_dir,
         source_completeness_dir=args.source_completeness_dir,
         closed_loop_iteration_dir=args.closed_loop_iteration_dir,
+        closure_readiness_report_path=args.closure_readiness_report_path,
         evidence_cache_manifest_path=args.evidence_cache_manifest_path,
         package_manifest_path=args.package_manifest_path,
         input_path=args.input_path,
