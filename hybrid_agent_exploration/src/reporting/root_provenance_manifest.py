@@ -57,8 +57,9 @@ def generate_root_provenance_manifest(
         verified_discovery_artifact_dir: Directory containing workflow_manifest.json.
         report_dir: Directory containing main report artifacts.
         si_dir: Directory containing supplementary information artifacts.
-        candidate_library_dir: Optional directory containing candidate_library.csv,
-            source_summary.json, and provenance.json from CandidateLibraryBuilder.
+        candidate_library_dir: Optional directory containing outputs from
+            CandidateLibraryBuilder, including the candidate CSV, source summary,
+            provenance, and offline evidence-audit artifacts.
         source_completeness_dir: Optional directory containing source_completeness
             JSON, CSV, and Markdown artifacts from the package runner.
         closed_loop_iteration_dir: Optional directory containing the closed-loop
@@ -331,7 +332,7 @@ def _category_for_candidate_library(path: Path) -> str:
     name = path.name.lower()
     if name == "candidate_library.csv":
         return "discovery"
-    if "provenance" in name or "summary" in name:
+    if "provenance" in name or "summary" in name or "audit" in name:
         return "audit"
     return "discovery"
 
