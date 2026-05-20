@@ -363,6 +363,69 @@ def test_external_cached_full_source_without_candidate_source_can_be_publication
     assert package_manifest["publication_grade_reasons"] == []
 
 
+def test_external_cached_manifest_captures_post_workflow_cache_state(tmp_path, monkeypatch):
+    import run_research_package as runner
+    from harness.authenticity import MoleculeEvidence, RealDataAuthenticator, ReferenceEvidence
+
+    raw_csv = tmp_path / "raw_psc.csv"
+    cache_dir = tmp_path / "evidence_cache"
+    _write_json(cache_dir / "reference_cache.json", {})
+    _write_json(cache_dir / "molecule_cache.json", {})
+    pd.DataFrame(
+        [
+            _raw_record("row-001", "10.1021/acs.jpclett.6c00119", "C", 0.25),
+            _raw_record("row-002", "10.1021/acs.jpclett.6c00120", "CC", 0.50),
+            _raw_record("row-003", "10.1021/acs.jpclett.6c00121", "CCC", 0.75),
+            _raw_record("row-004", "10.1021/acs.jpclett.6c00122", "CCCC", 1.00),
+        ]
+    ).to_csv(raw_csv, index=False)
+
+    def build_mutating_authenticator(evidence_mode, df, cache_dir):
+        cache_root = Path(cache_dir)
+
+        def verify_reference(doi: str) -> ReferenceEvidence:
+            reference_cache = json.loads((cache_root / "reference_cache.json").read_text(encoding="utf-8"))
+            reference_cache[f"doi:{doi}"] = {"title": "Verified"}
+            _write_json(cache_root / "reference_cache.json", reference_cache)
+            return ReferenceEvidence(doi=doi, title="Verified PSC additive paper", source="test-cache")
+
+        def verify_molecule(record: dict) -> MoleculeEvidence:
+            pubchem_id = str(record["pubchem_id"])
+            molecule_cache = json.loads((cache_root / "molecule_cache.json").read_text(encoding="utf-8"))
+            molecule_cache[f"pubchem:{pubchem_id}"] = {"smiles": record["smiles"]}
+            _write_json(cache_root / "molecule_cache.json", molecule_cache)
+            return MoleculeEvidence(smiles=record["smiles"], pubchem_id=pubchem_id, source="test-cache")
+
+        return RealDataAuthenticator(reference_verifier=verify_reference, molecule_verifier=verify_molecule)
+
+    monkeypatch.setattr(runner, "build_authenticator", build_mutating_authenticator)
+
+    package = runner.run_research_package(
+        input_path=raw_csv,
+        output_dir=tmp_path / "research_package",
+        dataset_id="external-cache-mutation-fixture",
+        evidence_mode="external-cached",
+        cache_dir=cache_dir,
+        input_scope="full-source",
+        min_verified_rows=4,
+        top_k=1,
+    )
+
+    evidence_manifest = json.loads(
+        (package.output_dir / "evidence_cache" / "evidence_cache_manifest.json").read_text(encoding="utf-8")
+    )
+    reference_cache = json.loads((cache_dir / "reference_cache.json").read_text(encoding="utf-8"))
+    molecule_cache = json.loads((cache_dir / "molecule_cache.json").read_text(encoding="utf-8"))
+    assert evidence_manifest["cache_files"]["reference_cache"]["entry_count"] == len(reference_cache)
+    assert evidence_manifest["cache_files"]["molecule_cache"]["entry_count"] == len(molecule_cache)
+    assert evidence_manifest["cache_files"]["reference_cache"]["sha256"] == runner._sha256(
+        cache_dir / "reference_cache.json"
+    )
+    assert evidence_manifest["cache_files"]["molecule_cache"]["sha256"] == runner._sha256(
+        cache_dir / "molecule_cache.json"
+    )
+
+
 def test_research_package_rejects_invalid_input_scope(tmp_path):
     from run_research_package import run_research_package
 
