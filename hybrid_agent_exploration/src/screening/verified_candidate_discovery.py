@@ -51,6 +51,8 @@ ALLOWED_VERIFICATION_SOURCE_KINDS = {
     "synthesis",
 }
 RANKING_EVIDENCE_SOURCE_KINDS = {"literature", "molecule", "reference"}
+SYNTHESIS_EVIDENCE_SOURCE_KINDS = {"literature", "reference", "synthesis"}
+COMMERCIAL_SYNTHESIS_SOURCE_KINDS = {"availability", "synthesis"}
 
 
 @dataclass(frozen=True)
@@ -148,7 +150,11 @@ def validate_candidate_library_contract(df: pd.DataFrame) -> None:
     identity_errors: list[str] = []
     for idx, row in df.iterrows():
         identifier = _row_identifiers(df.loc[[idx]])[0]
-        sources = _parse_verification_sources(row.get("verification_sources"))
+        source_items, source_parse_error = _parse_verification_source_items(row.get("verification_sources"))
+        if source_parse_error:
+            source_shape_errors.append(f"{identifier} verification_sources {source_parse_error}")
+        source_shape_errors.extend(_verification_source_item_errors(identifier, source_items))
+        sources = [source for source in source_items if isinstance(source, dict)]
         if not sources:
             source_errors.append(f"{identifier} has empty verification_sources")
             continue
@@ -162,6 +168,11 @@ def validate_candidate_library_contract(df: pd.DataFrame) -> None:
             status_source_errors.append(f"{identifier} availability_status requires kind=availability source")
         if _text(row.get("safety_status")).lower() != "not_assessed" and "safety" not in source_kinds:
             status_source_errors.append(f"{identifier} safety_status requires kind=safety source")
+        if _text(row.get("synthesis_status")).lower() != "not_assessed" and not _has_synthesis_backing_source(
+            row.get("synthesis_status"),
+            source_kinds,
+        ):
+            status_source_errors.append(f"{identifier} synthesis_status requires synthesis, literature, or availability source evidence")
     if source_errors:
         raise CandidateLibraryContractError("; ".join(source_errors))
     if source_shape_errors:
@@ -437,17 +448,30 @@ def _text(value: Any) -> str:
 
 
 def _parse_verification_sources(value: Any) -> list[dict[str, Any]]:
+    items, _ = _parse_verification_source_items(value)
+    return [source for source in items if isinstance(source, dict)]
+
+
+def _parse_verification_source_items(value: Any) -> tuple[list[Any], str | None]:
     if isinstance(value, list):
-        return [source for source in value if isinstance(source, dict)]
+        return value, None
     if not _text(value):
-        return []
+        return [], None
     try:
         parsed = json.loads(str(value))
     except json.JSONDecodeError:
-        return []
+        return [], "must be valid JSON"
     if not isinstance(parsed, list):
-        return []
-    return [source for source in parsed if isinstance(source, dict)]
+        return [], "must be a JSON list"
+    return parsed, None
+
+
+def _verification_source_item_errors(identifier: str, sources: list[Any]) -> list[str]:
+    errors: list[str] = []
+    for idx, source in enumerate(sources):
+        if not isinstance(source, dict):
+            errors.append(f"{identifier} verification_sources[{idx}] must be an object")
+    return errors
 
 
 def _verification_source_shape_errors(identifier: str, sources: list[dict[str, Any]]) -> list[str]:
@@ -472,6 +496,13 @@ def _verification_source_shape_errors(identifier: str, sources: list[dict[str, A
         if kind in {"literature", "reference", "synthesis"} and not (doi or url):
             errors.append(f"{context} kind={kind} requires doi or url")
     return errors
+
+
+def _has_synthesis_backing_source(status_value: Any, source_kinds: set[str]) -> bool:
+    status = _text(status_value).lower()
+    if status in {"commercial", "available"}:
+        return bool(source_kinds & COMMERCIAL_SYNTHESIS_SOURCE_KINDS)
+    return bool(source_kinds & SYNTHESIS_EVIDENCE_SOURCE_KINDS)
 
 
 def _ranking_evidence_count(value: Any) -> int:
