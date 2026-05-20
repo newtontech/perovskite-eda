@@ -33,6 +33,12 @@ def _source_rows() -> pd.DataFrame:
                             "vendor_name": "Sigma Aldrich",
                             "url": "https://www.sigmaaldrich.com/catalog/product/sial/459844",
                         },
+                        {
+                            "kind": "safety",
+                            "source": "vendor_sds",
+                            "vendor_name": "Sigma Aldrich",
+                            "url": "https://www.sigmaaldrich.com/US/en/sds/sial/459844",
+                        },
                     ]
                 ),
             },
@@ -55,6 +61,12 @@ def _source_rows() -> pd.DataFrame:
                             "source": "vendor_catalog",
                             "vendor_name": "TCI",
                             "url": "https://www.tcichemicals.com/US/en/p/T0424",
+                        },
+                        {
+                            "kind": "safety",
+                            "source": "vendor_sds",
+                            "vendor_name": "TCI",
+                            "url": "https://www.tcichemicals.com/US/en/sds/T0424",
                         },
                     ]
                 ),
@@ -106,7 +118,7 @@ def test_builder_normalizes_lightweight_source_table_and_writes_provenance(tmp_p
     assert summary["output_rows"] == 2
     assert summary["source_names"] == {"pubchem-vendor-fixture": 2}
     assert summary["availability_status"] == {"commercial": 2}
-    assert summary["verification_source_kinds"] == {"availability": 2, "molecule": 2}
+    assert summary["verification_source_kinds"] == {"availability": 2, "molecule": 2, "safety": 2}
     assert summary["outputs"]["external_evidence_audit_json"] == "external_evidence_audit.json"
     assert summary["outputs"]["external_evidence_audit_md"] == "external_evidence_audit.md"
 

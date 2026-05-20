@@ -42,6 +42,17 @@ CANDIDATE_LIBRARY_REQUIRED_COLUMNS = (
     "verification_status",
     "verification_sources",
 )
+ALLOWED_VERIFICATION_SOURCE_KINDS = {
+    "availability",
+    "literature",
+    "molecule",
+    "reference",
+    "safety",
+    "synthesis",
+}
+RANKING_EVIDENCE_SOURCE_KINDS = {"literature", "molecule", "reference"}
+SYNTHESIS_EVIDENCE_SOURCE_KINDS = {"literature", "reference", "synthesis"}
+COMMERCIAL_SYNTHESIS_SOURCE_KINDS = {"availability", "synthesis"}
 
 
 @dataclass(frozen=True)
@@ -134,20 +145,40 @@ def validate_candidate_library_contract(df: pd.DataFrame) -> None:
         raise CandidateLibraryContractError("; ".join(empty_errors))
 
     source_errors: list[str] = []
+    source_shape_errors: list[str] = []
+    status_source_errors: list[str] = []
     identity_errors: list[str] = []
     for idx, row in df.iterrows():
-        sources = _parse_verification_sources(row.get("verification_sources"))
+        identifier = _row_identifiers(df.loc[[idx]])[0]
+        source_items, source_parse_error = _parse_verification_source_items(row.get("verification_sources"))
+        if source_parse_error:
+            source_shape_errors.append(f"{identifier} verification_sources {source_parse_error}")
+        source_shape_errors.extend(_verification_source_item_errors(identifier, source_items))
+        sources = [source for source in source_items if isinstance(source, dict)]
         if not sources:
-            identifier = _row_identifiers(df.loc[[idx]])[0]
             source_errors.append(f"{identifier} has empty verification_sources")
             continue
+        source_shape_errors.extend(_verification_source_shape_errors(identifier, sources))
         has_identity = _text(row.get("pubchem_id")) or _text(row.get("cas_number"))
         has_molecule_source = any(_text(source.get("kind")) == "molecule" for source in sources)
         if not has_identity and not has_molecule_source:
-            identifier = _row_identifiers(df.loc[[idx]])[0]
             identity_errors.append(f"{identifier} lacks molecule identity")
+        source_kinds = {_text(source.get("kind")) for source in sources}
+        if _text(row.get("availability_status")).lower() != "not_assessed" and "availability" not in source_kinds:
+            status_source_errors.append(f"{identifier} availability_status requires kind=availability source")
+        if _text(row.get("safety_status")).lower() != "not_assessed" and "safety" not in source_kinds:
+            status_source_errors.append(f"{identifier} safety_status requires kind=safety source")
+        if _text(row.get("synthesis_status")).lower() != "not_assessed" and not _has_synthesis_backing_source(
+            row.get("synthesis_status"),
+            source_kinds,
+        ):
+            status_source_errors.append(f"{identifier} synthesis_status requires synthesis, literature, or availability source evidence")
     if source_errors:
         raise CandidateLibraryContractError("; ".join(source_errors))
+    if source_shape_errors:
+        raise CandidateLibraryContractError("; ".join(source_shape_errors))
+    if status_source_errors:
+        raise CandidateLibraryContractError("; ".join(status_source_errors))
     if identity_errors:
         raise CandidateLibraryContractError("; ".join(identity_errors))
 
@@ -325,7 +356,7 @@ def _candidate_score_components(row: pd.Series) -> dict[str, float | int]:
         positive_bonus=0.15,
         negative_penalty=-0.30,
     )
-    verification_evidence_count = len(_parse_verification_sources(row.get("verification_sources")))
+    verification_evidence_count = _ranking_evidence_count(row.get("verification_sources"))
     verification_evidence_bonus = min(verification_evidence_count, 5) * 0.05
     uncertainty = _number(row.get("uncertainty"))
     uncertainty_penalty = -0.50 * uncertainty if uncertainty > 0 else 0.0
@@ -393,7 +424,10 @@ def _scoring_policy() -> dict[str, Any]:
         "base_signal": "predicted_delta_pce",
         "baseline_context": "baseline_pce and baseline_context add bounded context bonuses when present",
         "readiness_statuses": "availability_status, synthesis_status, and safety_status add bounded bonuses or penalties",
-        "verification_evidence": "verification_sources contributes a capped evidence-count bonus",
+        "verification_evidence": (
+            "only molecule/literature/reference verification_sources contribute a capped evidence-count bonus; "
+            "availability/safety sources are audited but do not increase ranking"
+        ),
         "uncertainty_penalty": "applied_when_uncertainty_column_is_available",
     }
 
@@ -414,17 +448,68 @@ def _text(value: Any) -> str:
 
 
 def _parse_verification_sources(value: Any) -> list[dict[str, Any]]:
+    items, _ = _parse_verification_source_items(value)
+    return [source for source in items if isinstance(source, dict)]
+
+
+def _parse_verification_source_items(value: Any) -> tuple[list[Any], str | None]:
     if isinstance(value, list):
-        return [source for source in value if isinstance(source, dict)]
+        return value, None
     if not _text(value):
-        return []
+        return [], None
     try:
         parsed = json.loads(str(value))
     except json.JSONDecodeError:
-        return []
+        return [], "must be valid JSON"
     if not isinstance(parsed, list):
-        return []
-    return [source for source in parsed if isinstance(source, dict)]
+        return [], "must be a JSON list"
+    return parsed, None
+
+
+def _verification_source_item_errors(identifier: str, sources: list[Any]) -> list[str]:
+    errors: list[str] = []
+    for idx, source in enumerate(sources):
+        if not isinstance(source, dict):
+            errors.append(f"{identifier} verification_sources[{idx}] must be an object")
+    return errors
+
+
+def _verification_source_shape_errors(identifier: str, sources: list[dict[str, Any]]) -> list[str]:
+    errors: list[str] = []
+    for idx, source in enumerate(sources):
+        context = f"{identifier} verification_sources[{idx}]"
+        kind = _text(source.get("kind"))
+        if not kind:
+            errors.append(f"{context} missing kind")
+            continue
+        if kind not in ALLOWED_VERIFICATION_SOURCE_KINDS:
+            errors.append(f"{context} unsupported verification source kind: {kind}")
+        if not _text(source.get("source")):
+            errors.append(f"{context} missing source")
+        url = _text(source.get("url"))
+        doi = _text(source.get("doi"))
+        pubchem_id = _text(source.get("pubchem_id"))
+        if kind in {"availability", "safety"} and not url:
+            errors.append(f"{context} kind={kind} requires url")
+        if kind == "molecule" and not (pubchem_id or url):
+            errors.append(f"{context} kind=molecule requires pubchem_id or url")
+        if kind in {"literature", "reference", "synthesis"} and not (doi or url):
+            errors.append(f"{context} kind={kind} requires doi or url")
+    return errors
+
+
+def _has_synthesis_backing_source(status_value: Any, source_kinds: set[str]) -> bool:
+    status = _text(status_value).lower()
+    if status in {"commercial", "available"}:
+        return bool(source_kinds & COMMERCIAL_SYNTHESIS_SOURCE_KINDS)
+    return bool(source_kinds & SYNTHESIS_EVIDENCE_SOURCE_KINDS)
+
+
+def _ranking_evidence_count(value: Any) -> int:
+    return sum(
+        _text(source.get("kind")) in RANKING_EVIDENCE_SOURCE_KINDS
+        for source in _parse_verification_sources(value)
+    )
 
 
 def _now_iso() -> str:

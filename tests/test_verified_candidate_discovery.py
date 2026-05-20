@@ -80,7 +80,18 @@ def _external_candidate_pool() -> pd.DataFrame:
                 "verification_status": "verified",
                 "verification_sources": json.dumps([
                     {"kind": "molecule", "source": "pubchem", "pubchem_id": "702"},
-                    {"kind": "availability", "source": "vendor_catalog", "vendor_name": "Sigma Aldrich"},
+                    {
+                        "kind": "availability",
+                        "source": "vendor_catalog",
+                        "vendor_name": "Sigma Aldrich",
+                        "url": "https://www.sigmaaldrich.com/catalog/product/sial/459844",
+                    },
+                    {
+                        "kind": "safety",
+                        "source": "vendor_sds",
+                        "vendor_name": "Sigma Aldrich",
+                        "url": "https://www.sigmaaldrich.com/US/en/sds/sial/459844",
+                    },
                 ]),
             },
             {
@@ -98,7 +109,18 @@ def _external_candidate_pool() -> pd.DataFrame:
                 "verification_status": "verified",
                 "verification_sources": json.dumps([
                     {"kind": "molecule", "source": "pubchem", "pubchem_id": "7843"},
-                    {"kind": "availability", "source": "vendor_catalog", "vendor_name": "TCI"},
+                    {
+                        "kind": "availability",
+                        "source": "vendor_catalog",
+                        "vendor_name": "TCI",
+                        "url": "https://www.tcichemicals.com/US/en/p/B0001",
+                    },
+                    {
+                        "kind": "safety",
+                        "source": "vendor_sds",
+                        "vendor_name": "TCI",
+                        "url": "https://www.tcichemicals.com/US/en/sds/B0001",
+                    },
                 ]),
             },
         ]
@@ -201,7 +223,8 @@ def test_candidate_library_contract_requires_identity_or_molecule_source(tmp_pat
     pool = _external_candidate_pool()
     pool.loc[0, ["pubchem_id", "cas_number"]] = ""
     pool.loc[0, "verification_sources"] = json.dumps([
-        {"kind": "availability", "source": "vendor_catalog"}
+        {"kind": "availability", "source": "vendor_catalog", "url": "https://www.sigmaaldrich.com/catalog/product/sial/459844"},
+        {"kind": "safety", "source": "vendor_sds", "url": "https://www.sigmaaldrich.com/US/en/sds/sial/459844"},
     ])
 
     with pytest.raises(CandidateLibraryContractError) as exc:
@@ -214,6 +237,104 @@ def test_candidate_library_contract_requires_identity_or_molecule_source(tmp_pat
 
     assert "molecule identity" in str(exc.value)
     assert "cand-001" in str(exc.value)
+
+
+def test_candidate_library_contract_requires_status_backing_sources(tmp_path):
+    from screening.verified_candidate_discovery import CandidateLibraryContractError, VerifiedCandidateDiscovery
+
+    pool = _external_candidate_pool()
+    sources = [
+        source
+        for source in json.loads(pool.loc[0, "verification_sources"])
+        if source.get("kind") != "safety"
+    ]
+    pool.loc[0, "verification_sources"] = json.dumps(sources)
+
+    with pytest.raises(CandidateLibraryContractError) as exc:
+        VerifiedCandidateDiscovery(output_dir=tmp_path).discover(
+            pool,
+            model=LengthModel(),
+            feature_fn=_feature_fn,
+            dataset_id="missing-safety-source",
+        )
+
+    assert "safety_status" in str(exc.value)
+    assert "cand-001" in str(exc.value)
+
+
+def test_candidate_library_contract_requires_synthesis_backing_sources(tmp_path):
+    from screening.verified_candidate_discovery import CandidateLibraryContractError, VerifiedCandidateDiscovery
+
+    pool = _external_candidate_pool()
+    pool.loc[0, "synthesis_status"] = "reported_protocol"
+    pool.loc[0, "verification_sources"] = json.dumps([
+        {"kind": "molecule", "source": "pubchem", "pubchem_id": "702"},
+        {
+            "kind": "availability",
+            "source": "vendor_catalog",
+            "url": "https://www.sigmaaldrich.com/catalog/product/sial/459844",
+        },
+        {
+            "kind": "safety",
+            "source": "vendor_sds",
+            "url": "https://www.sigmaaldrich.com/US/en/sds/sial/459844",
+        },
+    ])
+
+    with pytest.raises(CandidateLibraryContractError) as exc:
+        VerifiedCandidateDiscovery(output_dir=tmp_path).discover(
+            pool,
+            model=LengthModel(),
+            feature_fn=_feature_fn,
+            dataset_id="missing-synthesis-source",
+        )
+
+    assert "synthesis_status" in str(exc.value)
+    assert "cand-001" in str(exc.value)
+
+
+def test_candidate_library_contract_rejects_non_object_source_entries(tmp_path):
+    from screening.verified_candidate_discovery import CandidateLibraryContractError, VerifiedCandidateDiscovery
+
+    pool = _external_candidate_pool()
+    sources = json.loads(pool.loc[0, "verification_sources"])
+    sources.append("not-a-source-object")
+    sources.append(None)
+    pool.loc[0, "verification_sources"] = json.dumps(sources)
+
+    with pytest.raises(CandidateLibraryContractError) as exc:
+        VerifiedCandidateDiscovery(output_dir=tmp_path).discover(
+            pool,
+            model=LengthModel(),
+            feature_fn=_feature_fn,
+            dataset_id="malformed-source-list",
+        )
+
+    assert "verification_sources[3]" in str(exc.value)
+    assert "must be an object" in str(exc.value)
+
+
+def test_candidate_library_contract_rejects_unknown_source_kind_and_missing_source_url(tmp_path):
+    from screening.verified_candidate_discovery import CandidateLibraryContractError, VerifiedCandidateDiscovery
+
+    pool = _external_candidate_pool()
+    pool.loc[0, "verification_sources"] = json.dumps([
+        {"kind": "molecule", "source": "pubchem", "pubchem_id": "702"},
+        {"kind": "availability", "source": "vendor_catalog"},
+        {"kind": "unsupported_kind", "source": "unvetted"},
+        {"kind": "safety", "source": "vendor_sds"},
+    ])
+
+    with pytest.raises(CandidateLibraryContractError) as exc:
+        VerifiedCandidateDiscovery(output_dir=tmp_path).discover(
+            pool,
+            model=LengthModel(),
+            feature_fn=_feature_fn,
+            dataset_id="bad-source-shape",
+        )
+
+    assert "unsupported verification source kind" in str(exc.value)
+    assert "url" in str(exc.value)
 
 
 def test_discovery_ranks_verified_external_candidate_library(tmp_path):
@@ -249,9 +370,18 @@ def test_discovery_scores_candidates_with_baseline_evidence_and_readiness_contex
     pool.loc[0, "baseline_context"] = "matched FA/MA PbI3 control"
     pool.loc[0, "verification_sources"] = json.dumps([
         {"kind": "molecule", "source": "pubchem", "pubchem_id": "702"},
-        {"kind": "availability", "source": "vendor_catalog", "vendor_name": "Sigma Aldrich"},
-        {"kind": "synthesis", "source": "reported_protocol"},
-        {"kind": "safety", "source": "sds"},
+        {
+            "kind": "availability",
+            "source": "vendor_catalog",
+            "vendor_name": "Sigma Aldrich",
+            "url": "https://www.sigmaaldrich.com/catalog/product/sial/459844",
+        },
+        {"kind": "synthesis", "source": "reported_protocol", "url": "https://doi.org/10.1021/acs.jpclett.6c00119"},
+        {
+            "kind": "safety",
+            "source": "sds",
+            "url": "https://www.sigmaaldrich.com/US/en/sds/sial/459844",
+        },
     ])
     pool.loc[1, "baseline_pce"] = 16.0
     pool.loc[1, "baseline_context"] = ""
@@ -287,7 +417,7 @@ def test_discovery_scores_candidates_with_baseline_evidence_and_readiness_contex
     assert components["availability_bonus"] > 0
     assert components["synthesis_bonus"] > 0
     assert components["safety_bonus"] > 0
-    assert components["verification_evidence_count"] == 4
+    assert components["verification_evidence_count"] == 1
     assert components["verification_evidence_bonus"] > 0
     assert components["uncertainty_penalty"] < 0
 
