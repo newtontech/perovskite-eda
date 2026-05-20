@@ -28,6 +28,7 @@ PANDOC_PDF_ENGINE ?= xelatex
 PANDOC_MAINFONT ?= DejaVu Serif
 PSC_CANDIDATE_CLOSURE_DATASET_ID ?= psc-additive-closure-candidate-loop
 PSC_CANDIDATE_CLOSURE_ARTIFACT_DIR ?= hybrid_agent_exploration/results/verified_discovery_runs/$(PSC_CANDIDATE_CLOSURE_DATASET_ID)
+PSC_CANDIDATE_CLOSURE_CACHE_DIR ?= hybrid_agent_exploration/.cache/verified_discovery/psc-additive-closure-external-cached-full-source/evidence_cache
 PSC_CANDIDATE_SOURCE ?= hybrid_agent_exploration/candidate_sources/psc_passivator_seed_candidates.csv
 PSC_CANDIDATE_SOURCE_NAME ?= psc-passivator-seed
 
@@ -66,6 +67,7 @@ CACHE_COLLECT_SHARD_ARGS := $(if $(CACHE_COLLECT_SHARD_COUNT),--shard-count $(CA
 CACHE_COLLECT_OUTPUT_JSON := $(if $(CACHE_COLLECT_SHARD_MODE),$(CACHE_COLLECT_SHARD_REPORT),$(CACHE_COLLECTION_REPORT))
 CACHE_MERGE_CANONICAL_DIR := $(if $(EVIDENCE_CACHE_DIR),$(EVIDENCE_CACHE_DIR),hybrid_agent_exploration/.cache/verified_discovery/$(DATASET_ID)/evidence_cache)
 CACHE_MERGE_SHARD_ARGS := $(foreach dir,$(CACHE_SHARD_DIRS),--shard-cache-dir $(dir))
+PSC_CANDIDATE_CLOSURE_CACHE_ARGS := $(if $(PSC_CANDIDATE_CLOSURE_CACHE_DIR),--cache-dir $(PSC_CANDIDATE_CLOSURE_CACHE_DIR),)
 VERIFY_CANDIDATE_LIBRARY_ARGS := $(if $(REQUIRE_CANDIDATE_LIBRARY),--require-candidate-library,)
 VERIFY_EVIDENCE_CACHE_ARGS := $(if $(REQUIRE_EVIDENCE_CACHE),--require-evidence-cache,)
 
@@ -100,7 +102,8 @@ research-package-psc-candidate-closure:
 		EVIDENCE_MODE=external-cached \
 		INPUT_SCOPE=full-source \
 		CANDIDATE_SOURCE=$(PSC_CANDIDATE_SOURCE) \
-		CANDIDATE_SOURCE_NAME=$(PSC_CANDIDATE_SOURCE_NAME)
+		CANDIDATE_SOURCE_NAME=$(PSC_CANDIDATE_SOURCE_NAME) \
+		EXTRA_RUN_ARGS="$(PSC_CANDIDATE_CLOSURE_CACHE_ARGS) $(EXTRA_RUN_ARGS)"
 	$(MAKE) research-package-pdf \
 		DATASET_ID=$(PSC_CANDIDATE_CLOSURE_DATASET_ID) \
 		ARTIFACT_DIR=$(PSC_CANDIDATE_CLOSURE_ARTIFACT_DIR) \

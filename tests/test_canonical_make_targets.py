@@ -81,6 +81,11 @@ def test_psc_candidate_closure_target_uses_real_seed_source_and_strict_verify():
     assert "EVIDENCE_MODE=external-cached" in output
     assert "INPUT_SCOPE=full-source" in output
     assert (
+        "--cache-dir hybrid_agent_exploration/.cache/verified_discovery/"
+        "psc-additive-closure-external-cached-full-source/evidence_cache"
+        in output
+    )
+    assert (
         "CANDIDATE_SOURCE=hybrid_agent_exploration/candidate_sources/"
         "psc_passivator_seed_candidates.csv"
         in output
