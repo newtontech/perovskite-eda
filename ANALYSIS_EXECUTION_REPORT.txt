@@ -1,0 +1,230 @@
+================================================================================
+QSPR CORRELATION ANALYSIS - EXECUTION REPORT
+Perovskite Solar Cell Modulators
+================================================================================
+
+EXECUTION SUMMARY
+-----------------
+Status: COMPLETED SUCCESSFULLY
+Date: 2026-02-20
+Dataset: /share/yhm/test/AutoML_EDA/processed_data.csv
+Sample Size: 5,354 compounds (1,035 unique CAS numbers)
+
+ANALYSIS PERFORMED
+------------------
+1. Correlation Analysis
+   - Pearson correlation (parametric)
+   - Spearman rank correlation (non-parametric)
+   - Kendall's tau (ordinal association)
+   - 95% Confidence Intervals (Fisher's z-transformation)
+   - Significance testing with p-values
+   - Bonferroni correction for multiple comparisons
+
+2. Statistical Tests
+   - N = 5,354 for all correlations
+   - Bonferroni correction factor: 6
+   - Significance threshold: α = 0.05/6 = 0.0083
+
+3. Visualizations Created
+   - Correlation matrix heatmap (7x7 variables)
+   - Scatter plots with regression lines (6 plots)
+   - Pair plot matrix (colored by Delta_PCE quartile)
+   - Partial correlation network graph
+   - Volcano plot (significance vs correlation strength)
+   - PCA feature importance analysis
+
+KEY RESULTS
+-----------
+Significant Correlations (Bonferroni-corrected p < 0.05):
+
+1. Log P (Partition Coefficient)
+   - r = 0.0828, p = 7.79e-09
+   - 95% CI: [0.0561, 0.1093]
+   - Highly significant, weak positive correlation
+
+2. Rotatable Bonds
+   - r = 0.0629, p = 2.43e-05
+   - 95% CI: [0.0362, 0.0896]
+   - Highly significant, weak positive correlation
+
+3. Molecular Weight
+   - r = 0.0561, p = 2.41e-04
+   - 95% CI: [0.0293, 0.0828]
+   - Highly significant, weak positive correlation
+   - Note: Non-significant in Spearman/Kendall tests (suggests non-linearity)
+
+4. H-Bond Acceptors
+   - r = 0.0528, p = 6.59e-04
+   - 95% CI: [0.0261, 0.0795]
+   - Highly significant, weak positive correlation
+   - Significant in all three correlation tests
+
+Non-Significant Correlations:
+
+1. H-Bond Donors
+   - r = -0.0125, p = 0.360 (not significant)
+
+2. TPSA (Topological Polar Surface Area)
+   - r = 0.0075, p = 0.584 (not significant)
+   - Note: Significant in Spearman/Kendall tests (suggests non-linearity)
+
+MULTICOLLINEARITY DETECTED
+---------------------------
+High inter-correlations (|r| > 0.7):
+
+- molecular_weight ↔ h_bond_acceptors: r = 0.7093
+- molecular_weight ↔ rotatable_bonds: r = 0.7995
+- molecular_weight ↔ log_p: r = 0.7413
+- h_bond_donors ↔ tpsa: r = 0.7942
+- h_bond_acceptors ↔ rotatable_bonds: r = 0.7375
+- h_bond_acceptors ↔ tpsa: r = 0.8596 (highest)
+
+Implications:
+- Violates assumption of independence for linear regression
+- Requires regularization (Ridge/Lasso) or dimensionality reduction (PCA)
+- May inflate variance of coefficient estimates
+
+OUTPUT FILES GENERATED
+----------------------
+Figures (/share/yhm/test/AutoML_EDA/figures/):
+1. correlation_heatmap.png (274 KB)
+   - 7x7 correlation matrix with triangular mask
+   - Annotations showing correlation coefficients
+   - Color scale: RdBu_r (red-white-blue)
+
+2. correlation_scatter_plots.png (1.5 MB)
+   - 6 subplot grid (3x2 layout)
+   - Each plot shows descriptor vs Delta_PCE
+   - Includes regression line and correlation statistics
+
+3. correlation_pair_plot.png (2.2 MB)
+   - Pair plot matrix for all 6 descriptors + Delta_PCE
+   - Colored by Delta_PCE quartile (Q1-Q4)
+   - KDE on diagonal, scatter on off-diagonal
+
+4. correlation_network.png (264 KB)
+   - Network graph of partial correlations
+   - Node size varies by importance
+   - Edge thickness represents correlation strength
+
+5. correlation_volcano.png (168 KB)
+   - Volcano plot of correlation vs significance
+   - Color-coded by significance level
+   - Annotated with feature names
+
+6. correlation_pca_importance.png (266 KB)
+   - Explained variance ratio bar plot
+   - Feature loadings heatmap (first 3 PCs)
+   - Cumulative variance curve
+
+Tables (/share/yhm/test/AutoML_EDA/tables/):
+1. correlation_statistics.csv (1.6 KB)
+   - 13 columns including all correlation metrics
+   - 6 rows (one per descriptor)
+   - Includes p-values, confidence intervals, corrected p-values
+
+2. correlation_heatmap_matrix.csv (1.0 KB)
+   - 7x7 Pearson correlation matrix
+   - Includes all descriptors and Delta_PCE
+
+Reports:
+1. correlation_report.txt (4.5 KB)
+   - Comprehensive analysis report
+   - Statistical interpretations
+   - Recommendations for further analysis
+
+2. QSPR_Correlation_Analysis_Summary.md (6.0 KB)
+   - Executive summary in markdown format
+   - Scientific interpretation
+   - Recommendations for future research
+
+Script:
+- qspr_correlation_analysis.py (27 KB)
+   - Complete analysis pipeline
+   - Reusable and well-documented
+   - Modular function design
+
+INTERPRETATION
+--------------
+Scientific Implications:
+
+1. Log P Dominance
+   - Hydrophobicity is the most significant predictor
+   - Suggests interfacial compatibility is crucial
+   - May relate to moisture resistance and stability
+
+2. Molecular Flexibility
+   - Rotatable bonds show significant positive correlation
+   - Indicates conformational adaptability is beneficial
+   - May enhance defect passivation
+
+3. Size Effects
+   - Molecular weight shows weak but significant correlation
+   - Larger modulators may provide better coverage
+   - However, non-significant in rank tests (suggests threshold effect)
+
+4. Electronic Properties
+   - H-bond acceptors contribute positively
+   - Electron-donating capacity appears important
+   - Consistent across all correlation methods
+
+Limitations:
+
+1. Weak Effect Sizes
+   - All correlations are weak (r < 0.1)
+   - Limited predictive power for individual descriptors
+   - Suggests complex, non-linear relationships
+
+2. Multicollinearity
+   - High inter-correlations among descriptors
+   - Difficult to isolate individual effects
+   - Requires advanced modeling techniques
+
+3. Descriptor Coverage
+   - Only 6 basic physicochemical properties
+   - Missing quantum chemical descriptors
+   - Lacks 3D molecular information
+
+RECOMMENDATIONS
+---------------
+For Future Analysis:
+
+1. Advanced Modeling
+   - Non-linear methods: Random Forest, XGBoost, Neural Networks
+   - Ensemble approaches combining linear and non-linear models
+   - Cross-validation to prevent overfitting
+
+2. Feature Engineering
+   - Polynomial and interaction terms
+   - Logarithmic transformations for skewed distributions
+   - Molecular fingerprints (ECFP, MACCS)
+   - 3D descriptors (molecular volume, surface area)
+
+3. Multicollinearity Management
+   - Principal Component Analysis (PCA)
+   - Partial Least Squares (PLS) regression
+   - Regularization (Ridge, Lasso, Elastic Net)
+   - Variance Inflation Factor (VIF) analysis
+
+4. Additional Descriptors
+   - Quantum chemical: HOMO/LUMO, ionization potential, electron affinity
+   - Topological: Wiener index, Zagreb indices
+   - Electronic: dipole moment, polarizability
+   - Geometric: solvent-accessible surface area
+
+5. Experimental Validation
+   - Prioritize high Log P compounds
+   - Test modulators with moderate rotatable bond counts
+   - Investigate synergistic effects of combinations
+
+CONCLUSION
+----------
+This comprehensive QSPR correlation analysis successfully identified four molecular descriptors with statistically significant correlations to Delta_PCE in perovskite solar cell modulators. The analysis provides a solid foundation for future machine learning studies and offers actionable insights for modulator design. However, the weak correlation magnitudes indicate that non-linear relationships and additional molecular features are likely important for predictive modeling.
+
+The complete analysis infrastructure is now in place, including reusable scripts, comprehensive visualizations, and detailed statistical reports. This framework can be extended to additional descriptors, larger datasets, and more sophisticated modeling approaches.
+
+================================================================================
+Analysis completed successfully on 2026-02-20
+Total execution time: ~3 seconds (for Python script)
+Total output files: 11 (6 figures, 2 tables, 2 reports, 1 script)
+================================================================================

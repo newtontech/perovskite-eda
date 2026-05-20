@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-04-30T19:44:25.997677",
+  "args": {
+    "n_agents": 2,
+    "max_workers": 1,
+    "target": "delta_pce",
+    "baseline_as_feature": true,
+    "weighted_sampling": true,
+    "output": "results/final_verify",
+    "fast_only": true,
+    "checkpoint_every": 1,
+    "seed": 42
+  },
+  "total_agents": 2,
+  "successful": 2,
+  "failed": 0,
+  "best_r2": 0.29621254932120245,
+  "total_duration_sec": 132.85
+}

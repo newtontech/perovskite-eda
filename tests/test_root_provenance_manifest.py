@@ -1,0 +1,210 @@
+import json
+import sys
+from pathlib import Path
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1] / "hybrid_agent_exploration"
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+
+def _write(path: Path, text: str) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_path):
+    from reporting.root_provenance_manifest import generate_root_provenance_manifest
+
+    discovery_dir = tmp_path / "verified_discovery"
+    report_dir = tmp_path / "report_bundle" / "main_text"
+    si_dir = tmp_path / "report_bundle" / "si"
+    workflow_manifest = {
+        "dataset_id": "strict-source-fixture",
+        "artifact_policy": "verified-light-artifacts-in-git",
+        "strict_verified_training_only": True,
+        "verified_candidate_discovery_only": True,
+        "outputs": {
+            "verified_train_csv": "dataset/verified_train.csv",
+                "model_manifest_json": "model/model_manifest.json",
+                "model_validation_metrics_json": "model/model_validation_metrics.json",
+                "model_validation_predictions_csv": "model/model_validation_predictions.csv",
+                "model_scaffold_validation_metrics_json": "model/model_scaffold_validation_metrics.json",
+                "model_scaffold_validation_predictions_csv": "model/model_scaffold_validation_predictions.csv",
+                "model_temporal_validation_metrics_json": "model/model_temporal_validation_metrics.json",
+                "model_temporal_validation_predictions_csv": "model/model_temporal_validation_predictions.csv",
+                "ranked_candidates_csv": "discovery/ranked_candidates.csv",
+            "discovery_audit_report_md": "discovery/audit_report.md",
+        },
+    }
+    _write(discovery_dir / "workflow_manifest.json", json.dumps(workflow_manifest))
+    _write(discovery_dir / "dataset" / "verified_train.csv", "record_id,smiles\nrow-001,C\n")
+    _write(discovery_dir / "model" / "model_manifest.json", '{"strict_verified_training_only": true}\n')
+    _write(discovery_dir / "model" / "model_validation_metrics.json", '{"external_validation": false}\n')
+    _write(discovery_dir / "model" / "model_validation_predictions.csv", "record_id,y_true,y_pred\nrow-001,0.1,0.2\n")
+    _write(
+        discovery_dir / "model" / "model_scaffold_validation_metrics.json",
+        '{"chemical_generalization_diagnostic": true}\n',
+    )
+    _write(
+        discovery_dir / "model" / "model_scaffold_validation_predictions.csv",
+        "record_id,chemical_group_key,y_true,y_pred\nrow-001,acyclic:*,0.1,0.2\n",
+    )
+    _write(
+        discovery_dir / "model" / "model_temporal_validation_metrics.json",
+        '{"temporal_generalization_diagnostic": true}\n',
+    )
+    _write(
+        discovery_dir / "model" / "model_temporal_validation_predictions.csv",
+        "record_id,year,y_true,y_pred\nrow-001,2026,0.1,0.2\n",
+    )
+    _write(discovery_dir / "discovery" / "ranked_candidates.csv", "rank,candidate_id\n1,cand-001\n")
+    _write(discovery_dir / "discovery" / "audit_report.md", "# Audit\nverified-only\n")
+    input_table = _write(tmp_path / "raw_source.csv", "doi,smiles\n10.1/example,C\n")
+    _write(report_dir / "main_text.md", "# Main report\n")
+    _write(report_dir / "claim_ledger.json", '[{"evidence_id": "metric:best_model.r2"}]\n')
+    _write(report_dir / "review_report.json", '{"review": {"passed": true}}\n')
+    _write(si_dir / "supplementary_information.md", "# SI\n")
+    _write(si_dir / "audit_summary.json", '{"passed": true}\n')
+    candidate_library_dir = tmp_path / "candidate_library"
+    candidate_source = _write(tmp_path / "candidate_source.csv", "candidate_id,smiles\ncand-001,C\n")
+    _write(candidate_library_dir / "candidate_library.csv", "candidate_id,smiles\ncand-001,C\n")
+    _write(candidate_library_dir / "source_summary.json", '{"output_rows": 1}\n')
+    _write(
+        candidate_library_dir / "external_evidence_audit.json",
+        '{"schema_version": "candidate-library-external-evidence-audit-v1"}\n',
+    )
+    _write(candidate_library_dir / "external_evidence_audit.md", "# Candidate Evidence Audit\n")
+    _write(candidate_library_dir / "provenance.json", '{"network_access": "not_used"}\n')
+    evidence_cache_manifest = _write(
+        tmp_path / "evidence_cache" / "evidence_cache_manifest.json",
+        '{"schema_version": "evidence-cache-manifest-v1", "cache_files": {}}\n',
+    )
+    source_completeness_dir = tmp_path / "source_completeness"
+    _write(source_completeness_dir / "source_completeness.json", '{"audit_scope": "column_level_missingness_only"}\n')
+    _write(source_completeness_dir / "source_completeness.csv", "group_id,column,present\nliterature_metadata,doi,true\n")
+    _write(source_completeness_dir / "source_completeness.md", "# Source Completeness Audit\n")
+    closed_loop_dir = tmp_path / "closed_loop" / "iteration_000"
+    _write(closed_loop_dir / "iteration_manifest.json", '{"schema_version": "closed-loop-iteration-packet-v1"}\n')
+    _write(closed_loop_dir / "selected_candidates.csv", "candidate_id\ncand-001\n")
+    _write(closed_loop_dir / "candidate_packet.md", "# Candidate packet\n")
+    _write(closed_loop_dir / "feedback_schema.json", '{"type": "object"}\n')
+    _write(closed_loop_dir / "feedback_template.csv", "candidate_id,experimental_status\ncand-001,pending_external_measurement\n")
+    _write(closed_loop_dir / "verification_report.json", '{"status": "passed"}\n')
+    closure_readiness_report = _write(
+        tmp_path / "closure_readiness_report.json",
+        '{"schema_version": "closure-readiness-report-v1", "overall_ready": false}\n',
+    )
+    package_manifest = _write(
+        tmp_path / "package_manifest.json",
+        '{"schema_version": "research-package-manifest-v1"}\n',
+    )
+
+    manifest = generate_root_provenance_manifest(
+        discovery_dir,
+        report_dir,
+        si_dir,
+        candidate_library_dir=candidate_library_dir,
+        source_completeness_dir=source_completeness_dir,
+        closed_loop_iteration_dir=closed_loop_dir,
+        closure_readiness_report_path=closure_readiness_report,
+        package_manifest_path=package_manifest,
+        input_path=input_table,
+        candidate_source_path=candidate_source,
+        evidence_cache_manifest_path=evidence_cache_manifest,
+    )
+
+    output_path = tmp_path / "report_bundle" / "provenance_manifest.json"
+    assert output_path.exists()
+    assert manifest == json.loads(output_path.read_text(encoding="utf-8"))
+    assert manifest["dataset_id"] == "strict-source-fixture"
+    assert manifest["artifact_policy"] == "verified-light-artifacts-in-git"
+    assert manifest["strict_verified_training_only"] is True
+    assert manifest["verified_candidate_discovery_only"] is True
+
+    assert {item["id"] for item in manifest["artifacts"]["dataset"]} == {"verified_train_csv"}
+    assert {item["id"] for item in manifest["artifacts"]["model"]} == {
+        "model_manifest_json",
+        "model_scaffold_validation_metrics_json",
+        "model_scaffold_validation_predictions_csv",
+        "model_temporal_validation_metrics_json",
+        "model_temporal_validation_predictions_csv",
+        "model_validation_metrics_json",
+        "model_validation_predictions_csv",
+    }
+    assert {item["id"] for item in manifest["artifacts"]["discovery"]} == {
+        "candidate_library:candidate_library_csv",
+        "ranked_candidates_csv",
+    }
+    assert {item["id"] for item in manifest["artifacts"]["audit"]} == {
+        "candidate_library:external_evidence_audit_json",
+        "candidate_library:external_evidence_audit_md",
+        "candidate_library:provenance_json",
+        "candidate_library:source_summary_json",
+        "discovery_audit_report_md",
+        "audit_summary_json",
+    }
+    assert {item["id"] for item in manifest["artifacts"]["report"]} == {"main_text_md"}
+    assert {item["id"] for item in manifest["artifacts"]["SI"]} == {"supplementary_information_md"}
+    assert {item["id"] for item in manifest["artifacts"]["claim"]} == {"claim_ledger_json"}
+    assert {item["id"] for item in manifest["artifacts"]["review"]} == {"review_report_json"}
+    assert {item["id"] for item in manifest["artifacts"]["package"]} == {"package_manifest_json"}
+    assert {item["id"] for item in manifest["artifacts"]["evidence_cache"]} == {
+        "evidence_cache_manifest_json"
+    }
+    assert {item["id"] for item in manifest["artifacts"]["source_completeness"]} == {
+        "source_completeness_csv",
+        "source_completeness_json",
+        "source_completeness_md",
+    }
+    assert {item["id"] for item in manifest["artifacts"]["closed_loop"]} == {
+        "candidate_packet_md",
+        "feedback_schema_json",
+        "feedback_template_csv",
+        "iteration_manifest_json",
+        "selected_candidates_csv",
+        "verification_report_json",
+    }
+    assert {item["id"] for item in manifest["artifacts"]["closure_readiness"]} == {
+        "closure_readiness_report_json",
+    }
+    assert manifest["source_manifests"]["package_manifest_json"]["exists"] is True
+    assert manifest["source_inputs"]["input_table"]["path"].endswith("raw_source.csv")
+    assert len(manifest["source_inputs"]["input_table"]["sha256"]) == 64
+    assert manifest["source_inputs"]["candidate_source_table"]["path"].endswith("candidate_source.csv")
+    assert len(manifest["source_inputs"]["candidate_source_table"]["sha256"]) == 64
+
+    verified_train = manifest["artifacts"]["dataset"][0]
+    assert verified_train["exists"] is True
+    assert verified_train["size_bytes"] == len("record_id,smiles\nrow-001,C\n")
+    assert verified_train["sha256_16"]
+    assert manifest["roots"]["candidate_library_dir"] == str(candidate_library_dir)
+    assert manifest["roots"]["source_completeness_dir"] == str(source_completeness_dir)
+    assert manifest["roots"]["closed_loop_iteration_dir"] == str(closed_loop_dir)
+    assert manifest["roots"]["closure_readiness_report_path"] == str(closure_readiness_report)
+
+
+def test_root_provenance_manifest_records_missing_declared_outputs(tmp_path):
+    from reporting.root_provenance_manifest import generate_root_provenance_manifest
+
+    discovery_dir = tmp_path / "verified_discovery"
+    report_dir = tmp_path / "bundle" / "main"
+    si_dir = tmp_path / "bundle" / "si"
+    workflow_manifest = {
+        "dataset_id": "missing-output-fixture",
+        "artifact_policy": "verified-light-artifacts-in-git",
+        "strict_verified_training_only": True,
+        "verified_candidate_discovery_only": True,
+        "outputs": {"model_metrics_json": "model/model_metrics.json"},
+    }
+    _write(discovery_dir / "workflow_manifest.json", json.dumps(workflow_manifest))
+    report_dir.mkdir(parents=True)
+    si_dir.mkdir(parents=True)
+
+    manifest = generate_root_provenance_manifest(discovery_dir, report_dir, si_dir)
+
+    missing = manifest["artifacts"]["model"][0]
+    assert missing["id"] == "model_metrics_json"
+    assert missing["exists"] is False
+    assert missing["size_bytes"] is None
+    assert missing["sha256_16"] is None
