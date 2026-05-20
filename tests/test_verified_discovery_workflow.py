@@ -83,6 +83,8 @@ def test_workflow_generates_training_and_candidate_discovery_artifacts(tmp_path)
     assert artifacts.data_audit_report_md.exists()
     assert artifacts.model_metrics_json.exists()
     assert artifacts.model_manifest_json.exists()
+    assert artifacts.model_validation_metrics_json.exists()
+    assert artifacts.model_validation_predictions_csv.exists()
     assert artifacts.ranked_candidates_csv.exists()
     assert artifacts.discovery_manifest_json.exists()
     assert artifacts.discovery_audit_report_md.exists()
@@ -106,6 +108,14 @@ def test_workflow_generates_training_and_candidate_discovery_artifacts(tmp_path)
     assert metrics["feature_columns"] == ["smiles_length"]
     assert metrics["model_class"] == "LinearRegression"
 
+    validation = json.loads(artifacts.model_validation_metrics_json.read_text(encoding="utf-8"))
+    assert validation["schema_version"] == "model-validation-metrics-v1"
+    assert validation["dataset_id"] == "workflow-fixture"
+    assert validation["validation_scope"] == "internal_random_holdout_verified_rows"
+    assert validation["external_validation"] is False
+    assert validation["split_strategy"] == "random_holdout_verified_rows"
+    assert validation["test_size"] == 0.2
+
     manifest = json.loads(artifacts.workflow_manifest_json.read_text(encoding="utf-8"))
     assert manifest["dataset_id"] == "workflow-fixture"
     assert manifest["verified_rows"] == 4
@@ -121,11 +131,47 @@ def test_workflow_generates_training_and_candidate_discovery_artifacts(tmp_path)
         "data_audit_report_md",
         "model_metrics_json",
         "model_manifest_json",
+        "model_validation_metrics_json",
+        "model_validation_predictions_csv",
         "ranked_candidates_csv",
         "discovery_manifest_json",
         "discovery_audit_report_md",
         "workflow_manifest_json",
     }
+
+
+def test_workflow_validation_metrics_report_real_holdout_rows(tmp_path):
+    from screening.verified_discovery_workflow import VerifiedDiscoveryWorkflow
+
+    raw_df = pd.DataFrame(
+        [
+            _record(f"row-{idx:03d}", f"10.1021/acs.jpclett.6c{idx:05d}", "C" * idx, float(idx) / 10)
+            for idx in range(1, 11)
+        ]
+    )
+
+    artifacts = VerifiedDiscoveryWorkflow(output_dir=tmp_path, authenticator=_authenticator()).run_from_dataframe(
+        raw_df,
+        dataset_id="workflow-validation-fixture",
+        model=LinearRegression(),
+        feature_fn=_feature_fn,
+        top_k=2,
+        min_verified_rows=10,
+    )
+
+    validation = json.loads(artifacts.model_validation_metrics_json.read_text(encoding="utf-8"))
+    assert validation["status"] == "passed"
+    assert validation["train_rows"] == 8
+    assert validation["validation_rows"] == 2
+    assert validation["validation_r2"] is not None
+    assert validation["validation_rmse"] is not None
+    assert validation["validation_mae"] is not None
+    assert validation["validation_pearson_r"] is not None
+
+    predictions = pd.read_csv(artifacts.model_validation_predictions_csv)
+    assert list(predictions.columns) == ["record_id", "smiles", "y_true", "y_pred", "residual", "split"]
+    assert predictions["split"].tolist() == ["validation", "validation"]
+    assert len(predictions) == 2
 
 
 def test_workflow_refuses_training_when_strict_gate_finds_too_few_verified_rows(tmp_path):
