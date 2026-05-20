@@ -468,7 +468,7 @@ The curated dataset (4,934 samples) and all generated results are available upon
 
 ---
 
-*Submitted to Journal of Physical Chemistry Letters*
+*Submitted to example journal*
 
 *Corresponding Author: [Author Name]*
 *Email: [email@institution.edu]*

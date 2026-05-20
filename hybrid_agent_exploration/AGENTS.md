@@ -53,7 +53,7 @@
 | F26 | 学习型表示 | 128-512 dim | SMILES token, molecular graph embedding, crystal graph, **JTVAE latent**, **Uni-Mol 3D embedding** |
 | F27 | 图像/谱学表征 | 变长 | PL/TRPL/UV-vis, XRD/GIWAXS, SEM/AFM, in situ PL/reflection |
 
-**本项目已实现**: F21 (RDKit Descriptors), F22 (ECFP4, MACCS, KRFP, AP, TT), F25 (部分工艺特征)
+**本项目已实现**: F21 (RDKit Descriptors), F22 (ECFP4, MACCS, KRFP, AP, TT, Morgan 256/512/1024), F25 (部分工艺特征)
 
 **前沿趋势**: F26 学习型表示（JTVAE latent, Uni-Mol embedding）正在取代手工特征。Co-PAS 已用 scaffold 预筛选 + JTVAE latent + PubChem 25万分子做添加剂筛选。
 
@@ -256,8 +256,8 @@ bash explorations/multi_agent_run.sh
 | Layer | 已实现方法 |
 |-------|-----------|
 | L1 数据清洗 | agentic_veryloose / agentic_standard / agentic_strict / traditional |
-| L2 特征 | F21_rdkit_basic (15-dim), F22_maccs (166-bit), F22_ecfp4/6 (2048-bit), F22_atom_pair (2048-bit), F22_topological_torsion (2048-bit) |
-| L3 模型 | M31_random_forest, M31_xgboost, M31_lightgbm, M31_svr, M31_knn |
+| L2 特征 | F21_rdkit_basic (15-dim), F22_maccs (166-bit), F22_ecfp4/6 (2048-bit), F22_krfp (4860-bit), F22_atom_pair (2048-bit), F22_topological_torsion (2048-bit), F22_morgan_256/512/1024 |
+| L3 模型 | M31_random_forest, M31_xgboost, M31_lightgbm, M31_catboost, M31_gradient_boosting, M31_svr, M31_knn, M31_elastic_net, M31_ridge, M31_lasso |
 | L4 评估 | E42_random_split, E43_5fold_cv, E45_shap |
 | L5 筛选 | D53_top_k, D54_report_only |
 

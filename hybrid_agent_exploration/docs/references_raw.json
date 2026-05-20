@@ -1,0 +1,2121 @@
+[
+  {
+    "title": "From Data‐Driven to Intelligence‐Driven: Innovating Research Paradigms of Perovskite Solar Cells",
+    "authors": [
+      "Ang Li",
+      "Chenyi Yi"
+    ],
+    "year": 2025,
+    "journal": "Solar RRL",
+    "volume": "9",
+    "issue": "21",
+    "pages": "",
+    "doi": "10.1002/solr.202500681",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/solr.202500681",
+    "abstract": "Perovskite solar cells (PSCs) are regarded as the next‐generation photovoltaic technology due to exceptional power conversion efficiency (PCE) and low fabrication costs. However, their multi‐scale physical and chemical structures render empirically driven research paradigms inefficient, especially like trial‐and‐error approach. In recent years, classical machine learning methods based on big data have been widely applied in PSCs research, yet their effectiveness remains constrained by issues such as limited data quality, single modality of data, and insufficient generative capabilities. With the rapid advancement of artificial intelligence, particularly the rise of deep learning, reinforcement learning, and large language models, PSCs' research progressively transforms from a local data‐driven to a global intelligence‐driven paradigm. This review systematically summarizes recent progress in intelligence‐driven methods for PSCs research, encompassing material design, process optimization, exploration of stability mechanisms, knowledge discovery, and self‐driving experimentation. We further outline key points and current challenges of AI technologies in enhancing PCE, stability, and scalability of PSCs, aiming to accelerate the development from laboratory innovation to industrial application.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Li, A., & Yi, C. (2025). From Data‐Driven to Intelligence‐Driven: Innovating Research Paradigms of Perovskite Solar Cells. Solar RRL, 9(21). https://onlinelibrary.wiley.com/ai/10.1002/solr.202500681",
+    "result_id": "10.1002/solr.202500681_0000",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Machine Learning‐Driven Perovskite Research from Experimental Exploration to Industrial Development",
+    "authors": [
+      "Feng, Z.",
+      "Zhu, X.",
+      "Meng, H.",
+      "Yang, A.",
+      "Tang, J.",
+      "Zhong, C.",
+      "Hu, K.",
+      "Liu, J.",
+      "Zhang, J.",
+      "Lin, X."
+    ],
+    "year": 2025,
+    "journal": "Solar RRL",
+    "volume": "9",
+    "issue": "18",
+    "pages": "",
+    "doi": "10.1002/solr.202500464",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/solr.202500464",
+    "abstract": "Perovskite solar cells (PSCs) have emerged as a research hotspot inthird‐generation photovoltaic technology with their high efficiency, low cost, and solution processability. However, many issues, such as material instability, lead toxicity, and scalability challenges, hinder their industrialization and commercialization. This study reviews the overall production management optimization that utilizes machine learning (ML) throughout the entire life cycle of PSCs production from experimental exploration to industrial development. We explore the application of ML in high‐throughput material screening, device structure redesign, scalable manufacturing, automated platform optimization, product quality analysis, installation, and maintenance from preproduction to after‐production of PSCs. By spanning the entire industry chain, ML significantly enhances the performance, stability, and lifespan of the device, strongly supporting their commercialization and wide application. As algorithms improve and data resources expand, the future application prospects of ML in the full production management of PSCs will become even broader.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Feng, Z., Zhu, X., Meng, H., Yang, A., Tang, J., Zhong, C., Hu, K., Liu, J., Zhang, J., & Lin, X. (2025). Machine Learning‐Driven Perovskite Research from Experimental Exploration to Industrial Development. Solar RRL, 9(18). https://onlinelibrary.wiley.com/ai/10.1002/solr.202500464",
+    "result_id": "10.1002/solr.202500464_0002",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Inorganic Cs2TeI6/Cs2AgInBr6 Dual‐Absorber Perovskite Solar Cells: SCAPS‐1D Optimization and Multiple Machine Learning Comparison Analysis",
+    "authors": [
+      "Li, X.",
+      "Jin, D.",
+      "Wang, H.",
+      "Zhao, J."
+    ],
+    "year": 2025,
+    "journal": "Advanced Theory and Simulations",
+    "volume": "8",
+    "issue": "12",
+    "pages": "",
+    "doi": "10.1002/adts.202500939",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/adts.202500939",
+    "abstract": "Abstract \nPerovskite solar cells (PSCs) have garnered sustained focus of the academic researchers owing to their exceptional light‐harvesting capabilities and solution manufacturing fabrications. Here, nontoxic inorganic materials Cs2TeI6 and Cs2AgInBr6 (CAIB) are employed as a dual‐absorber layer, which enhances the spectral range, while accelerating the extraction efficiency of carriers through the distribution of space charges, with an initial power conversion efficiency (PCE) of 10.99%. On a Solar Cell Capacitance Simulator in One Dimension (SCAPS‐1D) platform, after an in‐depth examination the bulk defect density, the interface defect density, the bandgap, and the thickness of the absorber layer, an exciting PCE at 31.60% is achieved, with the back electrode substituted by high‐efficiency and durable carbon. Afterward, incorporating realistic radiative recombination and resistance effects, PCE is refined to 24.70% with enhanced experimental feasibility. Notably, the proposed PSC demonstrates exceptional property in temperature and illumination evaluations, followed by discussions of capacitance. Furthermore, five algorithms are employed to construct models of PSC, striving to accurately represent the relationship between various property parameters and certain indicators of the absorber layer. Among them, eXtreme gradient boosting is identified as the most appropriate algorithm, with CAIB layer defect density dominating PCE, providing the optimal optimization strategy for future PSC designers.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Li, X., Jin, D., Wang, H., & Zhao, J. (2025). Inorganic Cs2TeI6/Cs2AgInBr6 Dual‐Absorber Perovskite Solar Cells: SCAPS‐1D Optimization and Multiple Machine Learning Comparison Analysis. Advanced Theory and Simulations, 8(12). https://onlinelibrary.wiley.com/ai/10.1002/adts.202500939",
+    "result_id": "10.1002/adts.202500939_0013",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Machine Learning Unlocks New Directions in Halide Perovskite Research",
+    "authors": [
+      "Choe, H.",
+      "Yoon, H.",
+      "Kim, I.",
+      "Kim, S. Y."
+    ],
+    "year": 2025,
+    "journal": "ChemElectroChem",
+    "volume": "13",
+    "issue": "1",
+    "pages": "",
+    "doi": "10.1002/celc.202500282",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/celc.202500282",
+    "abstract": "Halide perovskites have attracted significant interest due to their potential in optoelectronic devices. However, challenges related to complex compositional spaces, environmental sensitivity, and stability limitations continue to constrain their systematic development and application. Machine learning (ML) has emerged as an effective tool to address these challenges by enabling the prediction of material properties, the identification of promising compositions, and optimization of processing conditions, while reducing reliance on conventional trial‐and‐error methods. By capturing complex, nonlinear relationships among compositional, structural, and processing parameters, ML enables the exploration of broad design spaces that are essential for advancing perovskite research. Additionally, ML accelerates the discovery and optimization of perovskite materials through data‐driven approaches, including high‐throughput screening and inverse design, enabling rapid identification of optimal compositions and processing conditions for enhanced device performance and stability. This review provides an overview of recent efforts to integrate ML into halide perovskite studies, discussing workflows, implementation strategies, and notable progress in device‐level development. This article highlights how ML enables systematic materials discovery and optimization, supporting the advancement of stable and efficient perovskite optoelectronic devices.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Choe, H., Yoon, H., Kim, I., & Kim, S. Y. (2025). Machine Learning Unlocks New Directions in Halide Perovskite Research. ChemElectroChem, 13(1). https://onlinelibrary.wiley.com/ai/10.1002/celc.202500282",
+    "result_id": "10.1002/celc.202500282_0126",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Recent Advances in Modulating the Crystallization Dynamics of Sn–Pb Mixed Perovskites for High‐Efficiency All‐Perovskite Tandem Solar Cells",
+    "authors": [
+      "Doyun Im",
+      "Won Chang Choi",
+      "Gill Sang Han",
+      "Sangwook Lee"
+    ],
+    "year": 2025,
+    "journal": "ChemSusChem",
+    "volume": "18",
+    "issue": "24",
+    "pages": "",
+    "doi": "10.1002/cssc.202501511",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/cssc.202501511",
+    "abstract": "A deep understanding of Sn–Pb mixed perovskites is critical for the development of highly efficient all‐perovskite tandem solar cells that surpass the radiative efficiency limits of single‐junction devices. However, the rapid crystallization and intrinsic instability of Sn–Pb mixed perovskites often lead to crystal lattice defects, compositional inhomogeneity, and poor film morphology, which significantly reduce both device performance and stability. This review systematically examines the crystallization dynamics of Sn–Pb mixed perovskites and highlights the physicochemical distinctions between Sn and Pb. A comprehensive overview of crystallization dynamics, covering classical theories, recent state‐of‐the‐art strategies, and current advances, is presented. The review concludes by outlining key challenges and potential opportunities for next‐generation approaches to improve both performance and stability in Sn–Pb mixed perovskite solar cells and all‐perovskite tandem solar cells.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Im, D., Choi, W. C., Han, G. S., & Lee, S. (2025). Recent Advances in Modulating the Crystallization Dynamics of Sn–Pb Mixed Perovskites for High‐Efficiency All‐Perovskite Tandem Solar Cells. ChemSusChem, 18(24). https://onlinelibrary.wiley.com/ai/10.1002/cssc.202501511",
+    "result_id": "10.1002/cssc.202501511_0000",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Advancements in the Stability and Efficiency of Perovskite Solar Cells (PSCs): A Comprehensive Review",
+    "authors": [
+      "Thakur, P.",
+      "Tyagi, C.",
+      "Singh, A.",
+      "Jewariya, M."
+    ],
+    "year": 2025,
+    "journal": "ChemistrySelect",
+    "volume": "10",
+    "issue": "41",
+    "pages": "",
+    "doi": "10.1002/slct.202504592",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/slct.202504592",
+    "abstract": "Abstract \nPerovskite solar cells (PSCs) have emerged as a promising photovoltaic technology due to their tunable optoelectronic properties, low manufacturing costs, and high‐power conversion efficiencies. This review systematically examines the key factors affecting PSCs' performance, stability, and commercialization potential. It begins with an overview of the basic principles, structure, and operation of PSCs, followed by a discussion of degradation mechanisms caused by oxygen, moisture, heat, and light exposure. Strategies such as encapsulation, barrier layers, and thermal protection are evaluated. Material and Composition engineering, such as mixed‐cation and mixed halide formulation, interface engineering, and hybrid organic‐inorganic perovskites, which significantly enhance efficiency and long‐term stability. Recent advances in tandem architectures, passivation techniques, doping approaches, light management, and charge transport layers are also reviewed. Real‐world reliability is assessed through stability testing—including outdoor and damp‐heating experiments—and comparisons with established solar technologies. Finally, cost analyses, scalability considerations, and market adoption trends are discussed to provide a future‐looking perspective on the role of PSCs in the global energy landscape.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Thakur, P., Tyagi, C., Singh, A., & Jewariya, M. (2025). Advancements in the Stability and Efficiency of Perovskite Solar Cells (PSCs): A Comprehensive Review. ChemistrySelect, 10(41). https://onlinelibrary.wiley.com/ai/10.1002/slct.202504592",
+    "result_id": "10.1002/slct.202504592_0127",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Optimization of Lead‐Free Perovskite Solar Cell Architecture Using Machine Learning and Numerical Simulations",
+    "authors": [
+      "Rahman, M. A.",
+      "Alam, M. J."
+    ],
+    "year": 2025,
+    "journal": "Advanced Theory and Simulations",
+    "volume": "9",
+    "issue": "2",
+    "pages": "",
+    "doi": "10.1002/adts.202501590",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/adts.202501590",
+    "abstract": "Abstract \nThe proposed perovskite device structure considers several factors to realize their significance on device performance. Initially, the PCE variation between the two absorber halides is investigated, yielding a maximum PCE of 24.31% for CH3NH3SnBr3 and 27.37% for CH3NH3SnI3. Additionally, the SCAPS‐1D simulation assesses the contribution of distinct HTMs and ETMs. By further optimizing these layers along with diverse intrinsic parameters, the device's PCE increased from 27.37% to 40.17%. To improve predictive capabilities, a dataset of 29565 is generated utilizing the SCAPS‐1D simulator for CH3NH3SnI3‐based solar cells. Data preprocessing in Python applied leakage‐safe Pearson correlation filtering: within each highly collinear group (|r| ≥ 0.90), one representative predictor is retained and the remainder are excluded to reduce multicollinearity and improve interpretability. Six machine learning models are tested, and Random Forest is validated to be the most credible performer with an R2 of 96% and an RMSE of 0.210. The optimized configuration — FTO/WS2 (ETL)/CH3NH3SnI3 (absorber)/V2O5 (HTL)/Pt (back contact) — achieves a record simulated efficiency of 40.17%, surpassing prior reports. This performance is attributed to WS2’s favorable band alignment, CH3NH3SnI3’s strong absorption, and V2O5’s stability. The combined SCAPS–ML framework not only accelerates optimization but also provides actionable design rules for environmentally sustainable, lead‐free PSCs.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Rahman, M. A., & Alam, M. J. (2025). Optimization of Lead‐Free Perovskite Solar Cell Architecture Using Machine Learning and Numerical Simulations. Advanced Theory and Simulations, 9(2). https://onlinelibrary.wiley.com/ai/10.1002/adts.202501590",
+    "result_id": "10.1002/adts.202501590_0189",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Data‐Driven Molecular Encoding for Efficient Screening of Organic Additives in Perovskite Solar Cells",
+    "authors": [
+      "Pu, Y.",
+      "Dai, Z.",
+      "Zhou, Y.",
+      "Jia, N.",
+      "Wang, H.",
+      "Mukhametkarimov, Y.",
+      "Chen, R.",
+      "Wang, H.",
+      "Liu, Z."
+    ],
+    "year": 2025,
+    "journal": "Advanced Functional Materials",
+    "volume": "36",
+    "issue": "1",
+    "pages": "",
+    "doi": "10.1002/adfm.202506672",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/adfm.202506672",
+    "abstract": "Abstract \nMachine learning (ML) has shown promise in screening organic molecular additives for planar perovskite photovoltaics, but is often hindered by predictive biases due to small datasets and reliance on predefined descriptors. Here, Co‐Pilot for Perovskite Additive Screener (Co‐PAS) is introduced, an ML‐driven framework designed to accelerate additive (or passivator) screening for perovskite solar cells (PSCs). Co‐PAS integrates the Molecular Scaffold Classifier (MSC) for scaffold‐based pre‐screening and utilizes Junction Tree Variational Autoencoder (JTVAE) to achieve data‐driven molecular structure representation, significantly enhancing the accuracy of power conversion efficiency (PCE) predictions. By applying Co‐PAS to screen 250 000 molecules randomly drawn from PubChem, candidates are prioritized based on predicted PCE values and key molecular properties, including donor number, dipole moment, and hydrogen bond acceptor count. This workflow helps narrow down to 76 promising candidates, including Boc‐L‐threonine N‐hydroxysuccinimide ester (BTN), a previously unexplored additive in PSCs. The solar cell with BTN achieves a device PCE of 25.20%. These results underscore the potential of Co‐PAS in advancing additive discovery for high‐performance PSCs.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Pu, Y., Dai, Z., Zhou, Y., Jia, N., Wang, H., Mukhametkarimov, Y., Chen, R., Wang, H., & Liu, Z. (2025). Data‐Driven Molecular Encoding for Efficient Screening of Organic Additives in Perovskite Solar Cells. Advanced Functional Materials, 36(1). https://onlinelibrary.wiley.com/ai/10.1002/adfm.202506672",
+    "result_id": "10.1002/adfm.202506672_0040",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Dipole‐Moment‐Knowledge‐Guided Molecular Design for Perovskite Surface Passivation: A Gemma‐Language‐Model and DFT‐Driven Framework",
+    "authors": [
+      "Jiang, T.",
+      "Gao, Y.",
+      "Liu, G.",
+      "Zhao, G.",
+      "Hu, J.",
+      "Sa, R.",
+      "Gao, P."
+    ],
+    "year": 2025,
+    "journal": "Advanced Theory and Simulations",
+    "volume": "9",
+    "issue": "2",
+    "pages": "",
+    "doi": "10.1002/adts.202501318",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/adts.202501318",
+    "abstract": "ABSTRACT \nOne of the key challenges in the large‐scale application of perovskite solar cells is stability. Researchers have found that passivation molecules play a crucial role in mitigating interface defects, thereby enhancing stability. Traditionally, the design of passivation molecules has relied on the expertise of chemists and materials scientists. In this study, we introduce a novel approach driven by a language model and dipole‐moment‐knowledge‐based strategy for passivation molecule design. Specifically, we employ the open‐source Gemma model, which is pre‐trained and fine‐tuned on the PubChem and QM9 datasets. This fine‐tuning enables Gemma to generate passivation molecules with higher dipole moments. Further density functional theory (DFT) validation reveals that molecules designed by Gemma improve the stability of perovskite structures with surface defects by approximately 27.75%. Additionally, electronic density of states and charge distribution analysis further support these findings. This study highlights the potential of language models in the design of next‐generation photovoltaic device materials, particularly in passivation molecule development.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Jiang, T., Gao, Y., Liu, G., Zhao, G., Hu, J., Sa, R., & Gao, P. (2025). Dipole‐Moment‐Knowledge‐Guided Molecular Design for Perovskite Surface Passivation: A Gemma‐Language‐Model and DFT‐Driven Framework. Advanced Theory and Simulations, 9(2). https://onlinelibrary.wiley.com/ai/10.1002/adts.202501318",
+    "result_id": "10.1002/adts.202501318_0001",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Prediction and Fine Screening of Small Molecular Passivation Materials for High‐Efficiency Perovskite Solar Cells Via an Enhanced Machine Learning Workflow",
+    "authors": [
+      "Lou, Q.",
+      "Wang, J.",
+      "Nie, Z.",
+      "Xu, X.",
+      "Xu, Z.",
+      "Sun, M.",
+      "Luo, G.",
+      "Hu, H.",
+      "Li, J.",
+      "Tang, M.",
+      "Zhou, H."
+    ],
+    "year": 2025,
+    "journal": "Advanced Functional Materials",
+    "volume": "35",
+    "issue": "51",
+    "pages": "",
+    "doi": "10.1002/adfm.202511549",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/adfm.202511549",
+    "abstract": "Abstract \nInterface engineering is pivotal for enhancing the efficiency and stability of perovskite solar cells (PSCs), yet traditional experimental approaches for identifying effective passivation materials are labor‐intensive and time‐consuming. Leveraging the power of machine learning (ML), a robust and interpretable workflow is presented for the fine screening of small molecular passivation materials. By integrating multi‐level feature engineering, including structural, physical, and electronic properties, employing advanced ML models, benzodithiophene terthiophene rhodanine derivative (BTR‐Cl) is identified as a highly effective passivator for the perovskite/hole transport layer (HTL) interface. The fine‐screening capability of the ML workflow enables precise prediction of BTR‐Cl's superior performance. Experimental validation shows that BTR‐Cl optimizes energy level alignment, reduces surface defects, and significantly suppresses non‐radiative recombination, leading to a champion power conversion efficiency (PCE) of 25.36% with an open‐circuit voltage (VOC) of 1.186 V. Furthermore, BTR‐Cl effectively inhibits halogen ion migration, enhancing device stability. This study highlights the transformative potential of ML in fine screening and accelerating the discovery of advanced materials for high‐performance PSCs.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Lou, Q., Wang, J., Nie, Z., Xu, X., Xu, Z., Sun, M., Luo, G., Hu, H., Li, J., Tang, M., & Zhou, H. (2025). Prediction and Fine Screening of Small Molecular Passivation Materials for High‐Efficiency Perovskite Solar Cells Via an Enhanced Machine Learning Workflow. Advanced Functional Materials, 35(51). https://onlinelibrary.wiley.com/ai/10.1002/adfm.202511549",
+    "result_id": "10.1002/adfm.202511549_0002",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Accelerating the Exploration of Top Interface Passivators via Machine Learning for High‐Performance Perovskite Solar Cells",
+    "authors": [
+      "Zhu, Z.",
+      "Zhou, Z.",
+      "Zang, Y.",
+      "Yang, G.",
+      "Chen, H.",
+      "Tu, Y.",
+      "Zhu, C.",
+      "Yan, W."
+    ],
+    "year": 2026,
+    "journal": "Small",
+    "volume": "22",
+    "issue": "13",
+    "pages": "",
+    "doi": "10.1002/smll.202512910",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/smll.202512910",
+    "abstract": "ABSTRACT \nInterface passivation at the perovskite/electron‐transport‐layer (ETL) is key to reducing defects in perovskite solar cells (PSCs), yet the broad chemical space of passivators hinders discovery. Here, we present a machine‐learning (ML)‐guided workflow accelerating the identification of effective ammonium‐salt passivators for both n‐i‐p and p‐i‐n device architectures. A rigorously curated dataset of 296 literature records spanning 2017–2024, was stratified into 230 n‐i‐p and 66 p‐i‐n entries. Each passivator was represented via five molecular fingerprints and three descriptor sets, yielding eight distinct feature matrices per architecture. After training 72 regression models using tenfold cross‐validated RandomizedSearchCV, 256&XGBoost performed best for n‐i‐p (test MAE = 0.0431, RMSE = 0.0647), while RDKit&SVR excelled for p‐i‐n (test MAE = 0.0393, RMSE = 0.0516.). SHAP revealed that passivator concentration, molecular weight within 120–280 g mol−1, surface polarity fragments, and halide composition, particularly I/Br ratio, as the principal drivers of PCE enhancement. Guided by these insights, virtual screening of 162 salts at 9 concentrations identified top candidates. To validate our predictions experimentally, N,N,N‐trimethyl‐N‐(3‐hydroxypropyl) ammonium iodide was applied to a Cs0.05FA0.95PbI3‐based p‐i‐n device, yielding an improvement ratio of 1.152, closely matching the predicted value of 1.134 with a relative error of only 1.58%. Overall, this work establishes a transferable, SHAP‐guided and architecture‐aware machine‐learning framework that efficiently screens top interface passivators and provides physically meaningful design rules across different device configuPassivator, machine learning, perovskite solar cellrations.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Zhu, Z., Zhou, Z., Zang, Y., Yang, G., Chen, H., Tu, Y., Zhu, C., & Yan, W. (2026). Accelerating the Exploration of Top Interface Passivators via Machine Learning for High‐Performance Perovskite Solar Cells. Small, 22(13). https://onlinelibrary.wiley.com/ai/10.1002/smll.202512910",
+    "result_id": "10.1002/smll.202512910_0003",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Thiophene Expanded Self‐Assembled Monolayer as Hole Transport Layer for Organic Solar Cells with Efficiency of 20.78%",
+    "authors": [
+      "Xie, Y.",
+      "Tian, J.",
+      "Yang, X.",
+      "Chen, J.",
+      "Yu, S.",
+      "Tang, D.",
+      "Hu, X.",
+      "Sun, Y.",
+      "Lv, M."
+    ],
+    "year": 2025,
+    "journal": "Advanced Materials",
+    "volume": "37",
+    "issue": "41",
+    "pages": "",
+    "doi": "10.1002/adma.202502485",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/adma.202502485",
+    "abstract": "Abstract \nCarbazole‐derived self‐assembled monolayers (SAMs) as hole transport layers (HTLs) have achieved groundbreaking progress of device efficiency in perovskite and organic photovoltaics. Expanding the π‐conjugation of carbazole is an effective approach to enhance the molecular dipole moment and facilitate charge extraction of SAMs. However, this strategy tends to cause poor solubility and excessive self‐aggregation of SAMs. In this work, two highly efficient SAMs are developed by substituting a non‐fused thiophene unit on 3,6‐position of carbazole, namely (2‐(3,6‐di(thiophen‐3‐yl)‐9H‐carbazol‐9‐yl)ethyl)phosphonate (2PAThCz) and diethyl (4‐(3,6‐di(thiophen‐3‐yl)‐9H‐carbazol‐9‐yl)butyl)phosphonate (4PAThCz). The introduction of thiophene can completely alter the molecular packing behavior of SAM, promoting more compact π–π stacking and increasing dipole moment, which enhances hole transport. Furthermore, the long spacer length on 4PAThCz enable to help it achieves excellent solubility, inhibit self‐aggregation, and strengthen the molecular orderliness. As a result, an impressive efficiency of 20.78% (certified as 20.45%) is achieved for single‐junction organic solar cells.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Xie, Y., Tian, J., Yang, X., Chen, J., Yu, S., Tang, D., Hu, X., Sun, Y., & Lv, M. (2025). Thiophene Expanded Self‐Assembled Monolayer as Hole Transport Layer for Organic Solar Cells with Efficiency of 20.78%. Advanced Materials, 37(41). https://onlinelibrary.wiley.com/ai/10.1002/adma.202502485",
+    "result_id": "10.1002/adma.202502485_0001",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Proton Transfer‐Hydrogen Bonds Network for Highly Efficient and Stable Inverted Perovskite Solar Cells",
+    "authors": [
+      "Zheng, Y.",
+      "Ma, P.",
+      "Niu, T.",
+      "Chao, L.",
+      "Qian, S.",
+      "Xia, Y.",
+      "Chen, Y."
+    ],
+    "year": 2025,
+    "journal": "Angewandte Chemie International Edition",
+    "volume": "65",
+    "issue": "3",
+    "pages": "",
+    "doi": "10.1002/anie.202522939",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/anie.202522939",
+    "abstract": "Abstract \nThe development and application of self‐assembled monolayer (SAM) has revolutionized the advancement of inverted perovskite solar cells (PSCs). However, the performance of inverted PSCs remains limited by intrinsic defects in perovskite thin films, primarily due to inadequate control over crystallization on the poor‐quality SAM substrates. Here, we reported a proton transfer‐hydrogen bond network using a multifunctional additive phenylguanidine carbonate over a co‐adsorbed SAM (Co‐SAM) system. This strategy promoted the formation of guanidinium‐formamidinium hydrogen‐bonded complexes, which stabilize intermediate phases, suppress the generation of impurity phases during nucleation and accelerate the transition from δ‐phase to α‐phase. The significantly delayed crystallization process successfully induced large perovskite grains with suppressed intrinsic defects. Moreover, a high coverage, uniformity, and dense molecular packing was achieved for the Co‐SAM, ensuring an excellent growth substrate for subsequent perovskite deposition. PSCs ultimately achieved a power conversion efficiency (PCE) of 26.65%, with enhanced operational stability‐retaining 92.5% of initial PCE after >1200 h of maximum power point tracking.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Zheng, Y., Ma, P., Niu, T., Chao, L., Qian, S., Xia, Y., & Chen, Y. (2025). Proton Transfer‐Hydrogen Bonds Network for Highly Efficient and Stable Inverted Perovskite Solar Cells. Angewandte Chemie International Edition, 65(3). https://onlinelibrary.wiley.com/ai/10.1002/anie.202522939",
+    "result_id": "10.1002/anie.202522939_0001",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Understanding Phosphonic‐Acid Molecules Based Hole Transport Layers in Perovskite Solar Cells",
+    "authors": [
+      "Yang, Y.",
+      "Shi, X.",
+      "Stein, A. N.",
+      "Lockett, M. R.",
+      "Huang, J."
+    ],
+    "year": 2025,
+    "journal": "Advanced Energy Materials",
+    "volume": "16",
+    "issue": "7",
+    "pages": "",
+    "doi": "10.1002/aenm.202505937",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/aenm.202505937",
+    "abstract": "ABSTRACT \nSelf‐assembled monolayers (SAMs) have emerged as an important class of interfacial materials in perovskite solar cells (PSCs), enabling energy level tuning, efficient charge extraction, and improving device efficiency and stability. Among them, phosphonic‐acid‐based SAMs stand out due to their ability to form covalent bonds with transparent conductive oxides (TCOs), working as ultrathin, transparent, and tunable hole transport layers (HTLs). Despite the rapid progress in device development, several fundamental issues remain unclear, which may limit its broad application. In this perspective, we critically analyze the progress made by the community on several scientific questions. We first examine how SAMs are chemically bonded to TCOs, which is complicated by the difficulty in characterizing SAMs coverage on rough TCO substrates. We question the general perception of how charges are collected through SAMs layer to TCOs. And finally, the stability issues related to SAMs are discussed. Addressing these remaining challenges is necessary to bring the SAMs into commercial perovskite solar cell products.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Yang, Y., Shi, X., Stein, A. N., Lockett, M. R., & Huang, J. (2025). Understanding Phosphonic‐Acid Molecules Based Hole Transport Layers in Perovskite Solar Cells. Advanced Energy Materials, 16(7). https://onlinelibrary.wiley.com/ai/10.1002/aenm.202505937",
+    "result_id": "10.1002/aenm.202505937_0002",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Proton Transfer‐Hydrogen Bonds Network for Highly Efficient and Stable Inverted Perovskite Solar Cells",
+    "authors": [
+      "Zheng, Y.",
+      "Ma, P.",
+      "Niu, T.",
+      "Chao, L.",
+      "Qian, S.",
+      "Xia, Y.",
+      "Chen, Y."
+    ],
+    "year": 2025,
+    "journal": "Angewandte Chemie",
+    "volume": "138",
+    "issue": "3",
+    "pages": "",
+    "doi": "10.1002/ange.202522939",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/ange.202522939",
+    "abstract": "Abstract \nThe development and application of self‐assembled monolayer (SAM) has revolutionized the advancement of inverted perovskite solar cells (PSCs). However, the performance of inverted PSCs remains limited by intrinsic defects in perovskite thin films, primarily due to inadequate control over crystallization on the poor‐quality SAM substrates. Here, we reported a proton transfer‐hydrogen bond network using a multifunctional additive phenylguanidine carbonate over a co‐adsorbed SAM (Co‐SAM) system. This strategy promoted the formation of guanidinium‐formamidinium hydrogen‐bonded complexes, which stabilize intermediate phases, suppress the generation of impurity phases during nucleation and accelerate the transition from δ‐phase to α‐phase. The significantly delayed crystallization process successfully induced large perovskite grains with suppressed intrinsic defects. Moreover, a high coverage, uniformity, and dense molecular packing was achieved for the Co‐SAM, ensuring an excellent growth substrate for subsequent perovskite deposition. PSCs ultimately achieved a power conversion efficiency (PCE) of 26.65%, with enhanced operational stability‐retaining 92.5% of initial PCE after >1200 h of maximum power point tracking.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Zheng, Y., Ma, P., Niu, T., Chao, L., Qian, S., Xia, Y., & Chen, Y. (2025). Proton Transfer‐Hydrogen Bonds Network for Highly Efficient and Stable Inverted Perovskite Solar Cells. Angewandte Chemie, 138(3). https://onlinelibrary.wiley.com/ai/10.1002/ange.202522939",
+    "result_id": "10.1002/ange.202522939_0001",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Advancing perovskite photovoltaic technology through machine learning‐driven automation",
+    "authors": [
+      "Zhang, J.",
+      "Wu, J.",
+      "Le Corre, V. M.",
+      "Hauch, J. A.",
+      "Zhao, Y.",
+      "Brabec, C. J."
+    ],
+    "year": 2025,
+    "journal": "InfoMat",
+    "volume": "7",
+    "issue": "5",
+    "pages": "",
+    "doi": "10.1002/inf2.70005",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/inf2.70005",
+    "abstract": "Abstract \nSince its emergence in 2009, perovskite photovoltaic technology has achieved remarkable progress, with efficiencies soaring from 3.8% to over 26%. Despite these advancements, challenges such as long‐term material and device stability remain. Addressing these challenges requires reproducible, user‐independent laboratory processes and intelligent experimental preselection. Traditional trial‐and‐error methods and manual analysis are inefficient and urgently need advanced strategies. Automated acceleration platforms have transformed this field by improving efficiency, minimizing errors, and ensuring consistency. This review summarizes recent developments in machine learning‐driven automation for perovskite photovoltaics, with a focus on its application in new transport material discovery, composition screening, and device preparation optimization. Furthermore, the review introduces the concept of the self‐driven Autonomous Material and Device Acceleration Platforms (AMADAP) laboratory and discusses potential challenges it may face. This approach streamlines the entire process, from material discovery to device performance improvement, ultimately accelerating the development of emerging photovoltaic technologies.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Zhang, J., Wu, J., Le Corre, V. M., Hauch, J. A., Zhao, Y., & Brabec, C. J. (2025). Advancing perovskite photovoltaic technology through machine learning‐driven automation. InfoMat, 7(5). https://onlinelibrary.wiley.com/ai/10.1002/inf2.70005",
+    "result_id": "10.1002/inf2.70005_0020",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Thiophene‐Bridged Conjugated Self‐Assembled Hole Transport Monolayer for Efficient and Stable Inverted Perovskite Solar Cells",
+    "authors": [
+      "Weibin Sheng",
+      "Mingyuan Han",
+      "Botong Li",
+      "Ziqiang Su",
+      "Xuepeng Liu",
+      "Rahim Ghadari",
+      "Jiang Sheng",
+      "Zhipeng Shao",
+      "Guanglei Cui",
+      "Yong Ding",
+      "Songyuan Dai"
+    ],
+    "year": 2026,
+    "journal": "ChemSusChem",
+    "volume": "19",
+    "issue": "1",
+    "pages": "",
+    "doi": "10.1002/cssc.202502441",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/cssc.202502441",
+    "abstract": "Molecular engineering of self‐assembled hole transport monolayer (SAM) has been proven as a crucial way to improve the performance of perovskite solar cells (PSCs). We report a thiophene‐based conjugated SAM (MPA‐Th‐CA) for PSC through rational design to exploit superior conjugation and heteroatom effects. This SAM delivers multifaceted enhancements over its benzene‐based counterpart (MPA‐Ph‐CA), featuring a larger dipole moment, improved conductivity, optimized energy level alignment with perovskite, more uniform substrate coverage, and promoted perovskite crystallization. Ultimately, devices based on MPA‐Th‐CA achieved an excellent power conversion efficiency of 25.53% and demonstrated markedly improved stability under long‐term operation, high humidity, and high‐temperature conditions. This work provides an important strategy for optimizing interfacial materials via conjugated molecular design to fabricate high‐efficiency, stable PSCs.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Sheng, W., Han, M., Li, B., Su, Z., Liu, X., Ghadari, R., Sheng, J., Shao, Z., Cui, G., Ding, Y., & Dai, S. (2026). Thiophene‐Bridged Conjugated Self‐Assembled Hole Transport Monolayer for Efficient and Stable Inverted Perovskite Solar Cells. ChemSusChem, 19(1). https://onlinelibrary.wiley.com/ai/10.1002/cssc.202502441",
+    "result_id": "10.1002/cssc.202502441_0000",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Interfacial Hybrid Engineering Strategy for Highly Efficient and Stable Large‐Area Perovskite Solar Modules",
+    "authors": [
+      "Tang, H.",
+      "Yang, L.",
+      "Li, P.",
+      "Li, J.",
+      "Yang, Y.",
+      "Xu, R.",
+      "Sun, Y.",
+      "Cai, W.",
+      "Wang, J.",
+      "Xu, J.",
+      "Zuo, C.",
+      "Ding, L.",
+      "Wu, Z.",
+      "Dong, H."
+    ],
+    "year": 2025,
+    "journal": "Advanced Functional Materials",
+    "volume": "36",
+    "issue": "14",
+    "pages": "",
+    "doi": "10.1002/adfm.202516652",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/adfm.202516652",
+    "abstract": "Abstract \nSelf‐assembled molecules (SAMs) are considered promising materials for hole transport layers (HTL) in inverted perovskite solar cells (p‐i‐n PSCs). However, incomplete coverage, poor uniformity, and insufficient stability of SAM films still hinder the large‐scale industrial application of SAM‐based HTLs in PSCs. Here, an interfacial hybrid engineering (IHE) strategy is proposed that incorporates a molecular suppressor, 4,4,4‐tris(phosphoryl) triphenylmethane (PA), to regulate SAM assembly and optimize interfacial properties. PA effectively mitigates molecular aggregation of 2‐(9H‐carbazol‐9‐yl) ethylphosphonic acid (2PACz) through steric hindrance and chemical interactions, which ensures the homogeneous distribution, well‐ordered assembly, and scale‐up preparation of SAM molecules. Thereby, the perovskite/HTL interface exhibits improved energy level alignment, charge extraction efficiency, and defect passivation. The champion PCE of the PA‐based small‐area devices is 26.55%. Large‐area modules incorporating PA exhibit record‐breaking efficiencies of 22.81% (22.8 cm2) and 20.16% (750.5 cm2), representing the highest performance reported for single SAM‐HTL layers in scalable PSCs. Additionally, PA‐modified devices demonstrate remarkable operational stability under ISOS‐D and ISOS‐L testing conditions. This IHE strategy provides an effective and scalable solution for achieving uniform SAM deposition in large‐area PSCs while simultaneously enhancing device efficiency and long‐term durability, paving the way for the commercialization of SAM‐based perovskite photovoltaics.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Tang, H., Yang, L., Li, P., Li, J., Yang, Y., Xu, R., Sun, Y., Cai, W., Wang, J., Xu, J., Zuo, C., Ding, L., Wu, Z., & Dong, H. (2025). Interfacial Hybrid Engineering Strategy for Highly Efficient and Stable Large‐Area Perovskite Solar Modules. Advanced Functional Materials, 36(14). https://onlinelibrary.wiley.com/ai/10.1002/adfm.202516652",
+    "result_id": "10.1002/adfm.202516652_0001",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Fluorination‐Induced Dual‐Functionalized Interface with Multiple Passivation Sites for High‐Performance Inverted Perovskite Solar Cells",
+    "authors": [
+      "Hong, X.",
+      "Zhao, W.",
+      "Li, H.",
+      "Liang, Y.",
+      "Liu, X.",
+      "Li, Y.",
+      "Zhang, S.",
+      "Huang, K.",
+      "Li, H.",
+      "Liu, G.",
+      "Li, W.",
+      "Guo, F.",
+      "Yang, J.",
+      "Ke, L."
+    ],
+    "year": 2025,
+    "journal": "Advanced Functional Materials",
+    "volume": "36",
+    "issue": "12",
+    "pages": "",
+    "doi": "10.1002/adfm.202515642",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/adfm.202515642",
+    "abstract": "Abstract \nTailoring the self‐assembled monolayer (SAM)/perovskite interface is an effective approach to enhance hole‐extraction in p‐i‐n structured perovskite solar cells (PSCs). However, the co‐SAM strategy faces the challenge of competing anchor sites, which can interfere with the intended function of the original SAM. In this study, a fluorination strategy is used to design and synthesize a dual‐functionalized interfacial material, [2,3,5,6‐tetrafluoro‐4‐(trifluoromethyl) phenyl] phosphonic acid (FPA). Multiple active sites in FPA not only compensate for the anchoring deficiencies of the SAM but also effectively passivate the buried defects of the perovskite through coordination and hydrogen bonding, thereby effectively mitigating both deep and shallow defects at the SAM/perovskite interface. Ultimately, the efficiency of the best‐performing solar cells increases from 23.38% of the control device to 25.08% of the modified devices. In parallel, the unencapsulated devices retain over 90% of its initial efficiency after aging 1000 h at RH (65 ± 5)% in air at (25 ± 5) °C. The study provides an important approach in regulating the SAM/perovskite interface for enhanced charge extraction and environmental stability of the PSCs.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Hong, X., Zhao, W., Li, H., Liang, Y., Liu, X., Li, Y., Zhang, S., Huang, K., Li, H., Liu, G., Li, W., Guo, F., Yang, J., & Ke, L. (2025). Fluorination‐Induced Dual‐Functionalized Interface with Multiple Passivation Sites for High‐Performance Inverted Perovskite Solar Cells. Advanced Functional Materials, 36(12). https://onlinelibrary.wiley.com/ai/10.1002/adfm.202515642",
+    "result_id": "10.1002/adfm.202515642_0002",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Optimizing Molecular Packing and Interfacial Contact via Halogenated N‐Glycidyl Carbazole Small Molecules for Low Energy Loss and Highly Efficient Inverted Perovskite Solar Cells",
+    "authors": [
+      "Xu, Z.",
+      "Sun, X.",
+      "Hui, W.",
+      "Wang, Q.",
+      "Xu, P.",
+      "Tang, W.",
+      "Hu, H.",
+      "Song, L.",
+      "Xu, X.",
+      "Wu, Y.",
+      "Peng, Q."
+    ],
+    "year": 2025,
+    "journal": "Angewandte Chemie",
+    "volume": "137",
+    "issue": "26",
+    "pages": "",
+    "doi": "10.1002/ange.202503008",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/ange.202503008",
+    "abstract": "Abstract \nNonideal interfacial contact and non‐radiative voltage loss in self‐assembled monolayers (SAMs)‐based inverted perovskite solar cells (PSCs) limit their further development. Herein, two carbazole‐based molecules with different halogen atoms (X‐OCZ, X = Cl or Br) are developed as efficient interfacial regulators. The halogen effect not only finely modulates the molecular packing, crystallinity, and surface contact potential of the MeO‐2PACz analogue via self‐induced intermolecular interactions but also significantly influences the subsequent crystal growth of perovskite, thus resulting in the formation of high‐quality films with enhanced crystallinity, improved energy level alignment, and depressed non‐radiative recombination. Importantly, the Cl‐OCZ‐mediated device exhibits a minimal interfacial carrier transport energy barrier of 0.10 eV and an impressive charge collection efficiency of 93.6%. Moreover, the target device (aperture area: 0.09 cm2) shows an exceptional efficiency of 26.57% (certified 26.4%) along with enhanced thermal and operational stability. The strategy is also extended to large area devices, delivering efficiencies of 25.0% for a 1 cm2 device and 22.9% for a 12.96 cm2 minimodule. This study highlights the halogen role of interfacial small molecules in optimizing molecular packing and interfacial contact toward highly efficient PSCs with minimized energy loss and non‐radiative recombination.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Xu, Z., Sun, X., Hui, W., Wang, Q., Xu, P., Tang, W., Hu, H., Song, L., Xu, X., Wu, Y., & Peng, Q. (2025). Optimizing Molecular Packing and Interfacial Contact via Halogenated N‐Glycidyl Carbazole Small Molecules for Low Energy Loss and Highly Efficient Inverted Perovskite Solar Cells. Angewandte Chemie, 137(26). https://onlinelibrary.wiley.com/ai/10.1002/ange.202503008",
+    "result_id": "10.1002/ange.202503008_0001",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Synergistic Improvement of Structural Ordering and Interface Binding of Hole Transport Monolayer for Efficient Inverted Perovskite Solar Cells",
+    "authors": [
+      "Ziyang Zhang",
+      "Tianhao Wu",
+      "Zhenzhen Qin",
+      "Mengjiong Chen",
+      "Wenxiang Xiang",
+      "Zhenhua Chen",
+      "Yanbo Wang",
+      "Zhanglin Guo",
+      "Toshinori Matsushima",
+      "Liyuan Han"
+    ],
+    "year": 2025,
+    "journal": "Advanced Energy Materials",
+    "volume": "15",
+    "issue": "27",
+    "pages": "",
+    "doi": "10.1002/aenm.202500572",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/aenm.202500572",
+    "abstract": "Abstract \nThe widespread application of self‐assembled monolayer (SAM) hole transport materials has driven rapid advancements in the performance of inverted perovskite solar cells (PSCs). However, the difficulty of achieving a highly ordered SAM for hole transport and the weak binding strength between SAM and the perovskite layer not only leads to defective bottom interface but also reduces the compatibility with the large‐area device fabrication. In this work, a co‐assembled molecule functionalized with a diamide terminal group is demonstrated that is able to form supramolecular interaction with popular carbazole‐based SAMs for regulating their structural ordering, and to improve the chemical bonding with perovskite Pb‐I frameworks synergistically, which enables efficient and long‐term stable inverted PSCs. As a result, the target co‐assembled SAM contributes to a champion small‐area device with a power conversion efficiency (PCE) of 25.3% (certified 25.0%), and demonstrates good compatibility with large‐area fabrication by achieving highly reproducible performances in 1.02 cm2 devices. The encapsulated devices exhibit good stability with 92.8% and 91.2% of initial PCE after 1500 hours of aging under 85 °C and maximum power point (MPP) tracking at 65 °C for 1500 hours, respectively.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Zhang, Z., Wu, T., Qin, Z., Chen, M., Xiang, W., Chen, Z., Wang, Y., Guo, Z., Matsushima, T., & Han, L. (2025). Synergistic Improvement of Structural Ordering and Interface Binding of Hole Transport Monolayer for Efficient Inverted Perovskite Solar Cells. Advanced Energy Materials, 15(27). https://onlinelibrary.wiley.com/ai/10.1002/aenm.202500572",
+    "result_id": "10.1002/aenm.202500572_0000",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Optimizing Molecular Packing and Interfacial Contact via Halogenated N‐Glycidyl Carbazole Small Molecules for Low Energy Loss and Highly Efficient Inverted Perovskite Solar Cells",
+    "authors": [
+      "Xu, Z.",
+      "Sun, X.",
+      "Hui, W.",
+      "Wang, Q.",
+      "Xu, P.",
+      "Tang, W.",
+      "Hu, H.",
+      "Song, L.",
+      "Xu, X.",
+      "Wu, Y.",
+      "Peng, Q."
+    ],
+    "year": 2025,
+    "journal": "Angewandte Chemie International Edition",
+    "volume": "64",
+    "issue": "26",
+    "pages": "",
+    "doi": "10.1002/anie.202503008",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/anie.202503008",
+    "abstract": "Abstract \nNonideal interfacial contact and non‐radiative voltage loss in self‐assembled monolayers (SAMs)‐based inverted perovskite solar cells (PSCs) limit their further development. Herein, two carbazole‐based molecules with different halogen atoms (X‐OCZ, X = Cl or Br) are developed as efficient interfacial regulators. The halogen effect not only finely modulates the molecular packing, crystallinity, and surface contact potential of the MeO‐2PACz analogue via self‐induced intermolecular interactions but also significantly influences the subsequent crystal growth of perovskite, thus resulting in the formation of high‐quality films with enhanced crystallinity, improved energy level alignment, and depressed non‐radiative recombination. Importantly, the Cl‐OCZ‐mediated device exhibits a minimal interfacial carrier transport energy barrier of 0.10 eV and an impressive charge collection efficiency of 93.6%. Moreover, the target device (aperture area: 0.09 cm2) shows an exceptional efficiency of 26.57% (certified 26.4%) along with enhanced thermal and operational stability. The strategy is also extended to large area devices, delivering efficiencies of 25.0% for a 1 cm2 device and 22.9% for a 12.96 cm2 minimodule. This study highlights the halogen role of interfacial small molecules in optimizing molecular packing and interfacial contact toward highly efficient PSCs with minimized energy loss and non‐radiative recombination.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Xu, Z., Sun, X., Hui, W., Wang, Q., Xu, P., Tang, W., Hu, H., Song, L., Xu, X., Wu, Y., & Peng, Q. (2025). Optimizing Molecular Packing and Interfacial Contact via Halogenated N‐Glycidyl Carbazole Small Molecules for Low Energy Loss and Highly Efficient Inverted Perovskite Solar Cells. Angewandte Chemie International Edition, 64(26). https://onlinelibrary.wiley.com/ai/10.1002/anie.202503008",
+    "result_id": "10.1002/anie.202503008_0001",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Recent Advances in Self‐Assembled Molecules for Inverted Perovskite Photovoltaics",
+    "authors": [
+      "Xianfang Zhou",
+      "Haoran Lin",
+      "Yao Tong",
+      "Huajun Sun",
+      "Quanyao Zhu",
+      "Hanlin Hu"
+    ],
+    "year": 2025,
+    "journal": "Solar RRL",
+    "volume": "9",
+    "issue": "22",
+    "pages": "",
+    "doi": "10.1002/solr.202500684",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/solr.202500684",
+    "abstract": "Self‐assembled molecules (SAMs) have emerged as a promising hole transport layer in inverted perovskite solar cells (PSCs), owing to their advantages of low cost, tunable energy level alignment, ultrathin nature, and excellent interface passivation properties. This review systematically examines recent advancements in SAMs for optimizing inverted PSCs. We begin by discussing the typical configuration of SAMs and highlight key optimization strategies: molecular design, co‐SAM engineering, and post‐treatment techniques. The modulated anchoring behavior along with molecular packing of SAMs is emphasized, as well as corresponding impacts on performance. Additionally, SAM modifications have been shown to significantly enhance buried defect passivation and regulate the crystallization kinetics of perovskite films, leading to substantial improvements in PSC performance. Finally, we provide insights into the future directions for SAM development, aiming to fully realize their potential in perovskite photovoltaics.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Zhou, X., Lin, H., Tong, Y., Sun, H., Zhu, Q., & Hu, H. (2025). Recent Advances in Self‐Assembled Molecules for Inverted Perovskite Photovoltaics. Solar RRL, 9(22). https://onlinelibrary.wiley.com/ai/10.1002/solr.202500684",
+    "result_id": "10.1002/solr.202500684_0000",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Indenocarbazole‐Engineered Self‐Assembled Monolayers with Sterically Tuned π‐Stacking for High‐Efficiency p–i–n Perovskite Solar Cells",
+    "authors": [
+      "Zhang, Y.",
+      "Yang, Z.",
+      "Li, M.",
+      "Wang, Z.",
+      "Xiong, Y.",
+      "Guo, X.",
+      "Zong, X.",
+      "Wang, Y.",
+      "Liang, M."
+    ],
+    "year": 2025,
+    "journal": "Advanced Energy Materials",
+    "volume": "15",
+    "issue": "34",
+    "pages": "",
+    "doi": "10.1002/aenm.202501855",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/aenm.202501855",
+    "abstract": "Abstract \nTerminal π‐extension is crucial for fabricating highly ordered self‐assembled monolayers (SAMs) that facilitate efficient hole transport in perovskite solar cells (PSCs). However, π‐expanded conjugation may compromise SAM film quality and ultimately degrading interfacial properties in p–i–n PSCs. To resolve this trade‐off, SAMs incorporating an indenocarbazole (InCz) terminal group are designed, which simultaneously addresses both molecular ordering and film formation challenges. The InCz‐terminated PAInCz demonstrates optimal balance through: 1) strengthened π‐interactions enabling dense, ordered molecular stacking, and 2) dimethyl steric hindrance enhancing film quality. Notably, while PAInCz exhibits superior performance‐including enhanced perovskite interfacial contact, robust ITO substrate anchoring, and favorable energy alignment, its π‐extended counterpart Ph‐PAInCz (featuring both extended terminal and linker groups) showed diminished device performance. This contrast highlights the importance of controlled π‐conjugation in SAM design. The optimized PAInCz‐based inverted PSCs achieved a champion power conversion efficiency of 25.51% with exceptional operational stability, maintaining > 85% of initial PCE after 500 h of continuous light soaking (AM1.5G) and thermal stress testing (65 °C). These findings provide fundamental insights into how the π‐extension terminal and linker of SAMs influence the performance of perovskite solar cells.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Zhang, Y., Yang, Z., Li, M., Wang, Z., Xiong, Y., Guo, X., Zong, X., Wang, Y., & Liang, M. (2025). Indenocarbazole‐Engineered Self‐Assembled Monolayers with Sterically Tuned π‐Stacking for High‐Efficiency p–i–n Perovskite Solar Cells. Advanced Energy Materials, 15(34). https://onlinelibrary.wiley.com/ai/10.1002/aenm.202501855",
+    "result_id": "10.1002/aenm.202501855_0001",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Machine Learning for Accelerating Energy Materials Discovery: Bridging Quantum Accuracy with Computational Efficiency",
+    "authors": [
+      "Kim, K. S."
+    ],
+    "year": 2025,
+    "journal": "Advanced Energy Materials",
+    "volume": "16",
+    "issue": "2",
+    "pages": "",
+    "doi": "10.1002/aenm.202503356",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/aenm.202503356",
+    "abstract": "Abstract \nMachine learning (ML) has revolutionized energy materials discovery through two key paradigms: ML potentials enabling quantum‐accurate atomistic simulations with 2‐4 orders of magnitude speedup over density functional theory, and ML‐driven screening that efficiently navigates vast chemical spaces for rapid materials optimization. Advanced approaches, including graph neural networks and sparse Gaussian process regression incorporate physical symmetries and conservation laws, going beyond traditional statistical methods. Applications span battery materials, electrocatalysts, solar cells, phase change memory, and hydrogen storage systems, enabling simulations of thousands of atoms over extended timescales beyond the reach of quantum mechanical methods. Together, these complementary ML approaches enable predictive computational models spanning atomic to macroscopic scales. Current challenges include data quality, extrapolation to new chemical spaces, and physical interpretability. Emerging solutions involve equivariant architectures, active learning strategies, and physics‐informed neural networks. The convergence of ML methodologies with experimental workflows can accelerate materials discovery and optimization. This addresses critical sustainable energy challenges in conversion, storage, and utilization while supporting the development of autonomous discovery platforms. In this way, ML helps overcome computational limitations in multiscale energy materials research and supports the efficient design of novel materials with tailored properties.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Kim, K. S. (2025). Machine Learning for Accelerating Energy Materials Discovery: Bridging Quantum Accuracy with Computational Efficiency. Advanced Energy Materials, 16(2). https://onlinelibrary.wiley.com/ai/10.1002/aenm.202503356",
+    "result_id": "10.1002/aenm.202503356_0191",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Hybrid Modeling and Optimization of Cs2SiBr6 Perovskite Solar Cells Using DFT, Machine Learning, and SCAPS‐1D Simulation",
+    "authors": [
+      "Islam, M. R.",
+      "Hossain, M. F.",
+      "Kareem, M.",
+      "Rahman, M.",
+      "Galib, T. A.",
+      "Irfan, A.",
+      "Chaudhry, A. R.",
+      "Rahman, M. F."
+    ],
+    "year": 2025,
+    "journal": "Advanced Theory and Simulations",
+    "volume": "9",
+    "issue": "3",
+    "pages": "",
+    "doi": "10.1002/adts.202501685",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/adts.202501685",
+    "abstract": "ABSTRACT \nIn this work, we investigate the structural, electronic, and optical characteristics of the lead‐free inorganic double perovskite Cs2SiBr6 using first‐principles density functional theory (DFT) calculations. The results indicate that Cs2SiBr6 possesses a direct bandgap of 1.82 eV, exhibits strong visible‐light absorption, and shows favorable electronic transition properties, confirming its potential as an effective solar absorber material. To further assess its photovoltaic applicability, SCAPS‐1D simulations are performed for different device configurations employing various hole transport layers (HTLs) such as Cu2O, CuSCN, Spiro‐OMeTAD, and CBTS within the FTO/SnS2/Cs2SiBr6/HTL/Au structure. Among these designs, the CBTS‐based configuration demonstrated the highest power conversion efficiency (PCE) of 19.40%. Device performance is further optimized by systematically adjusting absorber thickness, doping concentration, defect density, and operating temperature. Moreover, five machine learning (ML) regression algorithms are utilized to predict PCE outcomes, where Random Forest and XGBoost exhibited superior predictive accuracy. Overall, this study presents a comprehensive, hybrid methodology integrating DFT modeling, numerical device simulation, and ML‐based prediction, offering a robust strategy for the rational design and optimization of high‐efficiency, lead‐free perovskite solar cells.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Islam, M. R., Hossain, M. F., Kareem, M., Rahman, M., Galib, T. A., Irfan, A., Chaudhry, A. R., & Rahman, M. F. (2025). Hybrid Modeling and Optimization of Cs2SiBr6 Perovskite Solar Cells Using DFT, Machine Learning, and SCAPS‐1D Simulation. Advanced Theory and Simulations, 9(3). https://onlinelibrary.wiley.com/ai/10.1002/adts.202501685",
+    "result_id": "10.1002/adts.202501685_0016",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Assessing Dynamic Viscosity of Polyethylene Glycol (PEG): Sensitivity Analysis and AI‐Based Modeling",
+    "authors": [
+      "Li, J.",
+      "Khalil Ibrahim, S.",
+      "Jhala, R.",
+      "Yadav, A.",
+      "T, R.",
+      "Shankhyan, A.",
+      "A, K.",
+      "Nath Thatoi, D.",
+      "Jihad Albadr, R.",
+      "Mohammed Taher, W.",
+      "Alwan, M.",
+      "Jasem Jawad, M.",
+      "Mushtaq, H.",
+      "Sherzod, S.",
+      "Smerat, A."
+    ],
+    "year": 2025,
+    "journal": "Macromolecular Theory and Simulations",
+    "volume": "34",
+    "issue": "5",
+    "pages": "",
+    "doi": "10.1002/mats.202500032",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/mats.202500032",
+    "abstract": "ABSTRACT \nIn this study, the hyperparameters of a gradient boosting decision tree (GBDT) machine learning model are meticulously fine‐tuned using four distinct evolutionary optimization approaches: Evolutionary Strategies (ES), Bayesian Probability Improvement (BPI), Batch Bayesian Optimization (BBO), and Self‐Adaptive Differential Evolution (SADE) to predict (polyethylene glycol) PEG viscosity. Analysis of the correlation matrix indicates that pressure and molecular weight have influence on dynamic viscosity. Pressure displays a negligible positive correlation (0.17), while molecular weight shows a positive correlation (0.24). On the other hand, temperature exhibits an inverse relationship (−0.75) with dynamic viscosity, establishing it as the most critical factor affecting viscosity. Thus, temperature significantly impacts dynamic viscosity, whereas molecular weight and pressure contribute marginally. These observations are essential for comprehending system behavior and enhancing process efficiency. Among the optimization techniques, SADE outperforms the others, yielding the most accurate GBDT‐based hybrid predictive model, as evidenced by performance metrics, including R‐squared, mean squared error (MSE), and average absolute relative error (AARE). Despite its extended runtime, SADE's exceptional precision, reflected in the lowest MSE and AARE. Sensitivity analysis confirms that all input variables affect the target parameter, with SHapley Additive exPlanations (SHAP) analysis highlighting temperature as a dominant factor influencing PEG viscosity.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Li, J., Khalil Ibrahim, S., Jhala, R., Yadav, A., T, R., Shankhyan, A., A, K., Nath Thatoi, D., Jihad Albadr, R., Mohammed Taher, W., Alwan, M., Jasem Jawad, M., Mushtaq, H., Sherzod, S., & Smerat, A. (2025). Assessing Dynamic Viscosity of Polyethylene Glycol (PEG): Sensitivity Analysis and AI‐Based Modeling. Macromolecular Theory and Simulations, 34(5). https://onlinelibrary.wiley.com/ai/10.1002/mats.202500032",
+    "result_id": "10.1002/mats.202500032_0004",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Read‐Across Structure‐Property Relationship‐Based Superior Prediction of Fraction Unbound in Plasma from Chemical Structure: Interpretable Models with Minimum Descriptors",
+    "authors": [
+      "Dasgupta, I.",
+      "Khatun, S.",
+      "Gayen, S."
+    ],
+    "year": 2026,
+    "journal": "Molecular Informatics",
+    "volume": "45",
+    "issue": "2",
+    "pages": "",
+    "doi": "10.1002/minf.70023",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/minf.70023",
+    "abstract": "Accurately predicting the fraction unbound in plasma (fup) from chemical structures is essential for understanding pharmacokinetic characteristics during the early stage of drug discovery. This prediction serves as a valuable tool for minimizing late‐stage setbacks and refining subsequent screening processes. Conventional approaches often rely on complex computational methodologies that may require extensive descriptor sets, resulting in opaque models with limited interpretability. In this study, we applied the read‐across strategy in combination with traditional quantitative structure–property relationship to predict fup while minimizing descriptor complexity. Our method employs interpretable models (regression and classification), facilitating insight into the underlying structure–property relationships governing plasma protein binding. Through comprehensive validation and comparison with different machine learning methods, we demonstrated the superior predictive performance of quantitative read‐across structure–property relationship multiple linear regression and classification‐based read‐across structure‐property relatonship respectively. support vector classifier models across diverse chemical compounds. This approach offers a valuable tool for predicting fup in the process of drug discovery. Overall, this study aims to advance the field of pharmacokinetic modeling by applying the read‐across strategy that improves predictive power with interpretability. By elucidating the complex relationship between chemical structures and fup, our best models have the potential to formulate more rational drug design approaches, ultimately contributing to the development of more effective therapeutics.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Dasgupta, I., Khatun, S., & Gayen, S. (2026). Read‐Across Structure‐Property Relationship‐Based Superior Prediction of Fraction Unbound in Plasma from Chemical Structure: Interpretable Models with Minimum Descriptors. Molecular Informatics, 45(2). https://onlinelibrary.wiley.com/ai/10.1002/minf.70023",
+    "result_id": "10.1002/minf.70023_0036",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Data‐Driven Design of Spinodal Decomposition in (Ti, Zr, Hf)C Composite Carbides for Optimizing the Hardness‐Toughness Trade‐Off",
+    "authors": [
+      "Zhang, Z.",
+      "Hou, C.",
+      "Zhang, Z.",
+      "Chang, G.",
+      "Li, N.",
+      "Wang, W.",
+      "Zhang, W."
+    ],
+    "year": 2025,
+    "journal": "Advanced Functional Materials",
+    "volume": "35",
+    "issue": "36",
+    "pages": "",
+    "doi": "10.1002/adfm.202502555",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/adfm.202502555",
+    "abstract": "Abstract \nTransition metal carbides, characterized by exceptional hardness, wear resistance, and thermal stability, emerge as promising candidates for extreme‐environment applications. However, the inherent hardness‐toughness trade‐off remains a critical challenge for development of the high‐performance ceramics. Herein, a data‐driven design strategy to optimize this trade‐off through precisely tailoring spinodal decomposition in (Ti, Zr, Hf)C composite carbides is proposed. The integration of phase diagram calculations, key experiments, and machine learning approaches permits high‐throughput mechanical property screening across broad compositional and temperature ranges. Isothermal aging induces the formation of a high density of nanoscale nodular structures within the (Ti, Zr, Hf)C carbides, accompanied by the generation of dislocations, synergistically enhancing the hardness (2780 HV) and fracture toughness (3.47 MPa·m1/2) by 32% and 80%, respectively, compared to the as‐sintered state. By establishing a data‐driven framework that elucidates the composition‐processing‐property relationships, this research provides a scientific strategy to rapidly optimize the hardness and toughness in carbide ceramics through orchestrated spinodal decomposition, offering a rational design methodology to develop for extreme‐condition ceramics.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Zhang, Z., Hou, C., Zhang, Z., Chang, G., Li, N., Wang, W., & Zhang, W. (2025). Data‐Driven Design of Spinodal Decomposition in (Ti, Zr, Hf)C Composite Carbides for Optimizing the Hardness‐Toughness Trade‐Off. Advanced Functional Materials, 35(36). https://onlinelibrary.wiley.com/ai/10.1002/adfm.202502555",
+    "result_id": "10.1002/adfm.202502555_0069",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening"
+    ]
+  },
+  {
+    "title": "Filling the Gap in LogP$$ LogP $$ and pKa$$ {pK}_a $$ Evaluation for Saturated Fluorine‐Containing Derivatives With Machine Learning",
+    "authors": [
+      "Gurbych, O.",
+      "Pavliuk, P.",
+      "Krasnienkov, D.",
+      "Liashuk, O.",
+      "Melnykov, K.",
+      "Grygorenko, O. O."
+    ],
+    "year": 2025,
+    "journal": "Journal of Computational Chemistry",
+    "volume": "46",
+    "issue": "2",
+    "pages": "",
+    "doi": "10.1002/jcc.70002",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/jcc.70002",
+    "abstract": "ABSTRACT \nLipophilicity and acidity/basicity are fundamental physical properties that profoundly affect the compound's pharmacological activity, bioavailability, metabolism, and toxicity. Predicting lipophilicity, measured by LogP $$ LogP $$  (1‐octanol–water distribution coefficient logarithm), and acidity/basicity, measured by pK a $$ {pK}_a $$  (negative of acid ionization constant logarithm), is essential for early drug discovery success. However, the limited availability of experimental data and poor accuracy of standard LogP $$ LogP $$  and pK a $$ {pK}_a $$  assessment methods for saturated fluorine‐containing derivatives pose a significant challenge to achieving satisfactory results for this compound class. To overcome this challenge, we compiled a unique dataset of saturated fluorinated and corresponding non‐fluorinated derivatives with LogP $$ LogP $$  and pK a $$ {pK}_a $$  experimental values. Aiming to create an optimal approach to acidity/basicity and lipophilicity prediction, we evaluated, trained from scratch, or fine‐tuned more than 40 machine learning models, including linear, tree‐based, and neural networks. The study was supplemented with a substructure mask explanation (SME), which confirmed the critical role of the fluorinated substituents on both physicochemical properties studied and testified to the consistency of the developed models. The results were open‐sourced as a GitHub repository, pip, conda packages, and a KNIME node, allowing the public to perform the targeted molecular design of the proposed class of compounds.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Gurbych, O., Pavliuk, P., Krasnienkov, D., Liashuk, O., Melnykov, K., & Grygorenko, O. O. (2025). Filling the Gap in LogP$$ LogP $$ and pKa$$ {pK}_a $$ Evaluation for Saturated Fluorine‐Containing Derivatives With Machine Learning. Journal of Computational Chemistry, 46(2). https://onlinelibrary.wiley.com/ai/10.1002/jcc.70002",
+    "result_id": "10.1002/jcc.70002_0054",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "An Efficient Method Using Small‐Sized Datasets Based upon Generative Adversarial Networks: Investigation of Cluster Configuration Space",
+    "authors": [
+      "Xie, J.",
+      "Lu, Q.",
+      "Bian, W."
+    ],
+    "year": 2025,
+    "journal": "Chemistry Methods",
+    "volume": "5",
+    "issue": "9",
+    "pages": "",
+    "doi": "10.1002/cmtd.202500004",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/cmtd.202500004",
+    "abstract": "Cluster research plays an important role in chemistry. To explore the cluster configuration space, it is usually necessary to run a large‐scale search. Yet for some instances, the desired cluster configuration may be counterintuitive, making it challenging to provide a reasonable initial guess to search for the corresponding minimum. There exist several routes to generate cluster configuration. However, they may suffer from the dimension problem or need some other prerequisite. In this work, generative adversarial networks (GANs) are employed to efficiently generate cluster configurations based on small‐sized datasets. A dynamic clamp function is introduced during the training. The size of the dataset is controlled to be on the order of magnitude of dozens to hundreds of samples. Furthermore, the convex hull volume and area are established to assist in identifying unique structures. It is found that the proposed GAN architecture is not sensitive to network structures and can be used effectively to generate novel cluster configurations. The introduced dynamic clamp function significantly alleviates the mode collapse problem. Compared to the previous studies, the dataset size is much reduced to avoid large‐scale training. Datasets containing fewer than 200 samples already yield satisfactory results. This method performs better than the genetic algorithm and is expected to have a wide range of chemical application scenarios.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Xie, J., Lu, Q., & Bian, W. (2025). An Efficient Method Using Small‐Sized Datasets Based upon Generative Adversarial Networks: Investigation of Cluster Configuration Space. Chemistry Methods, 5(9). https://onlinelibrary.wiley.com/ai/10.1002/cmtd.202500004",
+    "result_id": "10.1002/cmtd.202500004_0002",
+    "subfields": [
+      "Molecular design / virtual screening",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "De novo generation of optically active small organic molecules using Monte Carlo tree search combined with recurrent neural network",
+    "authors": [
+      "Tashiro, M.",
+      "Imamura, Y.",
+      "Katouda, M."
+    ],
+    "year": 2020,
+    "journal": "Journal of Computational Chemistry",
+    "volume": "42",
+    "issue": "3",
+    "pages": "136-143",
+    "doi": "10.1002/jcc.26441",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/jcc.26441",
+    "abstract": "Abstract \nOptically active small organic molecules are computationally designed using the ChemTS python library developed by Tsuda and collaborators, which utilizes a combined Monte Carlo tree search (MCTS) and recurrent neural network model. Geometry optimization and excited‐state calculations are performed for each generated molecule, following which the excitation energy and dissymmetry factors are computed to evaluate the score function in the MCTS process. Using this procedure, molecules not contained in existing databases are generated. Molecules having either high dissymmetry factors or high transition dipole strengths can be generated depending on the choice of the score function. In a single trajectory with 100,000 trials, mutually similar high‐scoring molecules are generated frequently after the initial 15,000–20,000 trials. This indicates that it is better to sample high‐scoring molecules from several trajectories having a modest number of trials each than from a single trajectory having a large number of trials.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Tashiro, M., Imamura, Y., & Katouda, M. (2020). De novo generation of optically active small organic molecules using Monte Carlo tree search combined with recurrent neural network. Journal of Computational Chemistry, 42(3), 136-143. https://onlinelibrary.wiley.com/ai/10.1002/jcc.26441",
+    "result_id": "10.1002/jcc.26441_0002",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Large Language Model‐Assisted Additive Selection for Synergistic Defect and Crystallization Control in Efficient Inverted Perovskite Solar Cells",
+    "authors": [
+      "Chen, Z.",
+      "Wang, X.",
+      "Wang, J.",
+      "Hu, Y.",
+      "Hu, H.",
+      "Nie, J.",
+      "Jiao, Z.",
+      "Wang, Y.",
+      "Li, Q.",
+      "Cheng, Z.",
+      "Gao, Z.",
+      "Lu, Z.",
+      "Mu, C."
+    ],
+    "year": 2026,
+    "journal": "ChemSusChem",
+    "volume": "19",
+    "issue": "3",
+    "pages": "",
+    "doi": "10.1002/cssc.202502563",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/cssc.202502563",
+    "abstract": "Precursor additives are crucial for enhancing the efficiency and stability of perovskite solar cells. However, their traditional selection of additives primarily relies on empirical trial‐and‐error approaches, which are time‐consuming and inefficient. Herein, we utilize Perovskite‐R1, a large language model, to rapidly identify an efficient additive: ethyl 2‐aminopropanoate hydrochloride (EAH). This additive simultaneously passivates defects and regulates crystallization through the coordination of its –CO and –NH3+ groups with the uncoordinated Pb2+ and I− ions in the perovskite. These interactions significantly improve charge‐carrier transport and suppress nonradiative recombination, leading to a champion power conversion efficiency (PCE) of 22.58%. Furthermore, the EAH‐modified device exhibits excellent long‐term stability, maintaining 95.1% and 94.1% of its initial PCE after 1368 h of storage in N2 and 1272 h of thermal aging at 65°C, respectively. This study highlights the potential of integrating artificial intelligence with materials design to accelerate the discovery of high‐performance, stable, and sustainable perovskite optoelectronic materials.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Chen, Z., Wang, X., Wang, J., Hu, Y., Hu, H., Nie, J., Jiao, Z., Wang, Y., Li, Q., Cheng, Z., Gao, Z., Lu, Z., & Mu, C. (2026). Large Language Model‐Assisted Additive Selection for Synergistic Defect and Crystallization Control in Efficient Inverted Perovskite Solar Cells. ChemSusChem, 19(3). https://onlinelibrary.wiley.com/ai/10.1002/cssc.202502563",
+    "result_id": "10.1002/cssc.202502563_0003",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Multitarget Generate Electrolyte Additive for Lithium Metal Batteries",
+    "authors": [
+      "Liu, X.",
+      "Chu, J.",
+      "Xue, S.",
+      "Wang, D.",
+      "Lu, Z.",
+      "Zhang, M.",
+      "Liu, Y.",
+      "Xu, X.",
+      "Zhang, Y.",
+      "Long, J.",
+      "Meng, L.",
+      "Yuan, J.",
+      "He, M."
+    ],
+    "year": 2025,
+    "journal": "Advanced Materials",
+    "volume": "37",
+    "issue": "34",
+    "pages": "",
+    "doi": "10.1002/adma.202502086",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/adma.202502086",
+    "abstract": "Abstract \nElectrolyte additives are crucial for accelerating the commercialization of lithium metal batteries (LMBs), yet designing effective additives is challenging due to the need to balance conflicting properties, such as eectrochemical performance and nonflammability. To address this challenge, a deep learning‐assisted generative model is developed for multiobjective optimization of electrolyte additives. Overcoming data scarcity, the dataset is expanded using a molecular categorization derivation method, increasing single‐property data points to 70 095 multiproperty data points. Coupled with an asynchronous limited decoder and adversarial regulation strategy for latent distribution, this approach achieved 100% generative efficiency for structurally complex and diverse molecules in vast chemical space. The method is validated by discovering 2,4‐bis(2‐fluoroethoxy) tetrafluorocyclotriphosphazene (DFEPN), a novel additive with excellent flame resistance and stable dual electrode/electrolyte interphases. In a Li||LiFePO4 full cell with a commercial electrolyte, DFEPN enables an order of magnitude increase in capacity retention, outperforming the state‐of‐the‐art flame‐retardant additive ethoxy(pentafluoro)cyclotriphosphazene by 33%. This study offers a pathway for developing safe and reliable lithium battery electrolytes, particularly under severe data constraints, and has broader implications for advanced battery design.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Liu, X., Chu, J., Xue, S., Wang, D., Lu, Z., Zhang, M., Liu, Y., Xu, X., Zhang, Y., Long, J., Meng, L., Yuan, J., & He, M. (2025). Multitarget Generate Electrolyte Additive for Lithium Metal Batteries. Advanced Materials, 37(34). https://onlinelibrary.wiley.com/ai/10.1002/adma.202502086",
+    "result_id": "10.1002/adma.202502086_0003",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": " AI‐Driven Discovery of High Performance Polymer Electrodes for Next‐Generation Batteries",
+    "authors": [
+      "Ganti, S. V.",
+      "Wölfel, L.",
+      "Kuenneth, C."
+    ],
+    "year": 2025,
+    "journal": "Journal of Polymer Science",
+    "volume": "63",
+    "issue": "21",
+    "pages": "4631-4639",
+    "doi": "10.1002/pol.20250198",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/pol.20250198",
+    "abstract": "ABSTRACT \nThe use of transition group metals in electric batteries requires extensive usage of critical elements like lithium, cobalt, and nickel, which pose significant environmental challenges. Replacing these metals with redox‐active organic materials offers a promising alternative, thereby reducing the carbon footprint of batteries by one order of magnitude. However, this approach faces critical obstacles, including the limited availability of suitable redox‐active organic materials and issues such as lower electronic conductivity, voltage, specific capacity, and long‐term stability. To overcome the limitations for lower voltage and specific capacity, a machine learning (ML) driven battery informatics framework is developed and implemented. This framework utilizes an extensive battery dataset and advanced ML techniques to accelerate and enhance the identification, optimization, and design of redox‐active organic materials. In this contribution, a data‐fusion ML coupled meta learning model capable of predicting the battery properties, voltage, and specific capacity for various organic negative electrodes and charge carriers (positive electrode materials) combinations is presented. The ML models accelerate experimentation, facilitate the inverse design of battery materials, and identify suitable candidates from three extensive material libraries to advance sustainable energy‐storage technologies.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Ganti, S. V., Wölfel, L., & Kuenneth, C. (2025).  AI‐Driven Discovery of High Performance Polymer Electrodes for Next‐Generation Batteries. Journal of Polymer Science, 63(21), 4631-4639. https://onlinelibrary.wiley.com/ai/10.1002/pol.20250198",
+    "result_id": "10.1002/pol.20250198_0018",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Efficient integration of perceptual variational autoencoder into dynamic latent scale generative adversarial network",
+    "authors": [
+      "Jeongik Cho",
+      "Adam Krzyzak"
+    ],
+    "year": 2024,
+    "journal": "Expert Systems",
+    "volume": "41",
+    "issue": "10",
+    "pages": "",
+    "doi": "10.1111/exsy.13618",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1111/exsy.13618",
+    "abstract": "Abstract \nDynamic latent scale GAN is an architecture‐agnostic encoder‐based generative model inversion method. This paper introduces a method to efficiently integrate perceptual VAE into dynamic latent scale GAN to improve the performance of dynamic latent scale GAN. When dynamic latent scale GAN is trained with a normal i.i.d. latent random variable and the latent encoder is integrated into the discriminator, a sum of a predicted latent random variable of real data and a scaled normal noise follows the normal i.i.d. random variable. Since this random variable is paired with real data and follows the latent random variable, it can be used for both VAE and GAN training. Furthermore, by considering the intermediate layer output of the discriminator as the feature encoder output, the VAE can be trained to minimise the perceptual reconstruction loss. The forward propagation & backpropagation for minimising this perceptual reconstruction loss can be integrated with those of GAN training. Therefore, the proposed method does not require additional computations compared to typical GAN or dynamic latent scale GAN. Integrating perceptual VAE to dynamic latent scale GAN improved the generative and inversion performance of the model.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Cho, J., & Krzyzak, A. (2024). Efficient integration of perceptual variational autoencoder into dynamic latent scale generative adversarial network. Expert Systems, 41(10). https://onlinelibrary.wiley.com/ai/10.1111/exsy.13618",
+    "result_id": "10.1111/exsy.13618_0000",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening"
+    ]
+  },
+  {
+    "title": "AI‐Driven Advances in Sustainable Materials for Green Energy: From Innovation to Lifecycle Management",
+    "authors": [
+      "Xian, Y.",
+      "Li, C.",
+      "Xu, Y.",
+      "Zhou, Y.",
+      "Xue, D."
+    ],
+    "year": 2025,
+    "journal": "SusMat",
+    "volume": "5",
+    "issue": "5",
+    "pages": "",
+    "doi": "10.1002/sus2.70030",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/sus2.70030",
+    "abstract": "ABSTRACT \nArtificial intelligence (AI) is revolutionizing sustainable materials science, yet a comprehensive and timely evaluation of the rapidly evolving AI techniques applied across the entire materials lifecycle remains lacking. This work reviews AI‐driven advances in sustainable materials, specifically focusing on battery materials, thermal management materials, energy conversion materials, and catalysts. The key patterns, capabilities, and limitations of AI are identified across three interconnected phases: sustainable materials design (leveraging predictive and generative models for accelerated discovery), green processing (integrating adaptive synthesis optimization and autonomous experimentation), and extending to lifecycle management (encompassing real‐time monitoring, predictive maintenance, and intelligent recycling). Then, the persistent challenges, including data sparsity, domain‐specific knowledge integration, and limited model generalizability, are investigated, followed by an exploration of emerging solutions such as federated learning for privacy‐preserving data sharing, physics‐informed neural networks for knowledge integration, and multimodal AI for cross‐modal knowledge transfer. Finally, the computational sustainability challenges of AI methods themselves are also discussed. This review highlights key bottlenecks impeding scalable adoption and discuss pathways for realizing the full potential of AI in sustainable materials development.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Xian, Y., Li, C., Xu, Y., Zhou, Y., & Xue, D. (2025). AI‐Driven Advances in Sustainable Materials for Green Energy: From Innovation to Lifecycle Management. SusMat, 5(5). https://onlinelibrary.wiley.com/ai/10.1002/sus2.70030",
+    "result_id": "10.1002/sus2.70030_0155",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Artificial Intelligence in Accelerating Materials Discovery: Opportunities and Challenges",
+    "authors": [
+      "Kumar Yadav, A."
+    ],
+    "year": 2026,
+    "journal": "ChemistrySelect",
+    "volume": "11",
+    "issue": "7",
+    "pages": "",
+    "doi": "10.1002/slct.202507191",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/slct.202507191",
+    "abstract": "ABSTRACT \nArtificial Intelligence integration in materials science has revolutionized discovery processes, accelerating timelines by 10–100× and identifying over 2.2 million stable inorganic materials through machine learning frameworks. This review examines current AI paradigms—foundation models, quantum machine learning, and autonomous laboratories—while addressing implementation challenges. Four transformative innovations are reshaping materials discovery: graph neural networks achieving >90% accuracy in thermoelectric predictions, generative models enabling inverse design, natural language processing extracting protocols from 100,000+ papers, and autonomous laboratories with 71% synthesis validation success rates. These advances leverage large‐scale databases (Materials Project, NOMAD, OQMD), computational infrastructure, and algorithms spanning supervised learning, reinforcement learning, and deep generative models. Critical case studies include DeepMind's GNoME discovering 380,000 stable materials and Microsoft's MatterGen platform for crystal structure generation. However, persistent challenges remain: data scarcity affects 60% of materials classes, algorithmic bias exists in training datasets, and black‐box limitations restrict scientific insight. Emerging trends—physics‐informed machine learning, multimodal AI, federated learning, and human‐AI collaboration—promise further acceleration. This review provides state‐of‐the‐art assessment and actionable insights for navigating AI‐driven materials discovery transformation, emphasizing the paradigm shift from traditional trial‐and‐error approaches to predictive, autonomous research methodologies that fundamentally reshape scientific investigation and innovation processes.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Kumar Yadav, A. (2026). Artificial Intelligence in Accelerating Materials Discovery: Opportunities and Challenges. ChemistrySelect, 11(7). https://onlinelibrary.wiley.com/ai/10.1002/slct.202507191",
+    "result_id": "10.1002/slct.202507191_0188",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Hybrid Learning Enables Reproducible >24% Efficiency in Autonomously Fabricated Perovskites Solar Cells",
+    "authors": [
+      "Wang, Y.",
+      "Perea‐Puente, S.",
+      "Le Corre, V. M.",
+      "Wu, Z.",
+      "Sytnyk, M.",
+      "These, A.",
+      "Zhang, J.",
+      "Li, C.",
+      "Lüer, L.",
+      "Hauch, J.",
+      "Brabec, C. J.",
+      "Peters, I. M."
+    ],
+    "year": 2025,
+    "journal": "Advanced Energy Materials",
+    "volume": "16",
+    "issue": "4",
+    "pages": "",
+    "doi": "10.1002/aenm.202504340",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/aenm.202504340",
+    "abstract": "ABSTRACT \nAchieving high‐performance perovskite solar cells (PSCs) with satisfactory reproducibility remains a major challenge due to their intrinsic susceptibility to processing variations and environmental fluctuations. To address this challenge, this study introduces an autonomous optimization framework that integrates hybrid machine learning and high‐throughput experimentation with modified gradient ascent methods to optimize fabrication processes and minimize experimental variances. The framework successfully maps the complex, non‐linear interdependencies between fabrication parameters and reveals the critical decoupling of photovoltaic metrics. Optimization across seven rounds and 144 parameter sets results in pronounced power conversion efficiency (PCE) and reproducibility enhancement on the platform. The optimized procedure delivers champion devices achieving PCEs exceeding 24%, surpassing the experience manual operator performance (20.6% PCE, CV >25%) and reducing the coefficient of variation (CV) to below 4.7%, with improvements consistently validated across independent trials. This work offers a practical strategy for improving PSC performance and reproducibility, while laying a foundation for scalable manufacturing and accelerated materials development.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Wang, Y., Perea‐Puente, S., Le Corre, V. M., Wu, Z., Sytnyk, M., These, A., Zhang, J., Li, C., Lüer, L., Hauch, J., Brabec, C. J., & Peters, I. M. (2025). Hybrid Learning Enables Reproducible >24% Efficiency in Autonomously Fabricated Perovskites Solar Cells. Advanced Energy Materials, 16(4). https://onlinelibrary.wiley.com/ai/10.1002/aenm.202504340",
+    "result_id": "10.1002/aenm.202504340_0003",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Unveiling the statistical behaviors of metal‐halide perovskites from films to devices through a high‐throughput experimental platform",
+    "authors": [
+      "Deng, C.",
+      "Tang, L.",
+      "Luo, P.",
+      "Li, H.",
+      "Yang, L.",
+      "Liu, Z.",
+      "Liu, B.",
+      "Lu, X.",
+      "Song, Y.",
+      "Sun, X.",
+      "Zhao, Y."
+    ],
+    "year": 2025,
+    "journal": "InfoMat",
+    "volume": "8",
+    "issue": "1",
+    "pages": "",
+    "doi": "10.1002/inf2.70039",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/inf2.70039",
+    "abstract": "Abstract \nUnderstanding the statistical behaviors from films to devices is crucial for performance prediction and materials innovation. Here, we present the first fully automated high‐throughput experimental platform for metal‐halide perovskite research in China, integrating solution preparation, film fabrication, electrode evaporation, and comprehensive optical/optoelectronic characterization. This platform enables human‐interference‐free data collection with high repeatability, facilitating reliable statistical analysis. Through systematic investigation of over 1000 perovskite samples, we first identify the key factor of solvent atmosphere affecting experimental repeatability, and then introduce a super‐absorbent resin to effectively mitigate solvent‐related variability. By quantitative tracking of statistical distributions across the film‐to‐device transformation, we reveal that the deposition of charge transport layers also alters the bulk properties of perovskite films, as manifested by statistical changes in bandgap and Urbach energy. Finally, we develop a machine learning‐based predictive model that links thin‐film optical features to device performance, demonstrating the feasibility of AI‐driven approaches to accelerate the evolution of perovskite materials.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Deng, C., Tang, L., Luo, P., Li, H., Yang, L., Liu, Z., Liu, B., Lu, X., Song, Y., Sun, X., & Zhao, Y. (2025). Unveiling the statistical behaviors of metal‐halide perovskites from films to devices through a high‐throughput experimental platform. InfoMat, 8(1). https://onlinelibrary.wiley.com/ai/10.1002/inf2.70039",
+    "result_id": "10.1002/inf2.70039_0004",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Integration of materials science and artificial intelligence: From high‐throughput screening to autonomous laboratories",
+    "authors": [
+      "Huang, P.",
+      "Liu, W.",
+      "Sun, C.",
+      "Li, Z.",
+      "Wang, Y.",
+      "Chen, Y."
+    ],
+    "year": 2025,
+    "journal": "Materials Genome Engineering Advances",
+    "volume": "3",
+    "issue": "4",
+    "pages": "",
+    "doi": "10.1002/mgea.70036",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/mgea.70036",
+    "abstract": "Abstract \nTraditional methods for material discovery and optimization are time‐consuming and resource‐consuming. Recent advancements in artificial intelligence (AI), particularly machine learning, offer a revolutionary opportunity for accelerating novel material discovery. This review overviews AI enhancement on high‐throughput synthesis and screening methods for faster and more efficient material discovery, focusing on electrocatalysis and energy storage materials. The integration of AI with autonomous laboratories allows real‐time data analysis and closed‐loop optimization, accelerating material characterization and analysis. Despite challenges in data quality and model transparency, integration of AI with experimental workflows significantly advances materials science.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Huang, P., Liu, W., Sun, C., Li, Z., Wang, Y., & Chen, Y. (2025). Integration of materials science and artificial intelligence: From high‐throughput screening to autonomous laboratories. Materials Genome Engineering Advances, 3(4). https://onlinelibrary.wiley.com/ai/10.1002/mgea.70036",
+    "result_id": "10.1002/mgea.70036_0006",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Accelerated Multi‐Property Screening of Lead‐Free Halide Double Perovskite via Transfer Learning",
+    "authors": [
+      "Wei, Y.",
+      "He, J.",
+      "Yang, C.",
+      "Yu, W.",
+      "Feng, J.",
+      "Liu, X.",
+      "Chong, X."
+    ],
+    "year": 2025,
+    "journal": "Advanced Functional Materials",
+    "volume": "36",
+    "issue": "2",
+    "pages": "",
+    "doi": "10.1002/adfm.202514377",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/adfm.202514377",
+    "abstract": "Abstract \nAs a promising third‐generation photovoltaic technology, perovskite solar cells have attracted much attention due to their high photoelectric conversion efficiency and low manufacturing cost. However, perovskite solar cells still face problems such as poor stability and lead toxicity, and it is both time‐consuming and expensive to find new materials with properties that meet the demand through traditional trial‐and‐error methods. To address this problem, a multi‐property screening method is proposed for lead‐free halide double perovskite based on a transfer learning technique. First, a source domain model with the formation energy of halide double perovskites as the target property is established, and high‐precision predictive models of Ehull, band gap, bulk modulus, and shear modulus are constructed by the transfer learning technique. In particular, the “continuous transfer” method is proposed. The bulk modulus model, after transfer learning, is used as the source domain model to transfer the shear modulus model again. Finally, the high‐throughput screening of multi‐properties of halide double perovskites are successfully realized, and computationally verified that the Cs2CuIrF6 material has good stability, a suitable bandgap (1.06 eV), and ductility (G/B = 0.27). This proposed transfer learning strategy provides an effective method for screening stable perovskite materials with potential for multiple optoelectronic applications.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Wei, Y., He, J., Yang, C., Yu, W., Feng, J., Liu, X., & Chong, X. (2025). Accelerated Multi‐Property Screening of Lead‐Free Halide Double Perovskite via Transfer Learning. Advanced Functional Materials, 36(2). https://onlinelibrary.wiley.com/ai/10.1002/adfm.202514377",
+    "result_id": "10.1002/adfm.202514377_0083",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Artificial intelligence informed toxicity screening of amine chemistries used in the synthesis of hybrid organic–inorganic perovskites",
+    "authors": [
+      "Su, A.",
+      "Cheng, Y.",
+      "Xue, H.",
+      "She, Y.",
+      "Rajan, K."
+    ],
+    "year": 2022,
+    "journal": "AIChE Journal",
+    "volume": "68",
+    "issue": "6",
+    "pages": "",
+    "doi": "10.1002/aic.17699",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/aic.17699",
+    "abstract": "Abstract \nThis article describes a machine learning guided framework for screening the potential toxicity impact of amine chemistries used in the synthesis of hybrid organic–inorganic perovskites. Using a combination of a probabilistic molecular fingerprint technique that encodes bond connectivity (MinHash) coupled to non‐linear data dimensionality reduction methods (Uniform Manifold Approximation and Projection), we develop an “Amine Atlas.” We show how the Amine Atlas can be used to rapidly screen the relative toxicity levels of amine molecules used in the synthesis of 2D and 3D perovskites and help identify safer alternatives. Our work also serves as a framework for rapidly identifying molecular similarity guided, structure–function relationships for safer materials chemistries that also incorporate sustainability/toxicity concerns.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Su, A., Cheng, Y., Xue, H., She, Y., & Rajan, K. (2022). Artificial intelligence informed toxicity screening of amine chemistries used in the synthesis of hybrid organic–inorganic perovskites. AIChE Journal, 68(6). https://onlinelibrary.wiley.com/ai/10.1002/aic.17699",
+    "result_id": "10.1002/aic.17699_0004",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Prerequisites for a computational approach to Minoan chronology",
+    "authors": [
+      "Panagiotopoulos, D.",
+      "Trognitz, M."
+    ],
+    "year": 2025,
+    "journal": "Archaeometry",
+    "volume": "67",
+    "issue": "S1",
+    "pages": "110-130",
+    "doi": "10.1111/arcm.13066",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1111/arcm.13066",
+    "abstract": "Abstract \nThe paper examines the development, adoption, and limitations of the relative chronology system for Minoan pottery, initially established by Sir Arthur Evans and Duncan Mackenzie during the excavation of Knossos (1900–1906). Despite its weaknesses, this system remained largely unchanged due to its convenience rather than its accuracy. The study discusses adaptations of this framework, critiques its shortcomings—particularly in obscuring temporal variability—and explores alternative approaches, including computational methods and Linked Open Data (LOD). The proposed solution involves replacing rigid periodizations with a more precise system based on synchronisms, visualized through Gantt charts, and integrating regional sequences using mathematical modeling. The goal is to enhance chronological accuracy in Minoan archaeology, especially for critical transitional periods.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Panagiotopoulos, D., & Trognitz, M. (2025). Prerequisites for a computational approach to Minoan chronology. Archaeometry, 67(S1), 110-130. https://onlinelibrary.wiley.com/ai/10.1111/arcm.13066",
+    "result_id": "10.1111/arcm.13066_0025",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening"
+    ]
+  },
+  {
+    "title": "Review on Perovskite Solar Cells: From Single‐Junction Devices to Tandem Deployment in Space",
+    "authors": [
+      "Gong, J.",
+      "Schneider, L.",
+      "Liu, Y."
+    ],
+    "year": 2026,
+    "journal": "Advanced Sustainable Systems",
+    "volume": "10",
+    "issue": "1",
+    "pages": "",
+    "doi": "10.1002/adsu.202501343",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/adsu.202501343",
+    "abstract": "ABSTRACT \nPerovskite solar cells (PSCs) have emerged as a transformative photovoltaic technology, offering high power conversion efficiency (PCE) and the potential for cost‐effective manufacturing. However, stability and large‐scale manufacturing remain critical challenges that must be addressed for widespread adoption. This review provides a roadmap from single‐junction perovskite solar cells to tandem deployment in space. First, material‐level innovations are discussed, including mixed‐cation and low‐dimensional perovskites, transport materials, and additives that improve thermal and structural stability while enhancing efficiency. Then, we examine both established industrial standards and emerging scientific protocols aimed at stabilizing PSCs under operational conditions, including tandem cell integration strategies and encapsulation techniques to mitigate performance degradation. Manufacturing scalability is a focal point, where deposition methods and green solvents are explored to improve large‐area film uniformity and reduce environmental impact. Additionally, the increasing viability of PSCs in extraterrestrial environments is assessed, with emphasis on their performance in space applications, radiation resistance, and flexible lamination methods for deployment in extreme conditions. Progress across materials innovation, device architectures, stability testing protocols, and both terrestrial and extraterrestrial applications collectively drives perovskite photovoltaics toward higher efficiency, stability, and cost‐effectiveness.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Gong, J., Schneider, L., & Liu, Y. (2026). Review on Perovskite Solar Cells: From Single‐Junction Devices to Tandem Deployment in Space. Advanced Sustainable Systems, 10(1). https://onlinelibrary.wiley.com/ai/10.1002/adsu.202501343",
+    "result_id": "10.1002/adsu.202501343_0071",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Development of machine learning models based on molecular fingerprints for selection of small molecule inhibitors against JAK2 protein",
+    "authors": [
+      "Belenahalli Shekarappa, S.",
+      "Kandagalla, S.",
+      "Lee, J."
+    ],
+    "year": 2023,
+    "journal": "Journal of Computational Chemistry",
+    "volume": "44",
+    "issue": "16",
+    "pages": "1493-1504",
+    "doi": "10.1002/jcc.27103",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/jcc.27103",
+    "abstract": "Abstract \nJanus kinase 2 (JAK2) is emerging as a potential therapeutic target for many inflammatory diseases such as myeloproliferative disorders (MPD), cancer and rheumatoid arthritis (RA). In this study, we have collected experimental data of JAK2 protein containing 6021 unique inhibitors. We then characterized them based on Morgan (ECFP6) fingerprints followed by clustering into training and test set based on their molecular scaffolds. These data were used to build the classification models with various supervised machine learning (ML) algorithms that could prioritize novel inhibitors for future drug development against JAK2 protein. The best model built by Random Forest (RF) and Morgan fingerprints achieved the G‐mean value of 0.84 on the external test set. As an application of our classification model, virtual screening was performed against Drugbank molecules in order to identify the potential inhibitors based on the confidence score by RF model. Nine potential molecules were identified, which were further subject to molecular docking studies to evaluate the virtual screening results of the best RF model. This proposed method can prove useful for developing novel target‐specific JAK2 inhibitors.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Belenahalli Shekarappa, S., Kandagalla, S., & Lee, J. (2023). Development of machine learning models based on molecular fingerprints for selection of small molecule inhibitors against JAK2 protein. Journal of Computational Chemistry, 44(16), 1493-1504. https://onlinelibrary.wiley.com/ai/10.1002/jcc.27103",
+    "result_id": "10.1002/jcc.27103_0035",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Complex machine learning model needs complex testing: Examining predictability of molecular binding affinity by a graph neural network",
+    "authors": [
+      "Nikolaienko, T.",
+      "Gurbych, O.",
+      "Druchok, M."
+    ],
+    "year": 2022,
+    "journal": "Journal of Computational Chemistry",
+    "volume": "43",
+    "issue": "10",
+    "pages": "728-739",
+    "doi": "10.1002/jcc.26831",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/jcc.26831",
+    "abstract": "Abstract \nDrug discovery pipelines typically involve high‐throughput screening of large amounts of compounds in a search of potential drugs candidates. As a chemical space of small organic molecules is huge, a “navigation” over it urges for fast and lightweight computational methods, thus promoting machine‐learning approaches for processing huge pools of candidates. In this contribution, we present a graph‐based deep neural network for prediction of protein‐drug binding affinity and assess its predictive power under thorough testing conditions. Within the suggested approach, both protein and drug molecules are represented as graphs and passed to separate graph sub‐networks, then concatenated and regressed towards a binding affinity. The neural network is trained on two binding affinity datasets—PDBbind and data imported from RCSB Protein Data Bank. In order to explore the generalization capabilities of the model we go beyond traditional random or leave‐cluster‐out techniques and demonstrate the need for more elaborate model performance assessment – six different strategies for test/train data partitioning (random, time‐ and property‐arranged, protein‐ and ligand‐clustered) with a k‐fold cross‐validation are engaged. Finally, we discuss the model performance in terms of a set of metrics for different split strategies and fold arrangement. Our code is available at  https://github.com/SoftServeInc/affinity-by-GNN .\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Nikolaienko, T., Gurbych, O., & Druchok, M. (2022). Complex machine learning model needs complex testing: Examining predictability of molecular binding affinity by a graph neural network. Journal of Computational Chemistry, 43(10), 728-739. https://onlinelibrary.wiley.com/ai/10.1002/jcc.26831",
+    "result_id": "10.1002/jcc.26831_0007",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Modern machine‐learning for binding affinity estimation of protein–ligand complexes: Progress, opportunities, and challenges",
+    "authors": [
+      "Harren, T.",
+      "Gutermuth, T.",
+      "Grebner, C.",
+      "Hessler, G.",
+      "Rarey, M."
+    ],
+    "year": 2024,
+    "journal": "WIREs Computational Molecular Science",
+    "volume": "14",
+    "issue": "3",
+    "pages": "",
+    "doi": "10.1002/wcms.1716",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/wcms.1716",
+    "abstract": "Abstract \nStructure‐based drug design is a widely applied approach in the discovery of new lead compounds for known therapeutic targets. In most structure‐based drug design applications, the docking procedure is considered the crucial step. Here, a potential ligand is fitted into the binding site, and a scoring function assesses its binding capability. With the rise of modern machine‐learning in drug discovery, novel scoring functions using machine‐learning techniques achieved significant performance gains in virtual screening and ligand optimization tasks on retrospective data. However, real‐world applications of these methods are still limited. Missing success stories in prospective applications are one reason for this. Additionally, the fast‐evolving nature of the field makes it challenging to assess the advantages of each individual method. This review will highlight recent strides toward improved real world applicability of machine‐learning based scoring, enabling a better understanding of the potential benefits and pitfalls of these functions on a project. Furthermore, a systematic way of classifying machine‐learning based scoring that facilitates comparisons will be presented. \nThis article is categorized under: \nData Science > Chemoinformatics \nData Science > Artificial Intelligence/Machine Learning \nSoftware > Molecular Modeling\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Harren, T., Gutermuth, T., Grebner, C., Hessler, G., & Rarey, M. (2024). Modern machine‐learning for binding affinity estimation of protein–ligand complexes: Progress, opportunities, and challenges. WIREs Computational Molecular Science, 14(3). https://onlinelibrary.wiley.com/ai/10.1002/wcms.1716",
+    "result_id": "10.1002/wcms.1716_0134",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Latent Space Subdivision: Stable and Controllable Time Predictions for Fluid Flow",
+    "authors": [
+      "Wiewel, S.",
+      "Kim, B.",
+      "Azevedo, V. C.",
+      "Solenthaler, B.",
+      "Thuerey, N."
+    ],
+    "year": 2020,
+    "journal": "Computer Graphics Forum",
+    "volume": "39",
+    "issue": "8",
+    "pages": "15-25",
+    "doi": "10.1111/cgf.14097",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1111/cgf.14097",
+    "abstract": "Abstract \nWe propose an end‐to‐end trained neural network architecture to robustly predict the complex dynamics of fluid flows with high temporal stability. We focus on single‐phase smoke simulations in 2D and 3D based on the incompressible Navier‐Stokes (NS) equations, which are relevant for a wide range of practical problems. To achieve stable predictions for long‐term flow sequences with linear execution times, a convolutional neural network (CNN) is trained for spatial compression in combination with a temporal prediction network that consists of stacked Long Short‐Term Memory (LSTM) layers. Our core contribution is a novel latent space subdivision (LSS) to separate the respective input quantities into individual parts of the encoded latent space domain. As a result, this allows to distinctively alter the encoded quantities without interfering with the remaining latent space values and hence maximizes external control. By selectively overwriting parts of the predicted latent space points, our proposed method is capable to robustly predict long‐term sequences of complex physics problems, like the flow of fluids. In addition, we highlight the benefits of a recurrent training on the latent space creation, which is performed by the spatial compression network. Furthermore, we thoroughly evaluate and discuss several different components of our method.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Wiewel, S., Kim, B., Azevedo, V. C., Solenthaler, B., & Thuerey, N. (2020). Latent Space Subdivision: Stable and Controllable Time Predictions for Fluid Flow. Computer Graphics Forum, 39(8), 15-25. https://onlinelibrary.wiley.com/ai/10.1111/cgf.14097",
+    "result_id": "10.1111/cgf.14097_0049",
+    "subfields": [
+      "ML methods"
+    ]
+  },
+  {
+    "title": "Virtual Bonding Enhanced Graph Self‐Supervised Learning for Molecular Property Prediction",
+    "authors": [
+      "Yuan, Y.",
+      "Lu, Z.",
+      "Li, Y."
+    ],
+    "year": 2025,
+    "journal": "Journal of Computational Chemistry",
+    "volume": "46",
+    "issue": "16",
+    "pages": "",
+    "doi": "10.1002/jcc.70147",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/jcc.70147",
+    "abstract": "ABSTRACT \nAccurate prediction of molecular properties is essential for modern drug design and discovery. Self‐supervised learning (SSL) and Graph Neural Networks (GNNs) have been widely used in this field to learn molecular representations and predict molecular properties. However, previous graph‐based deep learning methods have overlooked the important weak interaction, that is, long‐range interatomic interaction, which is crucial in determining the molecular properties. This study presents a novel self‐supervised learning framework, Virtual Bonding Enhanced Molecular Property Prediction (VIBE‐MPP), to address the limitations of existing methods by incorporating weak interactions and 3D spatial information into the molecular representations. VIBE‐MPP utilizes a Virtual Bonding Graph Neural Network (VBGNN) to construct a virtual bonding enhanced graph that encodes molecules, and a Dual‐level Self‐supervised Boosted Pretraining (DSBP) approach to enhance representation learning through four designed pretext tasks. The framework introduces virtual bonds to represent atom interactions within a radius of 10 Å, enabling an atom to engage in message passing with multiple other neighboring atoms simultaneously. The model is evaluated on 10 benchmark datasets, demonstrating superior performance over state‐of‐the‐art methods in both classification and regression tasks. On average, it improves upon the best baseline models by 3.20% and achieves optimal performance on four regression datasets. Additionally, visualizations of the learned molecular representations in downstream datasets show that VIBE‐MPP effectively captures molecular properties and semantic information.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Yuan, Y., Lu, Z., & Li, Y. (2025). Virtual Bonding Enhanced Graph Self‐Supervised Learning for Molecular Property Prediction. Journal of Computational Chemistry, 46(16). https://onlinelibrary.wiley.com/ai/10.1002/jcc.70147",
+    "result_id": "10.1002/jcc.70147_0058",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "The benefits and dangers of using machine learning to support making legal predictions",
+    "authors": [
+      "Zeleznikow, J."
+    ],
+    "year": 2023,
+    "journal": "WIREs Data Mining and Knowledge Discovery",
+    "volume": "13",
+    "issue": "4",
+    "pages": "",
+    "doi": "10.1002/widm.1505",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/widm.1505",
+    "abstract": "Abstract \nRule‐based systems have been used in the legal domain since the 1970s. Save for rare exceptions, machine learning has only recently been used. But why this delay? We investigate the appropriate use of machine learning to support and make legal predictions. To do so, we need to examine the appropriate use of data in global legal domains—including in common law, civil law, and hybrid jurisdictions. The use of various forms of Artificial Intelligence, including rule‐based reasoning, case‐based reasoning and machine learning in law requires an understanding of jurisprudential theories. We will see that the use of machine learning is particularly appropriate for non‐professionals: in particular self‐represented litigants or those relying upon legal aid services. The primary use of machine learning to support decision‐making in legal domains has been in criminal detection, financial domains, and sentencing. The use in these areas has led to concerns that the inappropriate use of Artificial Intelligence leads to biased decision making. This requires us to examine concerns about governance and ethics. Ethical concerns can be minimized by providing enhanced explanation, choosing appropriate data to be used, appropriately cleaning that data, and having human reviews of any decisions. \nThis article is categorized under: \nCommercial, Legal, and Ethical Issues > Legal Issues \nCommercial, Legal, and Ethical Issues > Fairness in Data Mining\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Zeleznikow, J. (2023). The benefits and dangers of using machine learning to support making legal predictions. WIREs Data Mining and Knowledge Discovery, 13(4). https://onlinelibrary.wiley.com/ai/10.1002/widm.1505",
+    "result_id": "10.1002/widm.1505_0074",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Deep learning meets tree phenology modelling: PhenoFormer versus process‐based models",
+    "authors": [
+      "Garnot, V. S.",
+      "Spafford, L.",
+      "Lever, J.",
+      "Sigg, C.",
+      "Pietragalla, B.",
+      "Vitasse, Y.",
+      "Gessler, A.",
+      "Wegner, J. D."
+    ],
+    "year": 2025,
+    "journal": "Methods in Ecology and Evolution",
+    "volume": "16",
+    "issue": "7",
+    "pages": "1489-1506",
+    "doi": "10.1111/2041-210X.70037",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1111/2041-210X.70037",
+    "abstract": "Abstract \n\n\n\nPredicting phenology, that is the timing of seasonal events of plant life such as leaf emergence and colouration in relation to climate fluctuations, is essential for anticipating future changes in carbon sequestration and tree vitality in temperate forest ecosystems. Existing approaches typically rely on either hypothesis‐driven process models or data‐driven statistical methods. Several studies have shown that process models outperform statistical methods when predicting under climatic conditions that differ from those of the training data, such as for climate change scenarios. However, in terms of statistical methods, deep learning approaches remain underexplored for species‐level phenology modelling. \n\nWe present a deep neural architecture, PhenoFormer, for species‐level phenology prediction using meteorological time series. Our experiments utilise a country‐scale data set comprising 70 years of climate data and approximately 70,000 phenological observations of nine woody plant species, focussing on leaf emergence and colouration in Switzerland. We extensively compare PhenoFormer to 18 different process‐based models and traditional machine learning methods, including Random Forest (RF) and Gradient Boosted Machine (GBM). \n\nOur results demonstrate that PhenoFormer outperforms traditional statistical methods in phenology prediction while achieving significant improvements or comparable performance to the best process‐based models. When predicting under climatic conditions similar to the training data, our model improved over the best process‐based models by 6% normalised root‐mean‐squared error (nRMSE) for spring phenology and 7% nRMSE for autumn phenology. Under conditions involving substantial climatic shifts between training and testing (+1.21°C), PhenoFormer reduced the nRMSE by an average of 8% across species compared to RF and GBM, and performed on par with the best process models. \n\nThese findings highlight the potential of deep learning for phenology modelling and call for further research in this direction, particularly for future climate projections. Meanwhile, the advancements achieved by PhenoFormer can provide valuable insights for anticipating species‐specific phenological responses to climate change.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Garnot, V. S., Spafford, L., Lever, J., Sigg, C., Pietragalla, B., Vitasse, Y., Gessler, A., & Wegner, J. D. (2025). Deep learning meets tree phenology modelling: PhenoFormer versus process‐based models. Methods in Ecology and Evolution, 16(7), 1489-1506. https://onlinelibrary.wiley.com/ai/10.1111/2041-210X.70037",
+    "result_id": "10.1111/2041-210X.70037_0112",
+    "subfields": [
+      "ML methods",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Synthetic Applicability Domain (SynAD): Navigating Chemical Space for Reliable AI‐Driven Reaction Prediction",
+    "authors": [
+      "Tan, Z.",
+      "Yang, Q.",
+      "Zhang, L.",
+      "Luo, S."
+    ],
+    "year": 2026,
+    "journal": "Angewandte Chemie",
+    "volume": "138",
+    "issue": "9",
+    "pages": "",
+    "doi": "10.1002/ange.202523874",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/ange.202523874",
+    "abstract": "Abstract \nOrganic synthetic chemistry has undergone a paradigm shift driven by breakthroughs in artificial intelligence (AI). Data‐driven methods help accelerate hypothesis evaluation and reduce experimental trial‐and‐error efforts. However, its practical utility is constrained by the out‐of‐distribution (OOD) issue, where predictions usually fail when extrapolating to unseen reactions with new catalysts, substrates, or conditions. Here, we introduce SynAD (synthetic applicability domain), a machine learning framework for assessing the predictive capability of AI models trained with existing data. SynAD combines descriptors with model‐adaptive distance metrics to automatically demarcate reliable and unreliable reactions. Validated on the Ullmann Ligand Dataset (ULD, >5000 reactions), SynAD a priori distinguishes predictable chemical space, resulting in a prediction accuracy of R2 = 0.90 (at 12.3% coverage) from a baseline of R2 = −0.21. This capacity to target reliable chemical space is consistently observed across 6 additional datasets. We also enable a SynAD score to quantify reaction class predictability, guiding experimental focus on OOD spaces. By defining model limits, SynAD provides a critical guardrail for chemists to trust AI, allocate resources strategically, and accelerate de novo discovery.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Tan, Z., Yang, Q., Zhang, L., & Luo, S. (2026). Synthetic Applicability Domain (SynAD): Navigating Chemical Space for Reliable AI‐Driven Reaction Prediction. Angewandte Chemie, 138(9). https://onlinelibrary.wiley.com/ai/10.1002/ange.202523874",
+    "result_id": "10.1002/ange.202523874_0023",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Synthetic Applicability Domain (SynAD): Navigating Chemical Space for Reliable AI‐Driven Reaction Prediction",
+    "authors": [
+      "Tan, Z.",
+      "Yang, Q.",
+      "Zhang, L.",
+      "Luo, S."
+    ],
+    "year": 2026,
+    "journal": "Angewandte Chemie International Edition",
+    "volume": "65",
+    "issue": "9",
+    "pages": "",
+    "doi": "10.1002/anie.202523874",
+    "link": "https://onlinelibrary.wiley.com/ai/10.1002/anie.202523874",
+    "abstract": "Abstract \nOrganic synthetic chemistry has undergone a paradigm shift driven by breakthroughs in artificial intelligence (AI). Data‐driven methods help accelerate hypothesis evaluation and reduce experimental trial‐and‐error efforts. However, its practical utility is constrained by the out‐of‐distribution (OOD) issue, where predictions usually fail when extrapolating to unseen reactions with new catalysts, substrates, or conditions. Here, we introduce SynAD (synthetic applicability domain), a machine learning framework for assessing the predictive capability of AI models trained with existing data. SynAD combines descriptors with model‐adaptive distance metrics to automatically demarcate reliable and unreliable reactions. Validated on the Ullmann Ligand Dataset (ULD, >5000 reactions), SynAD a priori distinguishes predictable chemical space, resulting in a prediction accuracy of R2 = 0.90 (at 12.3% coverage) from a baseline of R2 = −0.21. This capacity to target reliable chemical space is consistently observed across 6 additional datasets. We also enable a SynAD score to quantify reaction class predictability, guiding experimental focus on OOD spaces. By defining model limits, SynAD provides a critical guardrail for chemists to trust AI, allocate resources strategically, and accelerate de novo discovery.\n\n",
+    "source_search": "scholar-gateway",
+    "raw_citation": "Tan, Z., Yang, Q., Zhang, L., & Luo, S. (2026). Synthetic Applicability Domain (SynAD): Navigating Chemical Space for Reliable AI‐Driven Reaction Prediction. Angewandte Chemie International Edition, 65(9). https://onlinelibrary.wiley.com/ai/10.1002/anie.202523874",
+    "result_id": "10.1002/anie.202523874_0023",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Accelerated discovery of perovskite materials guided by machine learning techniques",
+    "authors": [],
+    "year": 2023,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1016/j.matlet.2023.135311",
+    "link": "https://doi.org/10.1016/j.matlet.2023.135311",
+    "abstract": "",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "ML methods"
+    ]
+  },
+  {
+    "title": "Machine Learning Accelerated Insights of Perovskite Materials",
+    "authors": [],
+    "year": 2021,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1007/978-3-030-68310-8_8",
+    "link": "https://doi.org/10.1007/978-3-030-68310-8_8",
+    "abstract": "",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "ML methods"
+    ]
+  },
+  {
+    "title": "Machine learning for perovskite materials design and discovery",
+    "authors": [],
+    "year": 2021,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1038/s41524-021-00495-8",
+    "link": "https://doi.org/10.1038/s41524-021-00495-8",
+    "abstract": "The development of materials is one of the driving forces to accelerate modern scientific progress and technological innovation. Machine learning (ML) technology is rapidly developed in many fields and opening blueprints for the discovery and rational design of materials. In this review, we retrospected the latest applications of ML in assisting perovskites discovery. First, the development tendency of ML in perovskite materials publications in recent years was organized and analyzed. Second, the workflow of ML in perovskites discovery was introduced. Then the applications of ML in various properties of inorganic perovskites, hybrid organic–inorganic perovskites and double perovskites were briefly reviewed. In the end, we put forward suggestions on the future development prospects of ML in the field of perovskite materials.",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening"
+    ]
+  },
+  {
+    "title": "Applications of machine learning in perovskite materials",
+    "authors": [],
+    "year": 2022,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1007/s42114-022-00560-w",
+    "link": "https://doi.org/10.1007/s42114-022-00560-w",
+    "abstract": "",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "ML methods"
+    ]
+  },
+  {
+    "title": "Accelerated Development of Perovskite-Inspired Materials via High-Throughput Synthesis and Machine-Learning Diagnosis",
+    "authors": [],
+    "year": 2019,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1016/j.joule.2019.05.014",
+    "link": "https://doi.org/10.1016/j.joule.2019.05.014",
+    "abstract": "",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Discovering novel lead-free mixed cation hybrid halide perovskites <i>via</i> machine learning",
+    "authors": [],
+    "year": 2025,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1039/d4cp04218b",
+    "link": "https://doi.org/10.1039/d4cp04218b",
+    "abstract": "Machine learning-assisted screening of lead-free perovskites: a computational study using DFT and ML to identify 930 promising perovskites from 29 000 possible combinations based on decomposition energy and band gap criteria.",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening"
+    ]
+  },
+  {
+    "title": "A machine learning model for screening thermodynamic stable lead-free halide double perovskites",
+    "authors": [],
+    "year": 2022,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1016/j.commatsci.2021.111172",
+    "link": "https://doi.org/10.1016/j.commatsci.2021.111172",
+    "abstract": "",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening"
+    ]
+  },
+  {
+    "title": "Machine learning-based screening of two-dimensional perovskite organic spacers",
+    "authors": [],
+    "year": 2024,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1007/s42114-024-00910-w",
+    "link": "https://doi.org/10.1007/s42114-024-00910-w",
+    "abstract": "",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening"
+    ]
+  },
+  {
+    "title": "Screening of Functional Small Molecules via Modified Machine Learning Strategy toward Efficient All-Inorganic Perovskite Solar Cells",
+    "authors": [],
+    "year": 2024,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1021/acsami.4c06226",
+    "link": "https://doi.org/10.1021/acsami.4c06226",
+    "abstract": "",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Discovery and verification of two-dimensional organic–inorganic hybrid perovskites via diagrammatic machine learning model",
+    "authors": [],
+    "year": 2024,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1016/j.matdes.2024.112642",
+    "link": "https://doi.org/10.1016/j.matdes.2024.112642",
+    "abstract": "",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening"
+    ]
+  },
+  {
+    "title": "Application of machine learning in perovskite materials and devices: A review",
+    "authors": [],
+    "year": 2024,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1016/j.jechem.2024.02.035",
+    "link": "https://doi.org/10.1016/j.jechem.2024.02.035",
+    "abstract": "",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Machine learning for halide perovskite materials",
+    "authors": [],
+    "year": 2020,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1016/j.nanoen.2020.105380",
+    "link": "https://doi.org/10.1016/j.nanoen.2020.105380",
+    "abstract": "",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "ML methods"
+    ]
+  },
+  {
+    "title": "Accelerated screening of functional atomic impurities in halide perovskites using high-throughput computations and machine learning",
+    "authors": [],
+    "year": 2022,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1007/s10853-022-06998-z",
+    "link": "https://doi.org/10.1007/s10853-022-06998-z",
+    "abstract": "",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Combining component screening, machine learning and molecular engineering for the design of high-performance inverted perovskite solar cells",
+    "authors": [],
+    "year": 2024,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1039/d4ee00635f",
+    "link": "https://doi.org/10.1039/d4ee00635f",
+    "abstract": "To develop efficient and stable inverted perovskite solar cells, we describe an innovative strategy that combines component screening, machine learning and molecular engineering.",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Machine-learning-accelerated selection of perovskite passivants",
+    "authors": [],
+    "year": 2023,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1038/s41563-023-01711-0",
+    "link": "https://doi.org/10.1038/s41563-023-01711-0",
+    "abstract": "",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "PSC fundamentals/reviews"
+    ]
+  },
+  {
+    "title": "Improvement of Perovskite Solar Cell Efficiency through PLA Additive Induced Boundary Passivation : With Application of Machine Learning in Crystal Image Analysis",
+    "authors": [],
+    "year": 2018,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1109/urtc45901.2018.9244813",
+    "link": "https://doi.org/10.1109/urtc45901.2018.9244813",
+    "abstract": "",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Predicting the bandgap and efficiency of perovskite solar cells using machine learning methods",
+    "authors": [],
+    "year": 2024,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1002/minf.202300217",
+    "link": "https://doi.org/10.1002/minf.202300217",
+    "abstract": "Rapid and accurate prediction of bandgaps and efficiency of perovskite solar cells is a crucial challenge for various solar cell applications. Existing theoretical and experimental methods often accurately measure these parameters; however, these methods are costly and time‐consuming. Machine learning‐based approaches offer a promising and computationally efficient method to address this problem. In this study, we trained different machine learning(ML) models using previously reported experimental data. Among the different ML models, the CatBoostRegressor performed better for both bandgap and efficiency approximations. We evaluated the proposed model using k‐fold cross‐validation and investigated the relative importance of input features using Shapley Additive Explanations (SHAP). SHAP interprets valuable insights into feature contributions of the prediction of the proposed model. Furthermore, we validated the performance of the proposed model using an independent dataset, demonstrating its robustness and generalizability beyond the training data. Our findings show that machine learning‐based approaches, with the aid of SHAP, can provide a promising and computationally efficient method for the accurate and rapid prediction of perovskite solar cell properties. The proposed model is expected to facilitate the discovery of new perovskite materials and is freely available at GitHub (https://github.com/AsadKhanJBNU/perovskite_bandgap_and_efficiency.git) for the perovskite community.",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Deep Learning for Additive Screening in Perovskite Light‐Emitting Diodes",
+    "authors": [],
+    "year": 2022,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1002/anie.202209337",
+    "link": "https://doi.org/10.1002/anie.202209337",
+    "abstract": "Additive engineering with organic molecules is of critical importance for achieving high‐performance perovskite optoelectronic devices. However, experimentally finding suitable additives is costly and time consuming, while conventional machine learning (ML) is difficult to predict accurately due to the limited experimental data available in this relatively new field. Here, we demonstrate a deep learning method that can predict the effectiveness of additives in perovskite light‐emitting diodes (PeLEDs) with a high accuracy up to 96 % by using a small dataset of 132 molecules. This model can maximize the information of the molecules and significantly mitigate the duplicated problem that usually happened with previous models in ML for molecular screening. Very high efficiency PeLEDs with a peak external quantum efficiency up to 22.7 % can be achieved by using the predicated additive. Our work opens a new avenue for further boosting the performance of perovskite optoelectronic devices.",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Machine Learning‐Assisted Optimization of Additive Engineering in FAPbI<sub>3</sub>‐Based Perovskite Solar Cells: Achieving High Efficiency and Long‐Term Stability",
+    "authors": [],
+    "year": 2024,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1002/ente.202401684",
+    "link": "https://doi.org/10.1002/ente.202401684",
+    "abstract": "Additive engineering in perovskite solar cells (PSCs) has been proven to enhance device performance, yet comparing the effects of different additives through experimental methods is still a challenge. Herein, machine learning (ML) is used to quantitatively analyze the impact of additive engineering on performance of PSCs, utilizing a dataset with 778 samples and 39 input features. Key features affecting device performance are identified, revealing that alkali metal additives boost short‐circuit current, alkylamine additives improve open‐circuit voltage, and passivation at A‐site defects is more beneficial than at interstitial sites. Using the results gained from the ML approach, the performance of PSCs improves significantly, achieving an efficiency of 23.50%, with <jats:italic>V</jats:italic><jats:sub>OC</jats:sub> and <jats:italic>J</jats:italic><jats:sub>SC</jats:sub> values of 1.16 V and 25.35 mA cm<jats:sup>−2</jats:sup>, respectively, markedly higher than those of the control samples.",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Machine Learning-Assisted Prediction of Ambient-Processed Perovskite Solar Cells’ Performances",
+    "authors": [],
+    "year": 2024,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.3390/en17235998",
+    "link": "https://doi.org/10.3390/en17235998",
+    "abstract": "As we move towards the commercialization and upscaling of perovskite solar cells, it is essential to fabricate them in ambient environment rather than in the conventional glove box environment. The efficiency of ambient-processed perovskite solar cells lags behind those fabricated in controlled environments, primarily owing to external environmental factors such as humidity and temperature. In the case of device fabrication in ambient environments, relying solely on a single parameter, such as temperature or humidity, is insufficient for accurately characterizing environmental conditions. Therefore, the dew point is introduced as a parameter which accounts for both temperature and humidity. In this study, a machine learning model was developed to predict the efficiency of ambient-processed perovskite solar cells based on meteorological data, particularly the dew point. A total of 238 perovskite solar cells were fabricated, and their photovoltaic parameters and dew points were collected from March to December 2023. The collected data were used to train various tree-based machine learning models, with the random forest model achieving the highest accuracy. The efficiencies of the perovskite solar cells fabricated in January and February 2024 were predicted with a MAPE of 4.44%. An additional Shapley Additive exPlanations analysis confirmed the significance of the dew point in the performance of perovskite solar cells.",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "A machine learning model with crude estimation of property strategy for performance prediction of perovskite solar cells based on process optimization",
+    "authors": [],
+    "year": 2024,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1063/5.0234046",
+    "link": "https://doi.org/10.1063/5.0234046",
+    "abstract": "Perovskite solar cells (PSCs) have attracted significant attention due to their high power conversion efficiency (PCE) and affordability. However, optimizing the preparation parameters for PSCs is crucial. This study establishes a machine learning model incorporating a crude estimation of property (CEP) strategy to enhance prediction accuracy and precisely control process parameters. The model’s evaluation metrics improved by utilizing excess non-stoichiometric components (Ensc) and perovskite additive compounds (Pac) as CEP. Notably, the coefficient of determination (R2) on the test set increased by 16.14%, while the root mean square error decreased by 20.44%, respectively. Nine machine learning algorithms, including decision tree (DT), random forest (RF), CatBoost, LassoLarsCV, histogram gradient boosting, extreme gradient boosting (XGBoost), K nearest neighbor, ridge regression (Ridge), and linear regression (Linear R), were employed to optimize PSC preparation and assess its impact on device performance. The best-performing models, DT and RF, were combined to create a stacking model demonstrating the most stable overall performance on training and test sets. The study identified key process parameters affecting PCE based on the stacking model. Among these, adding Ensc was the most critical factor, followed by perovskite thickness, thermal annealing time (Ta-ti), perovskite deposition solvent (Pds), solvent mixing ratio, and Pac. Experimental verification showed that PSCs with a 10% excess of PbI2 exhibited higher PCE compared to those with 5% excess, confirming that adding Ensc can effectively enhance PCE. These findings offer a valuable reference for optimizing PSC process parameters and improving performance, thereby saving time and labor costs.",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Predicting the properties of perovskite materials by improved compositionally restricted attention-based networks and explainable machine learning",
+    "authors": [],
+    "year": 2024,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1088/1361-6463/ad460f",
+    "link": "https://doi.org/10.1088/1361-6463/ad460f",
+    "abstract": "\n               Understanding the unique properties of perovskite materials is crucial in advancing solar energy technologies. Factors like heat of formation and bandgap significantly influence the light absorption capability and stability of perovskite solar cells. However, it is time-consuming and labor-intensive to obtain the properties of perovskites using traditional experimental or high-throughput computational methods. As a prospective method, machine learning can find regularities in the given training data and give accurate prediction results. In this article, we use deep learning models based on attention mechanisms and elemental features to predict the heat of formation and bandgap of perovskite materials. Random Forest and Gradient Boosted Regression Tree models have also been used for interpretable predictions of properties. The compositionally restricted attention-based network was improved by introducing a densely connected network and optimizing the network structure to increase data processing capabilities. The experiment results show that the mean absolute errors of the heat of formation and bandgap on the test sets are decreased by 5.77% and 3.37% respectively. The optimized model also shows better performance when used for classification tasks. In addition, we use the gradient boosting regression tree model and the shapley additive explanations tool to conduct an interpretable analysis, explaining the impact of different features on the predictions of the properties.",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "How Machine Learning Predicts and Explains the Performance of Perovskite Solar Cells",
+    "authors": [],
+    "year": 2022,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1002/solr.202101100",
+    "link": "https://doi.org/10.1002/solr.202101100",
+    "abstract": "<jats:sec><jats:label/>Characterizing the electrical parameters of perovskite solar cells (PSCs) usually requires a lot of time to fabricate complete devices. Here, machine learning (ML) is used to reduce the device fabrication process and predict the electrical performance of PSCs. Using ML algorithms and 814 valid data cleaned from 2735 peer‐reviewed publications, ML prediction models are built for bandgap, conduction band minimum, valence band maximum of perovskites, and electrical parameters of PSCs. These prediction models have excellent accuracy, and the root mean square error of the prediction models for bandgap and power conversion efficiency (PCE) reaches 0.064 eV and 1.58%, respectively. Among the many factors that affect the performance of PSCs, those factors play a major role in the lack of comprehensive explanation. Through the prediction model of electrical parameters and Shapley Additive explanations theory, the factors affecting the PCE of PSCs are explained and analyzed. It can not only verify the objective physical laws from the perspective of ML, but also conclude that among the 13 features, the content of formamidinium/NH<jats:sub>2</jats:sub>CHNH<jats:sub>2</jats:sub><jats:sup>+</jats:sup> plays the most important role in improving the PCE of PSCs. These results show that ML has great application possibilities in the PSC field.</jats:sec>",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Studying the Thermodynamic Phase Stability of Organic–Inorganic Hybrid Perovskites Using Machine Learning",
+    "authors": [],
+    "year": 2024,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.3390/molecules29132974",
+    "link": "https://doi.org/10.3390/molecules29132974",
+    "abstract": "As an important photovoltaic material, organic–inorganic hybrid perovskites have attracted much attention in the field of solar cells, but their instability is one of the main challenges limiting their commercial application. However, the search for stable perovskites among the thousands of perovskite materials still faces great challenges. In this work, the energy above the convex hull values of organic–inorganic hybrid perovskites was predicted based on four different machine learning algorithms, namely random forest regression (RFR), support vector machine regression (SVR), XGBoost regression, and LightGBM regression, to study the thermodynamic phase stability of organic–inorganic hybrid perovskites. The results show that the LightGBM algorithm has a low prediction error and can effectively capture the key features related to the thermodynamic phase stability of organic–inorganic hybrid perovskites. Meanwhile, the Shapley Additive Explanation (SHAP) method was used to analyze the prediction results based on the LightGBM algorithm. The third ionization energy of the B element is the most critical feature related to the thermodynamic phase stability, and the second key feature is the electron affinity of ions at the X site, which are significantly negatively correlated with the predicted values of energy above the convex hull (Ehull). In the screening of organic–inorganic perovskites with high stability, the third ionization energy of the B element and the electron affinity of ions at the X site is a worthy priority. The results of this study can help us to understand the correlation between the thermodynamic phase stability of organic–inorganic hybrid perovskites and the key features, which can assist with the rapid discovery of highly stable perovskite materials.",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Machine learning for screening and predicting the best surface modifiers for a rational optimization of efficient perovskite solar cells",
+    "authors": [],
+    "year": 2024,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1063/5.0214736",
+    "link": "https://doi.org/10.1063/5.0214736",
+    "abstract": "The key to keep the rising slope of perovskite solar cell performances is to reduce non-radiative losses by minimizing defect density. To this end, a large variety of strategies have been adopted spanning from the use of interfacial layers, surface modifiers, to interface engineering. Although winning concepts have been demonstrated, they result from a mere trial and error approach, which is time consuming and operator-dependent. To face this challenge, in this work, we propose the use of a machine learning approach for an educated and rational material screening with optimal characteristics in terms of surface passivation. In particular, we applied Shapley additive explanation to extract the specific chemical features of the passivator, which directly impact the device parameters, specifically the open circuit voltage (Voc). By monitoring the different material parameters as input, we were able to list the most promising passivators and directly test them in working solar cells. By comparing the device performances with the results of the modeling and with additional optical and morphological characterization, we retrieved the most significant material properties linked to the highest efficiency, which are (i) the presence of chlorine and its strong binding capacity to positively charged defects on perovskite surface, reducing the non-radiative recombination and (ii) an increased flexibility of the molecule, resulting in better coverage of the surface. Finally, we tested the predictive power of the ML algorithm proposing a new passivator, which, implemented in a working device, leads to the predicted high Voc confirming the results of the modeling.",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Investigating inorganic perovskite as absorber materials in perovskite solar cells: machine learning analysis and optimization",
+    "authors": [],
+    "year": 2024,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1088/1402-4896/ad2a2e",
+    "link": "https://doi.org/10.1088/1402-4896/ad2a2e",
+    "abstract": "\n               This work investigates the potential of inorganic perovskites AgBiSCl<jats:sub>2</jats:sub> and Al<jats:sub>2</jats:sub>Cu<jats:sub>2</jats:sub>Bi<jats:sub>2</jats:sub>S<jats:sub>3</jats:sub>Cl<jats:sub>8</jats:sub> as absorber layers in perovskite solar cells, followed by the application of supervised machine learning models. Extensive exploration and optimization of device architectures FTO/SnO<jats:sub>2</jats:sub>/AgBiSCl<jats:sub>2</jats:sub>/Spiro-OMeTAD/Au and FTO/SnO<jats:sub>2</jats:sub>/Al<jats:sub>2</jats:sub>Cu<jats:sub>2</jats:sub>Bi<jats:sub>2</jats:sub>S<jats:sub>3</jats:sub>Cl<jats:sub>8</jats:sub>/Spiro-OMeTAD/Au are conducted, involving variations in absorber layer thickness (d), bulk defect density (N<jats:sub>t</jats:sub>), and carrier mobility (<jats:italic>μ</jats:italic>\n                  <jats:sub>n,p</jats:sub>). The AgBiSCl<jats:sub>2</jats:sub>-based device achieves an optimized conversion efficiency of 10.06%, while the Al<jats:sub>2</jats:sub>Cu<jats:sub>2</jats:sub>Bi<jats:sub>2</jats:sub>S<jats:sub>3</jats:sub>Cl<jats:sub>8</jats:sub>-based device achieves 12.27%. To train different machine learning models, 1600 datasets are collected for each device, and Neural Networks (NN), Random Forests (RF), and XGBoost (XGB) models are employed. The performance parameters, evaluated using mean squared error (MSE) and high R-squared (R2) values, demonstrate that XGB performs the best, achieving an MSE of 0.210 and R2 of 97.1% for AgBiSCl<jats:sub>2</jats:sub> and 0.671 and 90.6% for Al<jats:sub>2</jats:sub>Cu<jats:sub>2</jats:sub>Bi<jats:sub>2</jats:sub>S<jats:sub>3</jats:sub>Cl<jats:sub>8</jats:sub>. Additionally, the impact of each variable (d, N<jats:sub>t</jats:sub>, and <jats:italic>μ</jats:italic>\n                  <jats:sub>n,p</jats:sub>) on the output is analyzed using Shapley Additive Explanations (SHAP) plots for each model. The results presented in this study pave the way for the advancement of perovskite material-based solar cells without relying on complex optoelectronic semiconducting equations and device simulators.",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Machine‐Learning‐Assisted Discovery of Mechanosynthesized Lead‐Free Metal Halide Perovskites for the Oxidative Photocatalytic Cleavage of Alkenes",
+    "authors": [],
+    "year": 2024,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1002/advs.202309714",
+    "link": "https://doi.org/10.1002/advs.202309714",
+    "abstract": "Lead‐free metal halide perovskites can potentially be air‐ and water‐stable photocatalysts for organic synthesis, but there are limited studies on them for this application. Separately, machine learning (ML), a critical subfield of artificial intelligence, has played a pivotal role in identifying correlations and formulating predictions based on extensive datasets. Herein, an iterative workflow by incorporating high‐throughput experimental data with ML to discover new lead‐free metal halide perovskite photocatalysts for the aerobic oxidation of styrene is described. Through six rounds of ML optimization guided by SHapley Additive exPlanations (SHAP) analysis, BA<jats:sub>2</jats:sub>CsAg<jats:sub>0.95</jats:sub>Na<jats:sub>0.05</jats:sub>BiBr<jats:sub>7</jats:sub> as a photocatalyst that afforded an 80% yield of benzoic acid under the standard conditions is identified, which is a 13‐fold improvement compared to the 6% with when using Cs<jats:sub>2</jats:sub>AgBiBr<jats:sub>6</jats:sub> as the initial photocatalyst benchmark that is started. BA<jats:sub>2</jats:sub>CsAg<jats:sub>0.95</jats:sub>Na<jats:sub>0.05</jats:sub>BiBr<jats:sub>7</jats:sub> can tolerate various functional groups with 22 styrene derivatives, highlighting the generality of the photocatalytic properties demonstrated. Radical scavenging studies and density functional theory calculations revealed that the formation of the reactive oxygen species superoxide and singlet oxygen in the presence of BA<jats:sub>2</jats:sub>CsAg<jats:sub>0.95</jats:sub>Na<jats:sub>0.05</jats:sub>BiBr<jats:sub>7</jats:sub> are critical for photocatalysis.",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Autonomous Optimization of Air‐Processed Perovskite Solar Cell in a Multidimensional Parameter Space",
+    "authors": [],
+    "year": 2025,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1002/aenm.202404957",
+    "link": "https://doi.org/10.1002/aenm.202404957",
+    "abstract": "Traditional optimization methods often face challenges in exploring complex process parameter spaces, which typically result in suboptimal local maxima. Here an autonomous framework driven by a machine learning (ML)‐guided automated platform is introduced to optimize the fabrication conditions of additive‐ and passivation‐free perovskite solar cells (PSCs) under ambient conditions. By effectively exploring a 6D parameter space, this method identifies five parameter sets achieving efficiencies above 23%, with a peak efficiency of 23.7% with limited experimental budgets. Feature importance analysis indicates that the rotation speeds during the first and second steps of perovskite processing are the most influential factors affecting device performance, thereby meriting prioritization in the optimization efforts. These results demonstrate the exceptional capability of the autonomous framework in addressing complex process parameter optimization challenges and its potential to advance perovskite photovoltaic technology. Beyond PSCs, this work provides a reliable and comprehensive strategy for optimizing solution‐processed semiconductors and highlights the broader applications of autonomous methodologies in materials science.",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE"
+    ]
+  },
+  {
+    "title": "Bayesian reverse design of high-efficiency perovskite solar cells based on experimental knowledge constraints",
+    "authors": [],
+    "year": 2024,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1063/5.0216447",
+    "link": "https://doi.org/10.1063/5.0216447",
+    "abstract": "To alleviate high costs and lengthy trial-and-error periods associated with traditional optimization methods for perovskite solar cells (PSCs), we developed a data-driven reverse design framework for high-efficiency PSCs. This framework integrates machine learning and Bayesian optimization (BO) to accelerate the optimization process of PSCs by intelligently recommending the most promising parameter configurations for PSCs, such as device structure and fabrication processes. To improve the robustness of the framework, we first designed a two-stage sampling strategy to alleviate the issue of imbalanced dataset classes. Subsequently, by integrating “experimental knowledge constraints” into the BO process, we achieved precise parameter configurations, thus avoiding discrepancies between predicted and actual results due to parameter mismatches. Finally, using SHapley Additive exPlanations, we unveiled key factors influencing the power conversion efficiency (PCE), such as the composition of perovskite solvents. Our framework not only precisely predicted the PCE of PSCs with an area under the curve of 0.861 but also identified the optimal parameter configurations, achieving a high probability of 0.981. This framework offers substantial support for minimizing redundant experiments and characterizations, effectively accelerating the optimization process of PSCs.",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  },
+  {
+    "title": "Data‐Driven Approach to Accelerate the Design of Halide Perovskite for Photovoltaic Application Using Electronic Properties as Descriptors",
+    "authors": [],
+    "year": 2024,
+    "journal": "",
+    "volume": "",
+    "issue": "",
+    "pages": "",
+    "doi": "10.1002/ente.202301284",
+    "link": "https://doi.org/10.1002/ente.202301284",
+    "abstract": "Perovskite solar cells (PSCs) have garnered remarkable attention for their efficiency and tunable optoelectronic properties. However, their instability to moisture and heat poses challenges. Traditional trial‐and‐error approaches for finding stable halide perovskites are inefficient due to the vast compositional possibilities within ABX<jats:sub>3</jats:sub> perovskite structure. This study uses machine learning (ML) to predict bandgaps and photovoltaic parameters of PSCs, using a dataset of 447 data points containing chemical composition, bandgaps, and photovoltaic parameters. Various ML models including support vector regressor, random forest, gradient boost regressor, XGBoost, extratree Regressor, and AdaBoost Regressor have been used herein. Positional average elemental property (PAEP) approach is introduced to featurize the data. As ABX<jats:sub>3</jats:sub> perovskite involves distinct A, B, and X sites, the proposed PAEP model captures site‐specific effects, enhancing model accuracy. The best model exhibits impressive r‐values of 0.98 for bandgap prediction and 0.86 for power conversion efficiency of PSCs. Elemental properties of B and X sites, such as ionization energy, electron affinity, and electronegativity, are found to be crucial features in the analysis by Shapley additive explanation. This study underscores the potential of ML in designing novel, stable, and efficient PSCs, offering a more efficient alternative to conventional trial‐and‐error methods.",
+    "source_search": "perovskite_rag",
+    "raw_citation": "",
+    "result_id": "",
+    "subfields": [
+      "PSC fundamentals/reviews",
+      "ML methods",
+      "Molecular design / virtual screening",
+      "Experimental validation / HTE",
+      "Databases / benchmarks"
+    ]
+  }
+]
