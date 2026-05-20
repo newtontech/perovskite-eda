@@ -1,4 +1,5 @@
 import json
+import hashlib
 import shutil
 import sys
 from pathlib import Path
@@ -342,7 +343,37 @@ def test_contract_requires_evidence_cache_manifest_when_cache_is_required(tmp_pa
     )
     assert result["checks"]["evidence_cache"]["cache_files"]["reference_cache"]["entry_count"] == 1
 
-    (package.output_dir / "evidence_cache" / "evidence_cache_manifest.json").unlink()
+    manifest_path = package.output_dir / "evidence_cache" / "evidence_cache_manifest.json"
+    evidence_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    def refresh_root_manifest_evidence_record() -> None:
+        root_manifest = json.loads(package.root_provenance_manifest_json.read_text(encoding="utf-8"))
+        for item in root_manifest["artifacts"]["evidence_cache"]:
+            if item["id"] == "evidence_cache_manifest_json":
+                item["size_bytes"] = manifest_path.stat().st_size
+                item["sha256_16"] = hashlib.sha256(manifest_path.read_bytes()).hexdigest()[:16]
+                break
+        _write_json(package.root_provenance_manifest_json, root_manifest)
+
+    bad_cache_dir_manifest = json.loads(json.dumps(evidence_manifest))
+    bad_cache_dir_manifest["cache_dir"] = str(cache_dir / "wrong-cache")
+    _write_json(manifest_path, bad_cache_dir_manifest)
+    refresh_root_manifest_evidence_record()
+    with pytest.raises(ResearchPackageContractError) as exc:
+        verify_research_package(package.output_dir, require_evidence_cache=True)
+    assert "cache_dir" in str(exc.value)
+
+    bad_file_path_manifest = json.loads(json.dumps(evidence_manifest))
+    bad_file_path_manifest["cache_files"]["reference_cache"]["path"] = str(cache_dir / "wrong-reference.json")
+    _write_json(manifest_path, bad_file_path_manifest)
+    refresh_root_manifest_evidence_record()
+    with pytest.raises(ResearchPackageContractError) as exc:
+        verify_research_package(package.output_dir, require_evidence_cache=True)
+    assert "cache_files.reference_cache.path" in str(exc.value)
+
+    _write_json(manifest_path, evidence_manifest)
+    refresh_root_manifest_evidence_record()
+    manifest_path.unlink()
     with pytest.raises(ResearchPackageContractError) as exc:
         verify_research_package(package.output_dir, require_evidence_cache=True)
 
