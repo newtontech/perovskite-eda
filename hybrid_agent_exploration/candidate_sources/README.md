@@ -14,6 +14,10 @@ passivator candidate screening. Source files must satisfy
   `kind=molecule` PubChem source containing `pubchem_id` and `url`.
 - Add PSC relevance evidence as PubMed, DOI, publisher, or other durable
   literature URLs when available.
+- PubChem PUG View section URLs may be used as conservative declared
+  `availability` / `safety` sources only when the corresponding official
+  PubChem headings are verified to exist for the CID. These labels indicate
+  section presence, not independent vendor stock or SDS re-verification.
 - Do not include placeholder URLs such as `example.com`.
 - Do not invent vendor catalog IDs or availability claims. Use conservative
   readiness labels such as `pubchem_listed`, `literature_reported`, or
