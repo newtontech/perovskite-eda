@@ -113,6 +113,33 @@ def test_research_package_verify_dry_run_accepts_closure_readiness_gate():
     assert "--require-closure-readiness" in output
 
 
+def test_research_package_dry_run_accepts_experimental_feedback_args():
+    output = _make_dry_run(
+        "research-package",
+        SOURCE_TABLE="/tmp/source.csv",
+        ARTIFACT_DIR="/tmp/artifacts",
+        DATASET_ID="feedback-dataset",
+        EXPERIMENTAL_FEEDBACK_CSV="/tmp/feedback.csv",
+        EXPERIMENTAL_FEEDBACK_DATA_SCOPE="external_lab",
+    )
+
+    assert "hybrid_agent_exploration/src/run_research_package.py" in output
+    assert "--experimental-feedback-csv /tmp/feedback.csv" in output
+    assert "--experimental-feedback-data-scope external_lab" in output
+
+
+def test_research_package_verify_dry_run_accepts_experimental_feedback_gate():
+    output = _make_dry_run(
+        "research-package-verify",
+        ARTIFACT_DIR="/tmp/artifacts",
+        REQUIRE_EXPERIMENTAL_FEEDBACK="1",
+    )
+
+    assert "hybrid_agent_exploration/src/verify_research_package.py" in output
+    assert "--package-dir /tmp/artifacts" in output
+    assert "--require-experimental-feedback" in output
+
+
 def test_smoke_target_dry_run_caps_rows_in_ignored_artifact_dir():
     output = _make_dry_run("research-package-smoke", SOURCE_TABLE="/tmp/source.csv")
 
@@ -328,6 +355,7 @@ def test_test_research_package_target_runs_canonical_pytest_slice():
     assert "tests/test_canonical_make_targets.py" in output
     assert "tests/test_evidence_cache_collector.py" in output
     assert "tests/test_evidence_cache_preflight.py" in output
+    assert "tests/test_experimental_feedback_ingestion.py" in output
     assert "tests/test_research_package_runner.py" in output
     assert "tests/test_run_verified_discovery_cli.py" in output
     assert "tests/test_root_provenance_manifest.py" in output

@@ -70,6 +70,29 @@ def _write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def _write_external_lab_feedback(path: Path) -> None:
+    pd.DataFrame(
+        [
+            {
+                "iteration_id": "iteration_000",
+                "candidate_id": "candidate-001",
+                "smiles": "CCCC",
+                "experimental_status": "measured",
+                "measured_pce_without_modulator": 18.0,
+                "measured_pce_with_modulator": 19.1,
+                "measured_delta_pce": 1.1,
+                "measurement_date": "2026-05-20",
+                "protocol_reference": "lab-protocol-v1",
+                "lab_or_operator": "operator-a",
+                "instrument_or_batch_id": "batch-001",
+                "raw_data_reference": "raw/run-001.csv",
+                "data_source": "lab-a",
+                "notes": "independent lab measurement row",
+            }
+        ]
+    ).to_csv(path, index=False)
+
+
 def test_contract_verifies_complete_research_package_with_candidate_library(tmp_path):
     from run_research_package import run_research_package
     from verify_research_package import verify_research_package
@@ -161,6 +184,72 @@ def test_contract_fails_when_required_candidate_library_is_absent(tmp_path):
         verify_research_package(package.output_dir, require_candidate_library=True)
 
     assert "candidate_library_dir" in str(exc.value)
+
+
+def test_contract_fails_when_experimental_feedback_is_required_but_absent(tmp_path):
+    from run_research_package import run_research_package
+    from verify_research_package import ResearchPackageContractError, verify_research_package
+
+    raw_csv = tmp_path / "raw_psc.csv"
+    candidate_csv = tmp_path / "candidate_source.csv"
+    _write_source_table(raw_csv)
+    _candidate_source().to_csv(candidate_csv, index=False)
+    package = run_research_package(
+        input_path=raw_csv,
+        output_dir=tmp_path / "research_package",
+        dataset_id="missing-feedback-fixture",
+        evidence_mode="source-columns",
+        candidate_source_path=candidate_csv,
+        candidate_source_name="fixture-vendor-source",
+        min_verified_rows=4,
+        top_k=1,
+    )
+
+    with pytest.raises(ResearchPackageContractError) as exc:
+        verify_research_package(
+            package.output_dir,
+            require_candidate_library=True,
+            require_experimental_feedback=True,
+        )
+
+    assert "experimental feedback required" in str(exc.value)
+
+
+def test_contract_verifies_declared_experimental_feedback_artifacts(tmp_path):
+    from run_research_package import run_research_package
+    from verify_research_package import verify_research_package
+
+    raw_csv = tmp_path / "raw_psc.csv"
+    candidate_csv = tmp_path / "candidate_source.csv"
+    feedback_csv = tmp_path / "external_lab_feedback.csv"
+    _write_source_table(raw_csv)
+    candidate_source = _candidate_source()
+    candidate_source["candidate_id"] = "candidate-001"
+    candidate_source.to_csv(candidate_csv, index=False)
+    _write_external_lab_feedback(feedback_csv)
+    package = run_research_package(
+        input_path=raw_csv,
+        output_dir=tmp_path / "research_package",
+        dataset_id="feedback-contract-fixture",
+        evidence_mode="source-columns",
+        candidate_source_path=candidate_csv,
+        candidate_source_name="fixture-vendor-source",
+        experimental_feedback_csv=feedback_csv,
+        experimental_feedback_data_scope="external_lab",
+        min_verified_rows=4,
+        top_k=1,
+    )
+
+    result = verify_research_package(
+        package.output_dir,
+        require_candidate_library=True,
+        require_experimental_feedback=True,
+    )
+
+    assert result["status"] == "passed"
+    assert result["checks"]["experimental_feedback"]["status"] == "passed"
+    assert result["checks"]["experimental_feedback"]["validated_feedback_rows"] == 1
+    assert result["checks"]["closure_readiness"]["overall_ready"] is False
 
 
 def test_contract_fails_when_core_artifact_is_missing(tmp_path):
