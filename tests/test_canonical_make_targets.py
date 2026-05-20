@@ -292,6 +292,7 @@ def test_pdf_target_dry_run_checks_pandoc_and_exports_report_pdfs():
         "hybrid_agent_exploration/src/reporting/root_provenance_manifest.py" in output
     )
     assert "--output-path /tmp/artifacts/provenance_manifest.json" in output
+    assert "--evidence-cache-manifest-path /tmp/artifacts/evidence_cache/evidence_cache_manifest.json" in output
 
 
 def test_verify_target_dry_run_runs_contract_verifier_with_optional_gates():
