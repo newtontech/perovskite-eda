@@ -715,6 +715,8 @@ class TopJournalReport:
     def _abstract(self, metrics: dict, config: dict, n_models: int) -> str:
         if self._has_training_only_metrics():
             return self._training_only_abstract(metrics, config, n_models)
+        if self._has_internal_holdout_metrics():
+            return self._internal_holdout_abstract(metrics, config, n_models)
 
         target = config.get("target", "delta_pce")
         r2 = metrics.get("r2")
@@ -764,6 +766,27 @@ class TopJournalReport:
             "The report records supported claims in a machine-readable claim ledger and explicitly separates artifact availability from scientific validation."
         )
 
+    def _internal_holdout_abstract(self, metrics: dict, config: dict, n_models: int) -> str:
+        target = config.get("target", "delta_pce")
+        model = config.get("layer3", {}).get("method_id", "model")
+        r2 = metrics.get("r2")
+        rmse = metrics.get("rmse")
+        mae = metrics.get("mae")
+        metric_sentence = "No internal random holdout metric summary is available."
+        if r2 is not None:
+            metric_sentence = f"The {model} reached an internal random holdout $R^2$ = {r2:.3f}"
+            if rmse is not None:
+                metric_sentence += f", RMSE = {rmse:.3f}"
+            if mae is not None:
+                metric_sentence += f", and MAE = {mae:.3f}"
+            metric_sentence += "."
+        return (
+            f"We report an evidence-audited exploratory QSPR package for predicting {target} in perovskite solar-cell additive data. "
+            f"The package contains {n_models} verified-discovery model fit, internal random holdout diagnostics, a verified candidate table, report sidecars, and provenance manifests. "
+            f"{metric_sentence} This diagnostic is not independent external-validation, scaffold validation, temporal validation, or experimental feedback. "
+            "The report records supported claims in a machine-readable claim ledger and explicitly separates artifact availability from scientific validation."
+        )
+
     def _results_overview(self, best_result: dict | None) -> str:
         successful = self._successful_results()
         if not successful or not best_result:
@@ -783,6 +806,14 @@ class TopJournalReport:
                 "This value is a fit diagnostic from the verified training rows, not a random-split, scaffold-split, temporal-split, or external-validation result. "
                 f"{smoke_note}"
                 "Candidate ranking is therefore interpreted as a reproducibility and provenance check rather than a validated design rule."
+            )
+        if self._has_internal_holdout_metrics():
+            return (
+                f"The verified-discovery package contains {len(successful)} successful model fit with an internal random holdout diagnostic. "
+                f"The run used {cfg.get('layer2', {}).get('method_id', 'unknown')} features and "
+                f"{cfg.get('layer3', {}).get('method_id', 'unknown')} with internal holdout $R^2$ = {best.get('r2', 0):.3f}. "
+                "This diagnostic is computed on held-out verified rows and is not independent external-validation, scaffold validation, temporal validation, or experimental feedback. "
+                "Candidate ranking is therefore interpreted as a reproducibility and prioritization artifact rather than a validated design rule."
             )
         split_counts = {}
         for row in successful:
@@ -839,6 +870,18 @@ class TopJournalReport:
                 "No scaffold-split, temporal-split, independent external-validation, or experimental follow-up evidence is inferred unless those artifacts are supplied. "
                 "Mechanistic statements are limited to artifact availability and aggregate diagnostics; candidate rankings require external validation before they can be used as design rules."
             )
+        if self._has_internal_holdout_metrics():
+            source_note = (
+                "Source-columns mode uses DOI and molecule fields already present in the input table and is explicitly smoke-only. "
+                if self._is_source_columns_smoke()
+                else "External-cached evidence checks are recorded separately from model validation. "
+            )
+            return (
+                f"{source_note}"
+                "The package now includes internal random holdout diagnostics on verified rows, but these are not independent external-validation, scaffold validation, temporal validation, or experimental feedback. "
+                "Random holdouts can overestimate chemical generalization when structural analogues occur across train and validation partitions. "
+                "Mechanistic statements are limited to artifact availability and aggregate diagnostics; candidate rankings require external validation before they can be used as design rules."
+            )
         has_external = bool(self.artifacts.get("y_true_external") and self.artifacts.get("y_pred_external"))
         external_note = (
             "Independent external validation artifacts were available and are reported as diagnostics."
@@ -852,6 +895,27 @@ class TopJournalReport:
         )
 
     def _conclusion(self, best_result: dict | None) -> str:
+        if self._has_internal_holdout_metrics():
+            best_metrics = best_result.get("metrics", {}) if best_result else {}
+            r2 = best_metrics.get("r2")
+            if r2 is None:
+                metric_sentence = "No internal random holdout R² was available."
+            else:
+                metric_sentence = f"The current package records an internal random holdout $R^2$ = {r2:.3f}, which is treated as an internal diagnostic rather than independent validation."
+            smoke_sentence = (
+                "Because this run used source-columns mode, it is a smoke package rather than a publication-grade verification package. "
+                if self._is_source_columns_smoke()
+                else ""
+            )
+            return "\n".join(
+                [
+                    "## Conclusion",
+                    "",
+                    "This research package demonstrates that the verified-discovery artifact chain can produce a traceable dataset, internal validation diagnostics, candidate library, ranked candidates, manuscript text, SI, and provenance manifests from real input records.",
+                    f"{metric_sentence} {smoke_sentence}The package does not support claims about representation superiority, baseline-feature benefit, SHAP-derived mechanisms, scaffold generalization, or externally validated candidate performance unless those artifacts are added in a future run.",
+                    self._next_scientific_step(),
+                ]
+            )
         if not self._has_training_only_metrics():
             return self.narrative.conclusion(self.results)
 
@@ -1117,6 +1181,17 @@ class TopJournalReport:
             return True
         return any(
             row.get("metrics", {}).get("metric_scope") == "training_only"
+            for row in self.results
+        )
+
+    def _has_internal_holdout_metrics(self) -> bool:
+        context = self._evidence_context()
+        if context.get("metric_scope") == "training_and_internal_holdout":
+            return True
+        if isinstance(self.artifacts.get("model_validation_metrics"), dict):
+            return True
+        return any(
+            row.get("metrics", {}).get("metric_scope") == "training_and_internal_holdout"
             for row in self.results
         )
 

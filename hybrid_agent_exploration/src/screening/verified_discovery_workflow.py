@@ -9,6 +9,7 @@ The workflow connects three gates:
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,8 +17,10 @@ from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
+from sklearn.base import clone
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
 
 from data.verified_dataset_builder import ARTIFACT_POLICY, VerifiedDatasetBuilder
 from harness.authenticity import RealDataAuthenticator
@@ -47,6 +50,8 @@ class VerifiedDiscoveryWorkflowArtifacts:
     data_audit_report_md: Path
     model_metrics_json: Path
     model_manifest_json: Path
+    model_validation_metrics_json: Path
+    model_validation_predictions_csv: Path
     ranked_candidates_csv: Path
     discovery_manifest_json: Path
     discovery_audit_report_md: Path
@@ -135,6 +140,18 @@ class VerifiedDiscoveryWorkflow:
 
         model = model or RandomForestRegressor(n_estimators=100, random_state=42)
         feature_fn = feature_fn or default_smiles_features
+        validation_metrics_json = model_dir / "model_validation_metrics.json"
+        validation_predictions_csv = model_dir / "model_validation_predictions.csv"
+        validation_metrics, validation_predictions = _evaluate_internal_holdout(
+            verified,
+            model=_fresh_model(model),
+            feature_fn=feature_fn,
+            dataset_id=dataset_id,
+            target_column=target_column,
+            smiles_column=smiles_column,
+        )
+        _write_json(validation_metrics, validation_metrics_json)
+        validation_predictions.to_csv(validation_predictions_csv, index=False)
         trained_model, metrics, feature_columns = _train_model(
             verified,
             model=model,
@@ -184,6 +201,8 @@ class VerifiedDiscoveryWorkflow:
             dataset_artifacts,
             model_metrics_json,
             model_manifest_json,
+            validation_metrics_json,
+            validation_predictions_csv,
             discovery_artifacts,
         )
         _write_json(
@@ -280,6 +299,68 @@ def _train_model(
     return model, metrics, feature_columns
 
 
+def _evaluate_internal_holdout(
+    verified: pd.DataFrame,
+    *,
+    model: Any,
+    feature_fn: FeatureFn,
+    dataset_id: str,
+    target_column: str,
+    smiles_column: str,
+    test_size: float = 0.2,
+    random_state: int = 42,
+) -> tuple[dict[str, Any], pd.DataFrame]:
+    train_df = verified.dropna(subset=[smiles_column, target_column]).copy()
+    train_df[target_column] = pd.to_numeric(train_df[target_column], errors="coerce")
+    train_df = train_df.dropna(subset=[target_column]).reset_index(drop=True)
+    features = feature_fn(train_df[smiles_column])
+    feature_frame, feature_columns = _as_feature_frame(features)
+    y = train_df[target_column].to_numpy(dtype=float)
+    X = feature_frame.to_numpy(dtype=float)
+    train_idx, validation_idx = train_test_split(
+        np.arange(len(train_df)),
+        test_size=test_size,
+        random_state=random_state,
+    )
+    model.fit(X[train_idx], y[train_idx])
+    y_pred = np.asarray(model.predict(X[validation_idx]), dtype=float)
+    y_true = y[validation_idx]
+    residual = y_pred - y_true
+    validation_rows = train_df.iloc[validation_idx].copy()
+    predictions = pd.DataFrame(
+        {
+            "record_id": validation_rows.get("record_id", pd.Series(validation_rows.index)).astype(str).to_list(),
+            "smiles": validation_rows[smiles_column].astype(str).to_list(),
+            "y_true": y_true,
+            "y_pred": y_pred,
+            "residual": residual,
+            "split": ["validation"] * len(validation_idx),
+        }
+    )
+    metrics = {
+        "schema_version": "model-validation-metrics-v1",
+        "dataset_id": dataset_id,
+        "generated_at": _now_iso(),
+        "status": "passed",
+        "validation_scope": "internal_random_holdout_verified_rows",
+        "split_strategy": "random_holdout_verified_rows",
+        "external_validation": False,
+        "test_size": test_size,
+        "random_state": random_state,
+        "train_rows": int(len(train_idx)),
+        "validation_rows": int(len(validation_idx)),
+        "target_column": target_column,
+        "smiles_column": smiles_column,
+        "feature_columns": feature_columns,
+        "model_class": model.__class__.__name__,
+        "validation_r2": _safe_r2(y_true, y_pred),
+        "validation_rmse": float(np.sqrt(mean_squared_error(y_true, y_pred))),
+        "validation_mae": float(mean_absolute_error(y_true, y_pred)),
+        "validation_pearson_r": _safe_pearson(y_true, y_pred),
+    }
+    return metrics, predictions
+
+
 def _as_feature_frame(features: Any) -> tuple[pd.DataFrame, list[str]]:
     if isinstance(features, pd.DataFrame):
         frame = features.fillna(0).copy()
@@ -297,11 +378,32 @@ def _as_feature_frame(features: Any) -> tuple[pd.DataFrame, list[str]]:
     return pd.DataFrame(array, columns=columns), columns
 
 
+def _fresh_model(model: Any) -> Any:
+    try:
+        return clone(model)
+    except Exception:
+        return deepcopy(model)
+
+
+def _safe_r2(y_true: np.ndarray, y_pred: np.ndarray) -> float | None:
+    if len(y_true) < 2:
+        return None
+    return float(r2_score(y_true, y_pred))
+
+
+def _safe_pearson(y_true: np.ndarray, y_pred: np.ndarray) -> float | None:
+    if len(y_true) < 2 or np.std(y_true) == 0 or np.std(y_pred) == 0:
+        return None
+    return float(np.corrcoef(y_true, y_pred)[0, 1])
+
+
 def _workflow_artifacts(
     output_dir: Path,
     dataset_artifacts,
     model_metrics_json: Path,
     model_manifest_json: Path,
+    model_validation_metrics_json: Path,
+    model_validation_predictions_csv: Path,
     discovery_artifacts: CandidateDiscoveryArtifacts,
 ) -> dict[str, Any]:
     return {
@@ -313,6 +415,8 @@ def _workflow_artifacts(
         "data_audit_report_md": dataset_artifacts.audit_report_md,
         "model_metrics_json": model_metrics_json,
         "model_manifest_json": model_manifest_json,
+        "model_validation_metrics_json": model_validation_metrics_json,
+        "model_validation_predictions_csv": model_validation_predictions_csv,
         "ranked_candidates_csv": discovery_artifacts.ranked_candidates_csv,
         "discovery_manifest_json": discovery_artifacts.discovery_manifest_json,
         "discovery_audit_report_md": discovery_artifacts.audit_report_md,

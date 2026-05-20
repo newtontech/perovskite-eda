@@ -101,6 +101,8 @@ def test_contract_verifies_complete_research_package_with_candidate_library(tmp_
     assert result["checks"]["root_provenance"]["status"] == "passed"
     assert "candidate_library/candidate_library.csv" in result["checks"]["required_artifacts"]["paths"]
     assert "source_completeness/source_completeness.json" in result["checks"]["required_artifacts"]["paths"]
+    assert "verified_discovery/model/model_validation_metrics.json" in result["checks"]["required_artifacts"]["paths"]
+    assert "verified_discovery/model/model_validation_predictions.csv" in result["checks"]["required_artifacts"]["paths"]
 
 
 def test_contract_verifies_relative_package_dir_workflow_outputs(tmp_path, monkeypatch):
@@ -178,6 +180,34 @@ def test_contract_fails_when_core_artifact_is_missing(tmp_path):
         verify_research_package(package.output_dir, require_candidate_library=True)
 
     assert "verified_discovery/dataset/verified_train.csv" in str(exc.value)
+
+
+def test_contract_fails_when_validation_metrics_artifact_is_missing(tmp_path):
+    from run_research_package import run_research_package
+    from verify_research_package import ResearchPackageContractError, verify_research_package
+
+    raw_csv = tmp_path / "raw_psc.csv"
+    candidate_csv = tmp_path / "candidate_source.csv"
+    _write_source_table(raw_csv)
+    _candidate_source().to_csv(candidate_csv, index=False)
+    package = run_research_package(
+        input_path=raw_csv,
+        output_dir=tmp_path / "research_package",
+        dataset_id="missing-validation-fixture",
+        evidence_mode="source-columns",
+        candidate_source_path=candidate_csv,
+        candidate_source_name="fixture-vendor-source",
+        min_verified_rows=4,
+        top_k=1,
+    )
+
+    missing = package.verified_discovery_dir / "model" / "model_validation_metrics.json"
+    missing.unlink()
+
+    with pytest.raises(ResearchPackageContractError) as exc:
+        verify_research_package(package.output_dir, require_candidate_library=True)
+
+    assert "verified_discovery/model/model_validation_metrics.json" in str(exc.value)
 
 
 def test_contract_fails_when_root_provenance_record_lies(tmp_path):

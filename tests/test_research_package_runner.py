@@ -92,6 +92,8 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
         package.verified_discovery_dir / "dataset" / "data_audit_report.md",
         package.verified_discovery_dir / "model" / "model_metrics.json",
         package.verified_discovery_dir / "model" / "model_manifest.json",
+        package.verified_discovery_dir / "model" / "model_validation_metrics.json",
+        package.verified_discovery_dir / "model" / "model_validation_predictions.csv",
         package.verified_discovery_dir / "discovery" / "ranked_candidates.csv",
         package.verified_discovery_dir / "discovery" / "candidate_discovery_manifest.json",
         package.verified_discovery_dir / "discovery" / "candidate_discovery_audit.md",
@@ -144,6 +146,12 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert package_manifest["outputs"]["source_completeness_json"] == "source_completeness/source_completeness.json"
     assert package_manifest["outputs"]["source_completeness_csv"] == "source_completeness/source_completeness.csv"
     assert package_manifest["outputs"]["source_completeness_md"] == "source_completeness/source_completeness.md"
+    assert package_manifest["outputs"]["model_validation_metrics_json"] == (
+        "verified_discovery/model/model_validation_metrics.json"
+    )
+    assert package_manifest["outputs"]["model_validation_predictions_csv"] == (
+        "verified_discovery/model/model_validation_predictions.csv"
+    )
     assert package_manifest["outputs"]["root_provenance_manifest_json"] == "provenance_manifest.json"
 
     workflow_manifest = json.loads(
@@ -166,7 +174,7 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert candidate_provenance["validation"]["status"] == "passed"
 
     report_text = (package.report_dir / "main_text" / "main_text_report.md").read_text(encoding="utf-8")
-    assert "training-only" in report_text
+    assert "internal random holdout" in report_text
     unsupported_phrases = [
         "substructural fingerprints (Morgan) outperform",
         "incorporating baseline device PCE as a feature helps",
@@ -188,7 +196,9 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     )
     assert run_manifest["best_model"]["pearson_r"] is None
     assert run_manifest["evidence_context"]["source_columns_is_smoke_only"] is True
-    assert run_manifest["evidence_context"]["metric_scope"] == "training_only"
+    assert run_manifest["evidence_context"]["metric_scope"] == "training_and_internal_holdout"
+    assert run_manifest["evidence_context"]["internal_validation"] is True
+    assert run_manifest["evidence_context"]["external_validation"] is False
     assert run_manifest["evidence_context"]["candidate_library_publication_grade"] is False
     assert run_manifest["source_completeness"]["audit_scope"] == "column_level_missingness_only"
     assert run_manifest["source_completeness"]["external_verification"] is False
@@ -204,7 +214,8 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     si_text = (package.report_dir / "si" / "supporting_information.md").read_text(encoding="utf-8")
     assert "source-columns" in si_text
     assert "smoke-only" in si_text
-    assert "training-only" in si_text
+    assert "internal random holdout" in si_text
+    assert "independent external-validation" in si_text
     assert "Candidate-library publication-grade flag: `False`" in si_text
     assert "Source Completeness Audit" in si_text
     assert "column-level missingness audit" in si_text
@@ -224,6 +235,8 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert len(root_manifest["source_inputs"]["input_table"]["sha256"]) == 64
     assert root_manifest["source_inputs"]["candidate_source_table"]["path"].endswith("candidate_source.csv")
     assert len(root_manifest["source_inputs"]["candidate_source_table"]["sha256"]) == 64
+    assert "model_validation_metrics_json" in {item["id"] for item in root_manifest["artifacts"]["model"]}
+    assert "model_validation_predictions_csv" in {item["id"] for item in root_manifest["artifacts"]["model"]}
     assert {item["id"] for item in root_manifest["artifacts"]["source_completeness"]} == {
         "source_completeness_csv",
         "source_completeness_json",
