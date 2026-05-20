@@ -13,6 +13,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from closed_loop.iteration_packet import ClosedLoopPacketError, verify_iteration_packet
+
 
 PACKAGE_MANIFEST_NAME = "package_manifest.json"
 ROOT_PROVENANCE_NAME = "provenance_manifest.json"
@@ -30,6 +32,13 @@ REQUIRED_PACKAGE_OUTPUTS = {
     "report_dir": "dir",
     "main_text_report_md": "file",
     "supporting_information_md": "file",
+    "closed_loop_iteration_dir": "dir",
+    "closed_loop_iteration_manifest_json": "file",
+    "closed_loop_selected_candidates_csv": "file",
+    "closed_loop_candidate_packet_md": "file",
+    "closed_loop_feedback_schema_json": "file",
+    "closed_loop_feedback_template_csv": "file",
+    "closed_loop_verification_report_json": "file",
     "root_provenance_manifest_json": "file",
     "package_manifest_json": "file",
 }
@@ -59,6 +68,12 @@ REQUIRED_ARTIFACT_FILES = (
     "report_bundle/main_text/review_report.json",
     "report_bundle/main_text/run_manifest.json",
     "report_bundle/si/supporting_information.md",
+    "closed_loop/iteration_000/iteration_manifest.json",
+    "closed_loop/iteration_000/selected_candidates.csv",
+    "closed_loop/iteration_000/candidate_packet.md",
+    "closed_loop/iteration_000/feedback_schema.json",
+    "closed_loop/iteration_000/feedback_template.csv",
+    "closed_loop/iteration_000/verification_report.json",
 )
 
 CANDIDATE_LIBRARY_FILES = (
@@ -110,6 +125,14 @@ JSON_FIELD_REQUIREMENTS = {
     "report_bundle/main_text/run_manifest.json": ("generated_at", "best_model"),
     "candidate_library/source_summary.json": ("dataset_id", "output_rows"),
     "candidate_library/provenance.json": ("dataset_id", "validation"),
+    "closed_loop/iteration_000/iteration_manifest.json": (
+        "schema_version",
+        "dataset_id",
+        "selection_policy",
+        "experimental_measurement_policy",
+    ),
+    "closed_loop/iteration_000/feedback_schema.json": ("schema_version", "properties"),
+    "closed_loop/iteration_000/verification_report.json": ("schema_version", "status", "checks"),
 }
 
 REQUIRED_ROOT_IDS = {
@@ -137,6 +160,14 @@ REQUIRED_ROOT_IDS = {
         "source_completeness_json",
         "source_completeness_csv",
         "source_completeness_md",
+    },
+    "closed_loop": {
+        "candidate_packet_md",
+        "feedback_schema_json",
+        "feedback_template_csv",
+        "iteration_manifest_json",
+        "selected_candidates_csv",
+        "verification_report_json",
     },
     "package": {"package_manifest_json"},
 }
@@ -219,6 +250,7 @@ def verify_research_package(
         require_evidence_cache=require_evidence_cache,
         errors=errors,
     )
+    closed_loop_check = _check_closed_loop_iteration_packet(package_manifest, root, errors=errors)
     _raise_if_errors(errors)
 
     return {
@@ -240,6 +272,7 @@ def verify_research_package(
             "required_artifacts": required_artifacts_check,
             "root_provenance": root_provenance_check,
             "evidence_cache": evidence_cache_check,
+            "closed_loop_iteration_packet": closed_loop_check,
         },
     }
 
@@ -462,6 +495,34 @@ def _check_evidence_cache(
         "manifest_path": _display_path(manifest_path, root),
         "cache_files": cache_files,
     }
+
+
+def _check_closed_loop_iteration_packet(
+    manifest: dict[str, Any],
+    root: Path,
+    *,
+    errors: list[str],
+) -> dict[str, Any]:
+    outputs = _manifest_outputs(manifest)
+    iteration_dir_value = outputs.get("closed_loop_iteration_dir", "closed_loop/iteration_000")
+    ranked_candidates_value = outputs.get(
+        "ranked_candidates_csv",
+        "verified_discovery/discovery/ranked_candidates.csv",
+    )
+    runner_args = manifest.get("runner_args")
+    if not isinstance(runner_args, dict):
+        runner_args = {}
+    top_k = int(runner_args.get("iteration_top_k") or runner_args.get("top_k") or 10)
+    try:
+        report = verify_iteration_packet(
+            _resolve_path(root, str(iteration_dir_value)),
+            ranked_candidates_csv=_resolve_path(root, str(ranked_candidates_value)),
+            top_k=top_k,
+        )
+    except (ClosedLoopPacketError, OSError, ValueError) as exc:
+        errors.append(f"closed_loop iteration packet failed: {exc}")
+        return {"status": "failed", "error": str(exc)}
+    return report
 
 
 def _candidate_library_required(manifest: dict[str, Any], require_candidate_library: bool) -> bool:
