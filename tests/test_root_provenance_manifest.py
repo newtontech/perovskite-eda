@@ -26,10 +26,12 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
         "verified_candidate_discovery_only": True,
         "outputs": {
             "verified_train_csv": "dataset/verified_train.csv",
-            "model_manifest_json": "model/model_manifest.json",
-            "model_validation_metrics_json": "model/model_validation_metrics.json",
-            "model_validation_predictions_csv": "model/model_validation_predictions.csv",
-            "ranked_candidates_csv": "discovery/ranked_candidates.csv",
+                "model_manifest_json": "model/model_manifest.json",
+                "model_validation_metrics_json": "model/model_validation_metrics.json",
+                "model_validation_predictions_csv": "model/model_validation_predictions.csv",
+                "model_scaffold_validation_metrics_json": "model/model_scaffold_validation_metrics.json",
+                "model_scaffold_validation_predictions_csv": "model/model_scaffold_validation_predictions.csv",
+                "ranked_candidates_csv": "discovery/ranked_candidates.csv",
             "discovery_audit_report_md": "discovery/audit_report.md",
         },
     }
@@ -38,6 +40,14 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
     _write(discovery_dir / "model" / "model_manifest.json", '{"strict_verified_training_only": true}\n')
     _write(discovery_dir / "model" / "model_validation_metrics.json", '{"external_validation": false}\n')
     _write(discovery_dir / "model" / "model_validation_predictions.csv", "record_id,y_true,y_pred\nrow-001,0.1,0.2\n")
+    _write(
+        discovery_dir / "model" / "model_scaffold_validation_metrics.json",
+        '{"chemical_generalization_diagnostic": true}\n',
+    )
+    _write(
+        discovery_dir / "model" / "model_scaffold_validation_predictions.csv",
+        "record_id,chemical_group_key,y_true,y_pred\nrow-001,acyclic:*,0.1,0.2\n",
+    )
     _write(discovery_dir / "discovery" / "ranked_candidates.csv", "rank,candidate_id\n1,cand-001\n")
     _write(discovery_dir / "discovery" / "audit_report.md", "# Audit\nverified-only\n")
     input_table = _write(tmp_path / "raw_source.csv", "doi,smiles\n10.1/example,C\n")
@@ -100,6 +110,8 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
     assert {item["id"] for item in manifest["artifacts"]["dataset"]} == {"verified_train_csv"}
     assert {item["id"] for item in manifest["artifacts"]["model"]} == {
         "model_manifest_json",
+        "model_scaffold_validation_metrics_json",
+        "model_scaffold_validation_predictions_csv",
         "model_validation_metrics_json",
         "model_validation_predictions_csv",
     }
