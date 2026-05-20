@@ -100,6 +100,8 @@ def test_contract_verifies_complete_research_package_with_candidate_library(tmp_
     assert result["checks"]["required_artifacts"]["status"] == "passed"
     assert result["checks"]["root_provenance"]["status"] == "passed"
     assert "candidate_library/candidate_library.csv" in result["checks"]["required_artifacts"]["paths"]
+    assert "candidate_library/external_evidence_audit.json" in result["checks"]["required_artifacts"]["paths"]
+    assert "candidate_library/external_evidence_audit.md" in result["checks"]["required_artifacts"]["paths"]
     assert "source_completeness/source_completeness.json" in result["checks"]["required_artifacts"]["paths"]
     assert "verified_discovery/model/model_validation_metrics.json" in result["checks"]["required_artifacts"]["paths"]
     assert "verified_discovery/model/model_validation_predictions.csv" in result["checks"]["required_artifacts"]["paths"]

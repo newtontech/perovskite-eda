@@ -102,6 +102,8 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
         package.verified_discovery_dir / "workflow_manifest.json",
         package.candidate_library_dir / "candidate_library.csv",
         package.candidate_library_dir / "source_summary.json",
+        package.candidate_library_dir / "external_evidence_audit.json",
+        package.candidate_library_dir / "external_evidence_audit.md",
         package.candidate_library_dir / "provenance.json",
         package.report_dir / "main_text" / "main_text_report.md",
         package.report_dir / "main_text" / "claim_ledger.json",
@@ -167,6 +169,12 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert package_manifest["outputs"]["model_scaffold_validation_predictions_csv"] == (
         "verified_discovery/model/model_scaffold_validation_predictions.csv"
     )
+    assert package_manifest["outputs"]["candidate_external_evidence_audit_json"] == (
+        "candidate_library/external_evidence_audit.json"
+    )
+    assert package_manifest["outputs"]["candidate_external_evidence_audit_md"] == (
+        "candidate_library/external_evidence_audit.md"
+    )
     assert package_manifest["outputs"]["root_provenance_manifest_json"] == "provenance_manifest.json"
     assert package_manifest["outputs"]["closed_loop_iteration_dir"] == "closed_loop/iteration_000"
     assert package_manifest["outputs"]["closed_loop_iteration_manifest_json"] == (
@@ -210,6 +218,12 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert candidate_provenance["input_file"]["exists"] is True
     assert len(candidate_provenance["input_file"]["sha256"]) == 64
     assert candidate_provenance["validation"]["status"] == "passed"
+    candidate_evidence_audit = json.loads(
+        (package.candidate_library_dir / "external_evidence_audit.json").read_text(encoding="utf-8")
+    )
+    assert candidate_evidence_audit["schema_version"] == "candidate-library-external-evidence-audit-v1"
+    assert candidate_evidence_audit["publication_grade"] is False
+    assert candidate_evidence_audit["missing_requirements_by_kind"]["literature"] == 1
 
     report_text = (package.report_dir / "main_text" / "main_text_report.md").read_text(encoding="utf-8")
     assert "internal random holdout" in report_text
@@ -277,6 +291,12 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert "model_validation_predictions_csv" in {item["id"] for item in root_manifest["artifacts"]["model"]}
     assert "model_scaffold_validation_metrics_json" in {item["id"] for item in root_manifest["artifacts"]["model"]}
     assert "model_scaffold_validation_predictions_csv" in {item["id"] for item in root_manifest["artifacts"]["model"]}
+    assert "candidate_library:external_evidence_audit_json" in {
+        item["id"] for item in root_manifest["artifacts"]["audit"]
+    }
+    assert "candidate_library:external_evidence_audit_md" in {
+        item["id"] for item in root_manifest["artifacts"]["audit"]
+    }
     assert {item["id"] for item in root_manifest["artifacts"]["source_completeness"]} == {
         "source_completeness_csv",
         "source_completeness_json",

@@ -476,6 +476,15 @@ def _package_manifest(
     if evidence_cache_manifest_path is not None:
         outputs["evidence_cache_dir"] = _relative(evidence_cache_manifest_path.parent, output_root)
         outputs["evidence_cache_manifest_json"] = _relative(evidence_cache_manifest_path, output_root)
+    if candidate_library_dir is not None:
+        outputs["candidate_external_evidence_audit_json"] = _relative(
+            candidate_library_dir / "external_evidence_audit.json",
+            output_root,
+        )
+        outputs["candidate_external_evidence_audit_md"] = _relative(
+            candidate_library_dir / "external_evidence_audit.md",
+            output_root,
+        )
     outputs["model_validation_metrics_json"] = _relative(
         discovery_artifacts.model_validation_metrics_json,
         output_root,

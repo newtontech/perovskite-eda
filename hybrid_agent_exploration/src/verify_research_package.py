@@ -90,6 +90,8 @@ REQUIRED_ARTIFACT_FILES = (
 CANDIDATE_LIBRARY_FILES = (
     "candidate_library/candidate_library.csv",
     "candidate_library/source_summary.json",
+    "candidate_library/external_evidence_audit.json",
+    "candidate_library/external_evidence_audit.md",
     "candidate_library/provenance.json",
 )
 
@@ -146,6 +148,13 @@ JSON_FIELD_REQUIREMENTS = {
     "report_bundle/main_text/review_report.json": ("review", "claim_audit"),
     "report_bundle/main_text/run_manifest.json": ("generated_at", "best_model"),
     "candidate_library/source_summary.json": ("dataset_id", "output_rows"),
+    "candidate_library/external_evidence_audit.json": (
+        "schema_version",
+        "dataset_id",
+        "summary",
+        "candidates",
+        "limitations",
+    ),
     "candidate_library/provenance.json": ("dataset_id", "validation"),
     "closed_loop/iteration_000/iteration_manifest.json": (
         "schema_version",
@@ -208,6 +217,8 @@ REQUIRED_ROOT_IDS = {
 CANDIDATE_LIBRARY_ROOT_IDS = {
     "discovery": {"candidate_library:candidate_library_csv"},
     "audit": {
+        "candidate_library:external_evidence_audit_json",
+        "candidate_library:external_evidence_audit_md",
         "candidate_library:source_summary_json",
         "candidate_library:provenance_json",
     },

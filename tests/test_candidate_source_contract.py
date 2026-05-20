@@ -43,3 +43,19 @@ def test_tracked_psc_passivator_seed_source_normalizes_to_candidate_library_v1(t
     summary = json.loads(artifacts.source_summary_json.read_text(encoding="utf-8"))
     assert summary["candidate_library_contract_version"] == "candidate-library-v1"
     assert summary["verification_source_kinds"]["molecule"] == len(library)
+
+    evidence_audit = json.loads(artifacts.external_evidence_audit_json.read_text(encoding="utf-8"))
+    assert evidence_audit["schema_version"] == "candidate-library-external-evidence-audit-v1"
+    assert evidence_audit["audit_scope"] == "declared_candidate_source_verification_sources_only"
+    assert evidence_audit["network_access"] == "not_used"
+    assert evidence_audit["external_reverification_performed"] is False
+    assert evidence_audit["publication_grade"] is False
+    assert evidence_audit["summary"]["total_candidates"] == len(library)
+    assert evidence_audit["summary"]["candidates_with_molecule_source"] == len(library)
+    assert evidence_audit["summary"]["candidates_with_pubchem_id"] == len(library)
+    assert evidence_audit["summary"]["candidates_with_pubchem_url"] == len(library)
+    assert evidence_audit["summary"]["candidates_with_literature_source"] == 4
+    assert evidence_audit["summary"]["candidates_with_safety_source"] == 0
+    assert "not sufficient to mark candidate_library_publication_grade true" in evidence_audit["limitations"]
+    serialized = json.dumps(evidence_audit, ensure_ascii=False)
+    assert "example.com" not in serialized
