@@ -93,10 +93,6 @@ def run_research_package(
     if evidence_mode == "external-cached":
         evidence_cache_dir = output_root / "evidence_cache"
         evidence_cache_manifest_path = evidence_cache_dir / "evidence_cache_manifest.json"
-        _write_json(
-            _evidence_cache_manifest(dataset_id=dataset_id, cache_root=cache_root),
-            evidence_cache_manifest_path,
-        )
     authenticator = build_authenticator(evidence_mode, df, cache_root)
 
     candidate_library_dir: Path | None = None
@@ -168,6 +164,11 @@ def run_research_package(
         min_verified_rows=min_verified_rows,
         run_metadata=run_metadata,
     )
+    if evidence_cache_manifest_path is not None:
+        _write_json(
+            _evidence_cache_manifest(dataset_id=dataset_id, cache_root=cache_root),
+            evidence_cache_manifest_path,
+        )
 
     report_inputs = _report_inputs(
         verified_discovery_dir,
