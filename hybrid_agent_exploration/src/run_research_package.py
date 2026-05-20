@@ -248,6 +248,7 @@ def run_research_package(
             experimental_feedback_artifacts=experimental_feedback_artifacts,
             validation_metrics_path=discovery_artifacts.model_validation_metrics_json,
             scaffold_validation_metrics_path=discovery_artifacts.model_scaffold_validation_metrics_json,
+            temporal_validation_metrics_path=discovery_artifacts.model_temporal_validation_metrics_json,
         ),
         closure_readiness_report_path,
     )
@@ -338,6 +339,9 @@ def _report_inputs(
     scaffold_validation_metrics = _read_json(
         verified_discovery_dir / "model" / "model_scaffold_validation_metrics.json"
     )
+    temporal_validation_metrics = _read_json(
+        verified_discovery_dir / "model" / "model_temporal_validation_metrics.json"
+    )
     workflow = _read_json(verified_discovery_dir / "workflow_manifest.json")
     feature_columns = metrics.get("feature_columns", [])
     evidence_context = {
@@ -378,6 +382,7 @@ def _report_inputs(
         "verified_discovery_top_n": top_n,
         "model_validation_metrics": validation_metrics,
         "model_scaffold_validation_metrics": scaffold_validation_metrics,
+        "model_temporal_validation_metrics": temporal_validation_metrics,
         "source_completeness": source_completeness,
         "evidence_context": evidence_context,
         "multi_model_results": [
@@ -548,6 +553,14 @@ def _package_manifest(
         discovery_artifacts.model_scaffold_validation_predictions_csv,
         output_root,
     )
+    outputs["model_temporal_validation_metrics_json"] = _relative(
+        discovery_artifacts.model_temporal_validation_metrics_json,
+        output_root,
+    )
+    outputs["model_temporal_validation_predictions_csv"] = _relative(
+        discovery_artifacts.model_temporal_validation_predictions_csv,
+        output_root,
+    )
     return {
         "schema_version": PACKAGE_MANIFEST_SCHEMA_VERSION,
         "dataset_id": dataset_id,
@@ -603,9 +616,11 @@ def _closure_readiness_report(
     experimental_feedback_artifacts: ExperimentalFeedbackIngestionArtifacts | None,
     validation_metrics_path: Path,
     scaffold_validation_metrics_path: Path,
+    temporal_validation_metrics_path: Path,
 ) -> dict[str, Any]:
     closure_blockers: list[str] = []
     chemical_generalization_gate = _chemical_generalization_gate(scaffold_validation_metrics_path)
+    temporal_validation_gate = _temporal_validation_gate(temporal_validation_metrics_path)
     experimental_feedback_gate = _experimental_feedback_gate(experimental_feedback_artifacts)
     gates = {
         "publication_grade": {
@@ -638,6 +653,7 @@ def _closure_readiness_report(
             "passed": validation_metrics_path.is_file(),
             "reason": "internal holdout validation artifact present",
         },
+        "temporal_validation": temporal_validation_gate,
         "chemical_generalization_validation": chemical_generalization_gate,
         "external_validation": {
             "passed": False,
@@ -762,6 +778,58 @@ def _chemical_generalization_gate(scaffold_validation_metrics_path: Path) -> dic
             f"rdkit_available={group_method.get('rdkit_available')!r}, "
             f"uses_smiles_skeleton_fallback={group_method.get('uses_smiles_skeleton_fallback')!r}, "
             f"overlap_groups={overlap})"
+        ),
+    }
+
+
+def _temporal_validation_gate(temporal_validation_metrics_path: Path) -> dict[str, Any]:
+    if not temporal_validation_metrics_path.is_file():
+        return {
+            "passed": False,
+            "reason": "temporal holdout validation artifact absent",
+        }
+    try:
+        metrics = _read_json(temporal_validation_metrics_path)
+    except (OSError, json.JSONDecodeError) as exc:
+        return {
+            "passed": False,
+            "reason": f"temporal holdout validation artifact unreadable: {exc}",
+        }
+    train_years = [int(year) for year in metrics.get("train_years", [])]
+    validation_years = [int(year) for year in metrics.get("validation_years", [])]
+    validation_rows = int(metrics.get("validation_rows") or 0)
+    passed = (
+        metrics.get("status") == "passed"
+        and metrics.get("temporal_generalization_diagnostic") is True
+        and metrics.get("external_validation") is False
+        and metrics.get("independent_external_validation") is False
+        and metrics.get("random_holdout") is False
+        and metrics.get("temporal_generalization_claim") == "not_established"
+        and validation_rows >= 2
+        and bool(train_years)
+        and bool(validation_years)
+        and max(train_years) < min(validation_years)
+        and int(metrics.get("doi_overlap_count") or 0) == 0
+    )
+    if passed:
+        return {
+            "passed": True,
+            "reason": "latest-year temporal holdout diagnostic artifact present without DOI overlap",
+            "cutoff_year": metrics.get("cutoff_year"),
+            "validation_rows": validation_rows,
+        }
+    if metrics.get("status") == "skipped":
+        return {
+            "passed": False,
+            "reason": f"temporal holdout skipped: {metrics.get('skip_reason', 'reason unavailable')}",
+        }
+    return {
+        "passed": False,
+        "reason": (
+            "temporal holdout diagnostic failed "
+            f"(status={metrics.get('status')!r}, validation_rows={validation_rows}, "
+            f"doi_overlap_count={metrics.get('doi_overlap_count')!r}, "
+            f"train_years={train_years}, validation_years={validation_years})"
         ),
     }
 
