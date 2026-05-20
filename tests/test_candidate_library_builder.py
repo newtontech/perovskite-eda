@@ -80,6 +80,8 @@ def test_builder_normalizes_lightweight_source_table_and_writes_provenance(tmp_p
     assert artifacts.output_count == 2
     assert artifacts.candidate_library_csv.exists()
     assert artifacts.source_summary_json.exists()
+    assert artifacts.external_evidence_audit_json.exists()
+    assert artifacts.external_evidence_audit_md.exists()
     assert artifacts.provenance_json.exists()
 
     library = pd.read_csv(artifacts.candidate_library_csv)
@@ -105,6 +107,25 @@ def test_builder_normalizes_lightweight_source_table_and_writes_provenance(tmp_p
     assert summary["source_names"] == {"pubchem-vendor-fixture": 2}
     assert summary["availability_status"] == {"commercial": 2}
     assert summary["verification_source_kinds"] == {"availability": 2, "molecule": 2}
+    assert summary["outputs"]["external_evidence_audit_json"] == "external_evidence_audit.json"
+    assert summary["outputs"]["external_evidence_audit_md"] == "external_evidence_audit.md"
+
+    evidence_audit = json.loads(artifacts.external_evidence_audit_json.read_text(encoding="utf-8"))
+    assert evidence_audit["schema_version"] == "candidate-library-external-evidence-audit-v1"
+    assert evidence_audit["dataset_id"] == "vendor-source-fixture"
+    assert evidence_audit["network_access"] == "not_used"
+    assert evidence_audit["external_reverification_performed"] is False
+    assert evidence_audit["publication_grade"] is False
+    assert evidence_audit["required_publication_grade_evidence_kinds"] == [
+        "molecule",
+        "literature",
+        "availability",
+        "safety",
+    ]
+    assert evidence_audit["missing_requirements_by_kind"]["literature"] == 2
+    assert evidence_audit["candidates"][0]["candidate_id"] == "pubchem-vendor-fixture:pubchem-702"
+    assert "literature_source_not_declared" in evidence_audit["candidates"][0]["evidence_gaps"]
+    assert "Candidate Evidence Audit" in artifacts.external_evidence_audit_md.read_text(encoding="utf-8")
 
     provenance = json.loads(artifacts.provenance_json.read_text(encoding="utf-8"))
     assert provenance["network_access"] == "not_used"
@@ -114,6 +135,7 @@ def test_builder_normalizes_lightweight_source_table_and_writes_provenance(tmp_p
     assert provenance["input_file"]["size_bytes"] > 0
     assert len(provenance["input_file"]["sha256"]) == 64
     assert provenance["outputs"]["candidate_library_csv"] == "candidate_library.csv"
+    assert provenance["outputs"]["external_evidence_audit_json"] == "external_evidence_audit.json"
 
 
 def test_builder_rejects_rows_without_real_verification_sources(tmp_path):

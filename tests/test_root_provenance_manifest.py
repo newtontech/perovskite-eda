@@ -60,6 +60,11 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
     candidate_source = _write(tmp_path / "candidate_source.csv", "candidate_id,smiles\ncand-001,C\n")
     _write(candidate_library_dir / "candidate_library.csv", "candidate_id,smiles\ncand-001,C\n")
     _write(candidate_library_dir / "source_summary.json", '{"output_rows": 1}\n')
+    _write(
+        candidate_library_dir / "external_evidence_audit.json",
+        '{"schema_version": "candidate-library-external-evidence-audit-v1"}\n',
+    )
+    _write(candidate_library_dir / "external_evidence_audit.md", "# Candidate Evidence Audit\n")
     _write(candidate_library_dir / "provenance.json", '{"network_access": "not_used"}\n')
     evidence_cache_manifest = _write(
         tmp_path / "evidence_cache" / "evidence_cache_manifest.json",
@@ -120,6 +125,8 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
         "ranked_candidates_csv",
     }
     assert {item["id"] for item in manifest["artifacts"]["audit"]} == {
+        "candidate_library:external_evidence_audit_json",
+        "candidate_library:external_evidence_audit_md",
         "candidate_library:provenance_json",
         "candidate_library:source_summary_json",
         "discovery_audit_report_md",
