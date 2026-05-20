@@ -193,6 +193,7 @@ test-research-package:
 	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 $(PYTHON) -m pytest -q \
 		tests/test_candidate_library_builder.py \
 		tests/test_candidate_source_contract.py \
+		tests/test_closed_loop_iteration_packet.py \
 		tests/test_canonical_make_targets.py \
 		tests/test_evidence_cache_collector.py \
 		tests/test_evidence_cache_preflight.py \

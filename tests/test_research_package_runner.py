@@ -109,6 +109,12 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
         package.output_dir / "source_completeness" / "source_completeness.json",
         package.output_dir / "source_completeness" / "source_completeness.csv",
         package.output_dir / "source_completeness" / "source_completeness.md",
+        package.output_dir / "closed_loop" / "iteration_000" / "iteration_manifest.json",
+        package.output_dir / "closed_loop" / "iteration_000" / "selected_candidates.csv",
+        package.output_dir / "closed_loop" / "iteration_000" / "candidate_packet.md",
+        package.output_dir / "closed_loop" / "iteration_000" / "feedback_schema.json",
+        package.output_dir / "closed_loop" / "iteration_000" / "feedback_template.csv",
+        package.output_dir / "closed_loop" / "iteration_000" / "verification_report.json",
         package.root_provenance_manifest_json,
         package.package_manifest_json,
     ]
@@ -153,6 +159,16 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
         "verified_discovery/model/model_validation_predictions.csv"
     )
     assert package_manifest["outputs"]["root_provenance_manifest_json"] == "provenance_manifest.json"
+    assert package_manifest["outputs"]["closed_loop_iteration_dir"] == "closed_loop/iteration_000"
+    assert package_manifest["outputs"]["closed_loop_iteration_manifest_json"] == (
+        "closed_loop/iteration_000/iteration_manifest.json"
+    )
+    assert package_manifest["outputs"]["closed_loop_selected_candidates_csv"] == (
+        "closed_loop/iteration_000/selected_candidates.csv"
+    )
+    assert package_manifest["outputs"]["closed_loop_feedback_template_csv"] == (
+        "closed_loop/iteration_000/feedback_template.csv"
+    )
 
     workflow_manifest = json.loads(
         (package.verified_discovery_dir / "workflow_manifest.json").read_text(encoding="utf-8")
@@ -245,10 +261,26 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert "candidate_library:candidate_library_csv" in {
         item["id"] for item in root_manifest["artifacts"]["discovery"]
     }
+    assert {item["id"] for item in root_manifest["artifacts"]["closed_loop"]} == {
+        "candidate_packet_md",
+        "feedback_schema_json",
+        "feedback_template_csv",
+        "iteration_manifest_json",
+        "selected_candidates_csv",
+        "verification_report_json",
+    }
 
     ranked = pd.read_csv(package.verified_discovery_dir / "discovery" / "ranked_candidates.csv")
     assert ranked["candidate_id"].tolist() == ["fixture-vendor-source:pubchem-7843"]
     assert "candidate_score" in ranked.columns
+    feedback = pd.read_csv(
+        package.output_dir / "closed_loop" / "iteration_000" / "feedback_template.csv",
+        keep_default_na=False,
+    )
+    assert feedback["candidate_id"].tolist() == ranked["candidate_id"].tolist()
+    assert set(feedback["experimental_status"]) == {"pending_external_measurement"}
+    for column in ["measured_delta_pce", "measured_pce", "measurement_date", "protocol_reference", "notes"]:
+        assert feedback[column].tolist() == [""]
 
 
 def test_external_cached_candidate_source_does_not_overclaim_publication_grade(tmp_path, monkeypatch):

@@ -103,6 +103,8 @@ def test_contract_verifies_complete_research_package_with_candidate_library(tmp_
     assert "source_completeness/source_completeness.json" in result["checks"]["required_artifacts"]["paths"]
     assert "verified_discovery/model/model_validation_metrics.json" in result["checks"]["required_artifacts"]["paths"]
     assert "verified_discovery/model/model_validation_predictions.csv" in result["checks"]["required_artifacts"]["paths"]
+    assert "closed_loop/iteration_000/feedback_template.csv" in result["checks"]["required_artifacts"]["paths"]
+    assert result["checks"]["closed_loop_iteration_packet"]["status"] == "passed"
 
 
 def test_contract_verifies_relative_package_dir_workflow_outputs(tmp_path, monkeypatch):
@@ -180,6 +182,36 @@ def test_contract_fails_when_core_artifact_is_missing(tmp_path):
         verify_research_package(package.output_dir, require_candidate_library=True)
 
     assert "verified_discovery/dataset/verified_train.csv" in str(exc.value)
+
+
+def test_contract_fails_when_closed_loop_feedback_contains_measurement(tmp_path):
+    from run_research_package import run_research_package
+    from verify_research_package import ResearchPackageContractError, verify_research_package
+
+    raw_csv = tmp_path / "raw_psc.csv"
+    candidate_csv = tmp_path / "candidate_source.csv"
+    _write_source_table(raw_csv)
+    _candidate_source().to_csv(candidate_csv, index=False)
+    package = run_research_package(
+        input_path=raw_csv,
+        output_dir=tmp_path / "research_package",
+        dataset_id="closed-loop-measurement-fixture",
+        evidence_mode="source-columns",
+        candidate_source_path=candidate_csv,
+        candidate_source_name="fixture-vendor-source",
+        min_verified_rows=4,
+        top_k=1,
+    )
+
+    feedback_path = package.output_dir / "closed_loop" / "iteration_000" / "feedback_template.csv"
+    feedback = pd.read_csv(feedback_path, keep_default_na=False)
+    feedback.loc[0, "measurement_date"] = "2026-05-20"
+    feedback.to_csv(feedback_path, index=False)
+
+    with pytest.raises(ResearchPackageContractError) as exc:
+        verify_research_package(package.output_dir, require_candidate_library=True)
+
+    assert "measurement_date" in str(exc.value)
 
 
 def test_contract_fails_when_validation_metrics_artifact_is_missing(tmp_path):
