@@ -130,6 +130,8 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
         package.verified_discovery_dir / "model" / "model_validation_predictions.csv",
         package.verified_discovery_dir / "model" / "model_scaffold_validation_metrics.json",
         package.verified_discovery_dir / "model" / "model_scaffold_validation_predictions.csv",
+        package.verified_discovery_dir / "model" / "model_temporal_validation_metrics.json",
+        package.verified_discovery_dir / "model" / "model_temporal_validation_predictions.csv",
         package.verified_discovery_dir / "discovery" / "ranked_candidates.csv",
         package.verified_discovery_dir / "discovery" / "candidate_discovery_manifest.json",
         package.verified_discovery_dir / "discovery" / "candidate_discovery_audit.md",
@@ -203,6 +205,12 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert package_manifest["outputs"]["model_scaffold_validation_predictions_csv"] == (
         "verified_discovery/model/model_scaffold_validation_predictions.csv"
     )
+    assert package_manifest["outputs"]["model_temporal_validation_metrics_json"] == (
+        "verified_discovery/model/model_temporal_validation_metrics.json"
+    )
+    assert package_manifest["outputs"]["model_temporal_validation_predictions_csv"] == (
+        "verified_discovery/model/model_temporal_validation_predictions.csv"
+    )
     assert package_manifest["outputs"]["candidate_external_evidence_audit_json"] == (
         "candidate_library/external_evidence_audit.json"
     )
@@ -228,6 +236,7 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert closure_readiness["publication_grade"] is False
     assert closure_readiness["publication_grade_false_reasons"]
     assert closure_readiness["gates"]["validation_artifacts"]["passed"] is True
+    assert closure_readiness["gates"]["temporal_validation"]["passed"] is False
     assert closure_readiness["gates"]["chemical_generalization_validation"]["passed"] is False
     assert "validation_rows" in closure_readiness["gates"]["chemical_generalization_validation"]["reason"]
     assert closure_readiness["gates"]["closed_loop_packet"]["passed"] is True
