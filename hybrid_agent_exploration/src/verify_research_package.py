@@ -52,6 +52,8 @@ REQUIRED_PACKAGE_OUTPUTS = {
     "model_validation_predictions_csv": "file",
     "model_scaffold_validation_metrics_json": "file",
     "model_scaffold_validation_predictions_csv": "file",
+    "model_temporal_validation_metrics_json": "file",
+    "model_temporal_validation_predictions_csv": "file",
     "root_provenance_manifest_json": "file",
     "package_manifest_json": "file",
 }
@@ -79,6 +81,8 @@ REQUIRED_ARTIFACT_FILES = (
     "verified_discovery/model/model_validation_predictions.csv",
     "verified_discovery/model/model_scaffold_validation_metrics.json",
     "verified_discovery/model/model_scaffold_validation_predictions.csv",
+    "verified_discovery/model/model_temporal_validation_metrics.json",
+    "verified_discovery/model/model_temporal_validation_predictions.csv",
     "verified_discovery/discovery/ranked_candidates.csv",
     "verified_discovery/discovery/candidate_discovery_manifest.json",
     "verified_discovery/discovery/candidate_discovery_audit.md",
@@ -133,6 +137,8 @@ REQUIRED_WORKFLOW_OUTPUTS = {
     "model_validation_predictions_csv",
     "model_scaffold_validation_metrics_json",
     "model_scaffold_validation_predictions_csv",
+    "model_temporal_validation_metrics_json",
+    "model_temporal_validation_predictions_csv",
     "ranked_candidates_csv",
     "discovery_manifest_json",
     "discovery_audit_report_md",
@@ -160,6 +166,15 @@ JSON_FIELD_REQUIREMENTS = {
         "external_validation",
         "chemical_generalization_diagnostic",
         "chemical_group_column",
+    ),
+    "verified_discovery/model/model_temporal_validation_metrics.json": (
+        "schema_version",
+        "dataset_id",
+        "validation_scope",
+        "split_strategy",
+        "external_validation",
+        "temporal_generalization_diagnostic",
+        "year_column",
     ),
     "verified_discovery/discovery/candidate_discovery_manifest.json": ("dataset_id", "outputs"),
     "verified_discovery/workflow_manifest.json": ("dataset_id", "outputs"),
@@ -210,6 +225,8 @@ REQUIRED_ROOT_IDS = {
         "model_validation_predictions_csv",
         "model_scaffold_validation_metrics_json",
         "model_scaffold_validation_predictions_csv",
+        "model_temporal_validation_metrics_json",
+        "model_temporal_validation_predictions_csv",
     },
     "discovery": {"ranked_candidates_csv", "discovery_manifest_json"},
     "audit": {"discovery_audit_report_md"},
@@ -335,6 +352,7 @@ def verify_research_package(
         errors=errors,
     )
     scaffold_validation_check = _check_scaffold_validation(package_manifest, root, errors=errors)
+    temporal_validation_check = _check_temporal_validation(package_manifest, root, errors=errors)
     closed_loop_check = _check_closed_loop_iteration_packet(package_manifest, root, errors=errors)
     experimental_feedback_check = _check_experimental_feedback(
         package_manifest,
@@ -371,6 +389,7 @@ def verify_research_package(
             "root_provenance": root_provenance_check,
             "evidence_cache": evidence_cache_check,
             "scaffold_validation": scaffold_validation_check,
+            "temporal_validation": temporal_validation_check,
             "closed_loop_iteration_packet": closed_loop_check,
             "experimental_feedback": experimental_feedback_check,
             "closure_readiness": closure_readiness_check,
@@ -880,6 +899,157 @@ def _check_scaffold_predictions(
             errors.append(f"{prefix}: residual does not equal y_pred - y_true")
 
 
+def _check_temporal_validation(
+    manifest: dict[str, Any],
+    root: Path,
+    *,
+    errors: list[str],
+) -> dict[str, Any]:
+    outputs = _manifest_outputs(manifest)
+    metrics_value = outputs.get(
+        "model_temporal_validation_metrics_json",
+        "verified_discovery/model/model_temporal_validation_metrics.json",
+    )
+    predictions_value = outputs.get(
+        "model_temporal_validation_predictions_csv",
+        "verified_discovery/model/model_temporal_validation_predictions.csv",
+    )
+    metrics_path = _resolve_path(root, str(metrics_value))
+    predictions_path = _resolve_path(root, str(predictions_value))
+    metrics = _read_json_artifact(
+        metrics_path,
+        root,
+        context="verified_discovery/model/model_temporal_validation_metrics.json",
+        errors=errors,
+    )
+    if not isinstance(metrics, dict):
+        return {"status": "failed", "reason": "temporal validation metrics missing or invalid"}
+
+    if metrics.get("schema_version") != "model-temporal-validation-metrics-v1":
+        errors.append(
+            "verified_discovery/model/model_temporal_validation_metrics.json: "
+            f"schema_version={metrics.get('schema_version')!r}; expected 'model-temporal-validation-metrics-v1'"
+        )
+    if metrics.get("validation_scope") != "temporal_holdout_verified_rows":
+        errors.append(
+            "verified_discovery/model/model_temporal_validation_metrics.json: "
+            "validation_scope must be 'temporal_holdout_verified_rows'"
+        )
+    if metrics.get("split_strategy") != "latest_reference_year_holdout":
+        errors.append(
+            "verified_discovery/model/model_temporal_validation_metrics.json: "
+            "split_strategy must be 'latest_reference_year_holdout'"
+        )
+    if metrics.get("external_validation") is not False:
+        errors.append("verified_discovery/model/model_temporal_validation_metrics.json: external_validation must be false")
+    if metrics.get("independent_external_validation") is not False:
+        errors.append(
+            "verified_discovery/model/model_temporal_validation_metrics.json: "
+            "independent_external_validation must be false"
+        )
+    if metrics.get("random_holdout") is not False:
+        errors.append("verified_discovery/model/model_temporal_validation_metrics.json: random_holdout must be false")
+    if metrics.get("temporal_generalization_diagnostic") is not True:
+        errors.append(
+            "verified_discovery/model/model_temporal_validation_metrics.json: "
+            "temporal_generalization_diagnostic must be true"
+        )
+    if metrics.get("year_column") != "year":
+        errors.append("verified_discovery/model/model_temporal_validation_metrics.json: year_column must be 'year'")
+
+    train_years = [int(year) for year in metrics.get("train_years", [])]
+    validation_years = [int(year) for year in metrics.get("validation_years", [])]
+    status = metrics.get("status")
+    if status == "passed":
+        if not train_years or not validation_years:
+            errors.append(
+                "verified_discovery/model/model_temporal_validation_metrics.json: "
+                "passed temporal validation requires non-empty train_years and validation_years"
+            )
+        elif max(train_years) >= min(validation_years):
+            errors.append(
+                "verified_discovery/model/model_temporal_validation_metrics.json: "
+                f"max(train_years) must be earlier than min(validation_years); "
+                f"observed {max(train_years)} >= {min(validation_years)}"
+            )
+        if int(metrics.get("doi_overlap_count") or 0) != 0 or metrics.get("overlap_dois"):
+            errors.append(
+                "verified_discovery/model/model_temporal_validation_metrics.json: "
+                "train/validation DOI overlap is not allowed"
+            )
+        _check_temporal_predictions(predictions_path, root, metrics=metrics, errors=errors)
+    elif status == "skipped":
+        if not metrics.get("skip_reason"):
+            errors.append(
+                "verified_discovery/model/model_temporal_validation_metrics.json: "
+                "skipped temporal validation requires skip_reason"
+            )
+    else:
+        errors.append(
+            "verified_discovery/model/model_temporal_validation_metrics.json: "
+            f"status must be 'passed' or 'skipped'; observed {status!r}"
+        )
+    return {
+        "status": status,
+        "path": _display_path(metrics_path, root),
+        "skip_reason": metrics.get("skip_reason"),
+        "validation_rows": metrics.get("validation_rows"),
+        "train_years": train_years,
+        "validation_years": validation_years,
+    }
+
+
+def _check_temporal_predictions(
+    path: Path,
+    root: Path,
+    *,
+    metrics: dict[str, Any],
+    errors: list[str],
+) -> None:
+    expected = ["record_id", "smiles", "year", "y_true", "y_pred", "residual", "split"]
+    try:
+        with path.open(newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            header = reader.fieldnames
+            rows = list(reader)
+    except OSError as exc:
+        errors.append(f"{_display_path(path, root)}: cannot read temporal predictions CSV ({exc})")
+        return
+    if header != expected:
+        errors.append(f"{_display_path(path, root)}: expected CSV header {expected}, observed {header}")
+        return
+
+    relative = _display_path(path, root)
+    expected_rows = int(metrics.get("validation_rows") or 0)
+    if len(rows) != expected_rows:
+        errors.append(f"{relative}: temporal predictions row count {len(rows)} != validation_rows {expected_rows}")
+    validation_years = {int(year) for year in metrics.get("validation_years", [])}
+    record_ids: set[str] = set()
+    for row_number, row in enumerate(rows, start=2):
+        prefix = f"{relative}: temporal predictions row {row_number}"
+        record_id = str(row.get("record_id", ""))
+        if record_id in record_ids:
+            errors.append(f"{prefix}: duplicate record_id {record_id!r}")
+        record_ids.add(record_id)
+        if row.get("split") != "validation":
+            errors.append(f"{prefix}: split must be 'validation'")
+        try:
+            year = int(float(row.get("year", "")))
+        except (TypeError, ValueError):
+            errors.append(f"{prefix}: year must be an integer")
+            continue
+        if year not in validation_years:
+            errors.append(f"{prefix}: year {year} is not in validation_years")
+        y_true = _parse_float(row.get("y_true"))
+        y_pred = _parse_float(row.get("y_pred"))
+        residual = _parse_float(row.get("residual"))
+        if y_true is None or y_pred is None or residual is None:
+            errors.append(f"{prefix}: y_true, y_pred, and residual must be finite numbers")
+            continue
+        if not math.isclose(residual, y_pred - y_true, rel_tol=1e-7, abs_tol=1e-7):
+            errors.append(f"{prefix}: residual does not equal y_pred - y_true")
+
+
 def _parse_float(value: Any) -> float | None:
     try:
         number = float(value)
@@ -926,6 +1096,7 @@ def _check_closure_readiness(
         gates = {}
     for gate_name in (
         "chemical_generalization_validation",
+        "temporal_validation",
         "external_validation",
         "experimental_feedback",
     ):

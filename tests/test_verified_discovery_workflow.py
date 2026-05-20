@@ -87,6 +87,8 @@ def test_workflow_generates_training_and_candidate_discovery_artifacts(tmp_path)
     assert artifacts.model_validation_predictions_csv.exists()
     assert artifacts.model_scaffold_validation_metrics_json.exists()
     assert artifacts.model_scaffold_validation_predictions_csv.exists()
+    assert artifacts.model_temporal_validation_metrics_json.exists()
+    assert artifacts.model_temporal_validation_predictions_csv.exists()
     assert artifacts.ranked_candidates_csv.exists()
     assert artifacts.discovery_manifest_json.exists()
     assert artifacts.discovery_audit_report_md.exists()
@@ -149,6 +151,8 @@ def test_workflow_generates_training_and_candidate_discovery_artifacts(tmp_path)
         "model_validation_predictions_csv",
         "model_scaffold_validation_metrics_json",
         "model_scaffold_validation_predictions_csv",
+        "model_temporal_validation_metrics_json",
+        "model_temporal_validation_predictions_csv",
         "ranked_candidates_csv",
         "discovery_manifest_json",
         "discovery_audit_report_md",
@@ -242,6 +246,60 @@ def test_workflow_scaffold_validation_reports_disjoint_chemical_groups(tmp_path)
     ]
     assert set(predictions["split"]) == {"validation"}
     assert set(predictions["chemical_group_key"]).issubset(set(metrics["validation_groups"]))
+
+
+def test_workflow_temporal_validation_reports_latest_year_holdout(tmp_path):
+    from harness.authenticity import MoleculeEvidence, RealDataAuthenticator, ReferenceEvidence
+    from screening.verified_discovery_workflow import VerifiedDiscoveryWorkflow
+
+    rows = [
+        _record(f"row-{idx:03d}", f"10.1021/acs.jpclett.temporal.{idx:03d}", "C" * idx, float(idx) / 10)
+        for idx in range(1, 11)
+    ]
+    for row, year in zip(rows, [2020, 2020, 2020, 2020, 2021, 2021, 2021, 2021, 2022, 2022], strict=True):
+        row["year"] = year
+    year_by_doi = {row["doi"]: row["year"] for row in rows}
+    authenticator = RealDataAuthenticator(
+        reference_verifier=lambda doi: ReferenceEvidence(
+            doi=doi,
+            title="Verified PSC additive paper",
+            year=year_by_doi[doi],
+            source="fixture-crossref",
+        ) if doi else None,
+        molecule_verifier=lambda record: MoleculeEvidence(
+            smiles=record["smiles"],
+            pubchem_id=record.get("pubchem_id"),
+            cas_number=record.get("cas_number"),
+            source="fixture-pubchem",
+        ),
+    )
+
+    artifacts = VerifiedDiscoveryWorkflow(output_dir=tmp_path, authenticator=authenticator).run_from_dataframe(
+        pd.DataFrame(rows),
+        dataset_id="workflow-temporal-validation-fixture",
+        model=LinearRegression(),
+        feature_fn=_feature_fn,
+        top_k=2,
+        min_verified_rows=10,
+    )
+
+    metrics = json.loads(artifacts.model_temporal_validation_metrics_json.read_text(encoding="utf-8"))
+    assert metrics["schema_version"] == "model-temporal-validation-metrics-v1"
+    assert metrics["status"] == "passed"
+    assert metrics["validation_scope"] == "temporal_holdout_verified_rows"
+    assert metrics["split_strategy"] == "latest_reference_year_holdout"
+    assert metrics["external_validation"] is False
+    assert metrics["independent_external_validation"] is False
+    assert metrics["temporal_generalization_diagnostic"] is True
+    assert metrics["validation_years"] == [2022]
+    assert max(metrics["train_years"]) < min(metrics["validation_years"])
+    assert metrics["doi_overlap_count"] == 0
+
+    predictions = pd.read_csv(artifacts.model_temporal_validation_predictions_csv)
+    assert list(predictions.columns) == ["record_id", "smiles", "year", "y_true", "y_pred", "residual", "split"]
+    assert len(predictions) == metrics["validation_rows"]
+    assert set(predictions["split"]) == {"validation"}
+    assert predictions["year"].tolist() == [2022, 2022]
 
 
 def test_workflow_refuses_training_when_strict_gate_finds_too_few_verified_rows(tmp_path):

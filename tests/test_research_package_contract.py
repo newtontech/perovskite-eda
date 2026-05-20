@@ -141,6 +141,8 @@ def test_contract_verifies_complete_research_package_with_candidate_library(tmp_
     assert "verified_discovery/model/model_validation_predictions.csv" in result["checks"]["required_artifacts"]["paths"]
     assert "verified_discovery/model/model_scaffold_validation_metrics.json" in result["checks"]["required_artifacts"]["paths"]
     assert "verified_discovery/model/model_scaffold_validation_predictions.csv" in result["checks"]["required_artifacts"]["paths"]
+    assert "verified_discovery/model/model_temporal_validation_metrics.json" in result["checks"]["required_artifacts"]["paths"]
+    assert "verified_discovery/model/model_temporal_validation_predictions.csv" in result["checks"]["required_artifacts"]["paths"]
     assert "closed_loop/iteration_000/feedback_template.csv" in result["checks"]["required_artifacts"]["paths"]
     assert result["checks"]["closed_loop_iteration_packet"]["status"] == "passed"
     assert "closure_readiness_report.json" in result["checks"]["required_artifacts"]["paths"]
