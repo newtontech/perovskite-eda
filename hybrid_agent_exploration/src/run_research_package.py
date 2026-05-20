@@ -29,6 +29,11 @@ from screening.verified_discovery_workflow import VerifiedDiscoveryWorkflow
 
 
 PACKAGE_MANIFEST_SCHEMA_VERSION = "research-package-manifest-v1"
+EVIDENCE_CACHE_MANIFEST_SCHEMA_VERSION = "evidence-cache-manifest-v1"
+EVIDENCE_CACHE_FILENAMES = {
+    "reference_cache": "reference_cache.json",
+    "molecule_cache": "molecule_cache.json",
+}
 INPUT_HASH_POLICY = {
     "algorithm": "sha256",
     "digest": "full_hex",
@@ -42,6 +47,7 @@ class ResearchPackageArtifacts:
     output_dir: Path
     verified_discovery_dir: Path
     source_completeness_dir: Path
+    evidence_cache_dir: Path | None
     candidate_library_dir: Path | None
     report_dir: Path
     root_provenance_manifest_json: Path
@@ -82,6 +88,15 @@ def run_research_package(
         output_root / "source_completeness",
     )
     cache_root = Path(cache_dir) if cache_dir else default_cache_dir(dataset_id)
+    evidence_cache_manifest_path: Path | None = None
+    evidence_cache_dir: Path | None = None
+    if evidence_mode == "external-cached":
+        evidence_cache_dir = output_root / "evidence_cache"
+        evidence_cache_manifest_path = evidence_cache_dir / "evidence_cache_manifest.json"
+        _write_json(
+            _evidence_cache_manifest(dataset_id=dataset_id, cache_root=cache_root),
+            evidence_cache_manifest_path,
+        )
     authenticator = build_authenticator(evidence_mode, df, cache_root)
 
     candidate_library_dir: Path | None = None
@@ -213,6 +228,7 @@ def run_research_package(
             verified_discovery_top_n=verified_discovery_top_n,
             discovery_artifacts=discovery_artifacts,
             source_completeness_dir=source_completeness_artifacts.output_dir,
+            evidence_cache_manifest_path=evidence_cache_manifest_path,
             candidate_library_dir=candidate_library_dir,
             candidate_library_rows=candidate_library_rows,
             report_dir=report_dir,
@@ -230,6 +246,7 @@ def run_research_package(
         si_path.parent,
         candidate_library_dir=candidate_library_dir,
         source_completeness_dir=source_completeness_artifacts.output_dir,
+        evidence_cache_manifest_path=evidence_cache_manifest_path,
         package_manifest_path=package_manifest_path,
         input_path=input_path,
         candidate_source_path=candidate_source_path,
@@ -239,6 +256,7 @@ def run_research_package(
         output_dir=output_root,
         verified_discovery_dir=verified_discovery_dir,
         source_completeness_dir=source_completeness_artifacts.output_dir,
+        evidence_cache_dir=evidence_cache_dir,
         candidate_library_dir=candidate_library_dir,
         report_dir=report_dir,
         root_provenance_manifest_json=root_manifest_path,
@@ -324,6 +342,7 @@ def _package_manifest(
     verified_discovery_top_n: int | None,
     discovery_artifacts,
     source_completeness_dir: Path,
+    evidence_cache_manifest_path: Path | None,
     candidate_library_dir: Path | None,
     candidate_library_rows: int | None,
     report_dir: Path,
@@ -353,6 +372,22 @@ def _package_manifest(
     candidate_source_facts = _file_facts(candidate_source_path) if candidate_source_path else None
     if candidate_source_facts is not None:
         candidate_source_facts["source_name"] = candidate_source_name
+    outputs = {
+        "verified_discovery_dir": _relative(discovery_artifacts.output_dir, output_root),
+        "source_completeness_dir": _relative(source_completeness_dir, output_root),
+        "source_completeness_json": _relative(source_completeness_dir / "source_completeness.json", output_root),
+        "source_completeness_csv": _relative(source_completeness_dir / "source_completeness.csv", output_root),
+        "source_completeness_md": _relative(source_completeness_dir / "source_completeness.md", output_root),
+        "candidate_library_dir": _relative(candidate_library_dir, output_root) if candidate_library_dir else None,
+        "report_dir": _relative(report_dir, output_root),
+        "main_text_report_md": _relative(report_dir / "main_text" / "main_text_report.md", output_root),
+        "supporting_information_md": _relative(report_dir / "si" / "supporting_information.md", output_root),
+        "root_provenance_manifest_json": _relative(root_manifest_path, output_root),
+        "package_manifest_json": _relative(package_manifest_path, output_root),
+    }
+    if evidence_cache_manifest_path is not None:
+        outputs["evidence_cache_dir"] = _relative(evidence_cache_manifest_path.parent, output_root)
+        outputs["evidence_cache_manifest_json"] = _relative(evidence_cache_manifest_path, output_root)
     return {
         "schema_version": PACKAGE_MANIFEST_SCHEMA_VERSION,
         "dataset_id": dataset_id,
@@ -387,19 +422,7 @@ def _package_manifest(
         "ranked_candidates": discovery_artifacts.ranked_candidates,
         "candidate_library_rows": candidate_library_rows,
         "report_quality_score": report_quality_score,
-        "outputs": {
-            "verified_discovery_dir": _relative(discovery_artifacts.output_dir, output_root),
-            "source_completeness_dir": _relative(source_completeness_dir, output_root),
-            "source_completeness_json": _relative(source_completeness_dir / "source_completeness.json", output_root),
-            "source_completeness_csv": _relative(source_completeness_dir / "source_completeness.csv", output_root),
-            "source_completeness_md": _relative(source_completeness_dir / "source_completeness.md", output_root),
-            "candidate_library_dir": _relative(candidate_library_dir, output_root) if candidate_library_dir else None,
-            "report_dir": _relative(report_dir, output_root),
-            "main_text_report_md": _relative(report_dir / "main_text" / "main_text_report.md", output_root),
-            "supporting_information_md": _relative(report_dir / "si" / "supporting_information.md", output_root),
-            "root_provenance_manifest_json": _relative(root_manifest_path, output_root),
-            "package_manifest_json": _relative(package_manifest_path, output_root),
-        },
+        "outputs": outputs,
     }
 
 
@@ -408,6 +431,7 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 
 def _write_json(payload: dict[str, Any], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
@@ -427,6 +451,41 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _evidence_cache_manifest(*, dataset_id: str, cache_root: Path) -> dict[str, Any]:
+    return {
+        "schema_version": EVIDENCE_CACHE_MANIFEST_SCHEMA_VERSION,
+        "dataset_id": dataset_id,
+        "generated_at": _now_iso(),
+        "artifact_policy": "external-untracked-hashed-artifact",
+        "cache_dir": str(cache_root),
+        "hash_policy": INPUT_HASH_POLICY,
+        "cache_files": {
+            cache_key: _cache_file_record(cache_root / filename, filename=filename)
+            for cache_key, filename in EVIDENCE_CACHE_FILENAMES.items()
+        },
+    }
+
+
+def _cache_file_record(path: Path, *, filename: str) -> dict[str, Any]:
+    exists = path.is_file()
+    return {
+        "filename": filename,
+        "path": str(path),
+        "exists": exists,
+        "size_bytes": path.stat().st_size if exists else None,
+        "sha256": _sha256(path) if exists else None,
+        "entry_count": _json_object_entry_count(path) if exists else None,
+    }
+
+
+def _json_object_entry_count(path: Path) -> int | None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+    return len(payload) if isinstance(payload, dict) else None
 
 
 def _relative(path: Path | None, root: Path) -> str | None:

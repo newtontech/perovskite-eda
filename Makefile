@@ -47,6 +47,8 @@ REPORT_DIR := $(ARTIFACT_DIR)/report_bundle/main_text
 SI_DIR := $(ARTIFACT_DIR)/report_bundle/si
 CANDIDATE_LIBRARY_DIR := $(ARTIFACT_DIR)/candidate_library
 SOURCE_COMPLETENESS_DIR := $(ARTIFACT_DIR)/source_completeness
+EVIDENCE_CACHE_PACKAGE_DIR := $(ARTIFACT_DIR)/evidence_cache
+EVIDENCE_CACHE_MANIFEST := $(EVIDENCE_CACHE_PACKAGE_DIR)/evidence_cache_manifest.json
 PACKAGE_MANIFEST := $(ARTIFACT_DIR)/package_manifest.json
 ROOT_PROVENANCE_JSON := $(ARTIFACT_DIR)/provenance_manifest.json
 MAIN_TEXT_MD := $(ARTIFACT_DIR)/report_bundle/main_text/main_text_report.md
@@ -167,6 +169,8 @@ research-package-pdf:
 	if [ -d "$(CANDIDATE_LIBRARY_DIR)" ]; then candidate_library_args="--candidate-library-dir $(CANDIDATE_LIBRARY_DIR)"; fi; \
 	candidate_source_args=""; \
 	if [ -n "$(CANDIDATE_SOURCE)" ]; then candidate_source_args="--candidate-source-path $(CANDIDATE_SOURCE)"; fi; \
+	evidence_cache_args=""; \
+	if [ -f "$(EVIDENCE_CACHE_MANIFEST)" ]; then evidence_cache_args="--evidence-cache-manifest-path $(EVIDENCE_CACHE_MANIFEST)"; fi; \
 	$(PYTHON) $(ROOT_PROVENANCE_MANIFEST) \
 		--verified-discovery-artifact-dir $(VERIFIED_DISCOVERY_DIR) \
 		--report-dir $(REPORT_DIR) \
@@ -176,7 +180,8 @@ research-package-pdf:
 		--input-path $(SOURCE_TABLE) \
 		--output-path $(ROOT_PROVENANCE_JSON) \
 		$$candidate_library_args \
-		$$candidate_source_args
+		$$candidate_source_args \
+		$$evidence_cache_args
 
 research-package-verify:
 	$(PYTHON) $(VERIFY_RESEARCH_PACKAGE) \
