@@ -223,7 +223,8 @@ def test_candidate_library_contract_requires_identity_or_molecule_source(tmp_pat
     pool = _external_candidate_pool()
     pool.loc[0, ["pubchem_id", "cas_number"]] = ""
     pool.loc[0, "verification_sources"] = json.dumps([
-        {"kind": "availability", "source": "vendor_catalog"}
+        {"kind": "availability", "source": "vendor_catalog", "url": "https://www.sigmaaldrich.com/catalog/product/sial/459844"},
+        {"kind": "safety", "source": "vendor_sds", "url": "https://www.sigmaaldrich.com/US/en/sds/sial/459844"},
     ])
 
     with pytest.raises(CandidateLibraryContractError) as exc:
