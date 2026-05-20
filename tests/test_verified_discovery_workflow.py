@@ -85,6 +85,8 @@ def test_workflow_generates_training_and_candidate_discovery_artifacts(tmp_path)
     assert artifacts.model_manifest_json.exists()
     assert artifacts.model_validation_metrics_json.exists()
     assert artifacts.model_validation_predictions_csv.exists()
+    assert artifacts.model_scaffold_validation_metrics_json.exists()
+    assert artifacts.model_scaffold_validation_predictions_csv.exists()
     assert artifacts.ranked_candidates_csv.exists()
     assert artifacts.discovery_manifest_json.exists()
     assert artifacts.discovery_audit_report_md.exists()
@@ -115,6 +117,18 @@ def test_workflow_generates_training_and_candidate_discovery_artifacts(tmp_path)
     assert validation["external_validation"] is False
     assert validation["split_strategy"] == "random_holdout_verified_rows"
     assert validation["test_size"] == 0.2
+    scaffold_validation = json.loads(
+        artifacts.model_scaffold_validation_metrics_json.read_text(encoding="utf-8")
+    )
+    assert scaffold_validation["schema_version"] == "model-scaffold-validation-metrics-v1"
+    assert scaffold_validation["dataset_id"] == "workflow-fixture"
+    assert scaffold_validation["validation_scope"] == "chemical_group_holdout_verified_rows"
+    assert scaffold_validation["split_strategy"] == "rdkit_murcko_or_anonymous_graph_group_holdout"
+    assert scaffold_validation["external_validation"] is False
+    assert scaffold_validation["chemical_generalization_diagnostic"] is True
+    assert scaffold_validation["train_groups"]
+    assert scaffold_validation["validation_groups"]
+    assert set(scaffold_validation["train_groups"]).isdisjoint(scaffold_validation["validation_groups"])
 
     manifest = json.loads(artifacts.workflow_manifest_json.read_text(encoding="utf-8"))
     assert manifest["dataset_id"] == "workflow-fixture"
@@ -133,6 +147,8 @@ def test_workflow_generates_training_and_candidate_discovery_artifacts(tmp_path)
         "model_manifest_json",
         "model_validation_metrics_json",
         "model_validation_predictions_csv",
+        "model_scaffold_validation_metrics_json",
+        "model_scaffold_validation_predictions_csv",
         "ranked_candidates_csv",
         "discovery_manifest_json",
         "discovery_audit_report_md",
@@ -172,6 +188,60 @@ def test_workflow_validation_metrics_report_real_holdout_rows(tmp_path):
     assert list(predictions.columns) == ["record_id", "smiles", "y_true", "y_pred", "residual", "split"]
     assert predictions["split"].tolist() == ["validation", "validation"]
     assert len(predictions) == 2
+
+
+def test_workflow_scaffold_validation_reports_disjoint_chemical_groups(tmp_path):
+    from screening.verified_discovery_workflow import VerifiedDiscoveryWorkflow
+
+    smiles = [
+        "CCCC",
+        "CCO",
+        "CCN",
+        "c1ccccc1O",
+        "c1ccccc1N",
+        "c1ccncc1",
+        "C1CCCCC1",
+        "C1CCNCC1",
+        "CC(C)O",
+        "CC(C)N",
+    ]
+    raw_df = pd.DataFrame(
+        [
+            _record(f"row-{idx:03d}", f"10.1021/acs.jpclett.7c{idx:05d}", smi, float(idx) / 10)
+            for idx, smi in enumerate(smiles, start=1)
+        ]
+    )
+
+    artifacts = VerifiedDiscoveryWorkflow(output_dir=tmp_path, authenticator=_authenticator()).run_from_dataframe(
+        raw_df,
+        dataset_id="workflow-scaffold-validation-fixture",
+        model=LinearRegression(),
+        feature_fn=_feature_fn,
+        top_k=2,
+        min_verified_rows=10,
+    )
+
+    metrics = json.loads(artifacts.model_scaffold_validation_metrics_json.read_text(encoding="utf-8"))
+    assert metrics["status"] == "passed"
+    assert metrics["validation_rows"] > 0
+    assert metrics["train_rows"] > 0
+    assert metrics["validation_r2"] is not None
+    assert metrics["chemical_group_column"] == "chemical_group_key"
+    assert set(metrics["train_groups"]).isdisjoint(metrics["validation_groups"])
+
+    predictions = pd.read_csv(artifacts.model_scaffold_validation_predictions_csv)
+    assert list(predictions.columns) == [
+        "record_id",
+        "smiles",
+        "chemical_group_key",
+        "chemical_group_source",
+        "y_true",
+        "y_pred",
+        "residual",
+        "split",
+    ]
+    assert set(predictions["split"]) == {"validation"}
+    assert set(predictions["chemical_group_key"]).issubset(set(metrics["validation_groups"]))
 
 
 def test_workflow_refuses_training_when_strict_gate_finds_too_few_verified_rows(tmp_path):

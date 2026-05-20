@@ -235,6 +235,7 @@ def run_research_package(
             evidence_cache_manifest_path=evidence_cache_manifest_path,
             closed_loop_iteration_dir=closed_loop_artifacts.output_dir,
             validation_metrics_path=discovery_artifacts.model_validation_metrics_json,
+            scaffold_validation_metrics_path=discovery_artifacts.model_scaffold_validation_metrics_json,
         ),
         closure_readiness_report_path,
     )
@@ -313,8 +314,17 @@ def _report_inputs(
 ) -> dict[str, Any]:
     metrics = _read_json(verified_discovery_dir / "model" / "model_metrics.json")
     validation_metrics = _read_json(verified_discovery_dir / "model" / "model_validation_metrics.json")
+    scaffold_validation_metrics = _read_json(
+        verified_discovery_dir / "model" / "model_scaffold_validation_metrics.json"
+    )
     workflow = _read_json(verified_discovery_dir / "workflow_manifest.json")
     feature_columns = metrics.get("feature_columns", [])
+    evidence_context = {
+        **evidence_context,
+        "chemical_generalization_validation": scaffold_validation_metrics.get("status") == "passed",
+        "chemical_generalization_validation_scope": scaffold_validation_metrics.get("validation_scope"),
+        "chemical_generalization_external_validation": scaffold_validation_metrics.get("external_validation", False),
+    }
     result = {
         "agent_id": "verified_discovery_model",
         "status": "success",
@@ -346,6 +356,7 @@ def _report_inputs(
         "verified_discovery_artifact_dir": verified_discovery_dir,
         "verified_discovery_top_n": top_n,
         "model_validation_metrics": validation_metrics,
+        "model_scaffold_validation_metrics": scaffold_validation_metrics,
         "source_completeness": source_completeness,
         "evidence_context": evidence_context,
         "multi_model_results": [
@@ -473,6 +484,14 @@ def _package_manifest(
         discovery_artifacts.model_validation_predictions_csv,
         output_root,
     )
+    outputs["model_scaffold_validation_metrics_json"] = _relative(
+        discovery_artifacts.model_scaffold_validation_metrics_json,
+        output_root,
+    )
+    outputs["model_scaffold_validation_predictions_csv"] = _relative(
+        discovery_artifacts.model_scaffold_validation_predictions_csv,
+        output_root,
+    )
     return {
         "schema_version": PACKAGE_MANIFEST_SCHEMA_VERSION,
         "dataset_id": dataset_id,
@@ -525,8 +544,10 @@ def _closure_readiness_report(
     evidence_cache_manifest_path: Path | None,
     closed_loop_iteration_dir: Path,
     validation_metrics_path: Path,
+    scaffold_validation_metrics_path: Path,
 ) -> dict[str, Any]:
     closure_blockers: list[str] = []
+    chemical_generalization_gate = _chemical_generalization_gate(scaffold_validation_metrics_path)
     gates = {
         "publication_grade": {
             "passed": publication_grade,
@@ -558,9 +579,10 @@ def _closure_readiness_report(
             "passed": validation_metrics_path.is_file(),
             "reason": "internal holdout validation artifact present",
         },
+        "chemical_generalization_validation": chemical_generalization_gate,
         "external_validation": {
             "passed": False,
-            "reason": "no independent external, scaffold, temporal, or experimental validation artifact",
+            "reason": "no independent external, temporal, or experimental validation artifact",
         },
         "closed_loop_packet": {
             "passed": (closed_loop_iteration_dir / "verification_report.json").is_file(),
@@ -586,6 +608,62 @@ def _closure_readiness_report(
         "publication_grade_false_reasons": false_reasons,
         "blocking_reasons": closure_blockers,
         "gates": gates,
+    }
+
+
+def _chemical_generalization_gate(scaffold_validation_metrics_path: Path) -> dict[str, Any]:
+    if not scaffold_validation_metrics_path.is_file():
+        return {
+            "passed": False,
+            "reason": "chemical-group holdout validation artifact absent",
+        }
+    try:
+        metrics = _read_json(scaffold_validation_metrics_path)
+    except (OSError, json.JSONDecodeError) as exc:
+        return {
+            "passed": False,
+            "reason": f"chemical-group holdout validation artifact unreadable: {exc}",
+        }
+    train_groups = [str(group) for group in metrics.get("train_groups", [])]
+    validation_groups = [str(group) for group in metrics.get("validation_groups", [])]
+    overlap = sorted(set(train_groups) & set(validation_groups))
+    group_method = metrics.get("group_method") if isinstance(metrics.get("group_method"), dict) else {}
+    validation_rows = int(metrics.get("validation_rows") or 0)
+    passed = (
+        metrics.get("status") == "passed"
+        and metrics.get("chemical_generalization_diagnostic") is True
+        and metrics.get("external_validation") is False
+        and metrics.get("independent_external_validation") is False
+        and metrics.get("random_holdout") is False
+        and metrics.get("chemical_generalization_claim") == "not_established"
+        and group_method.get("rdkit_available") is True
+        and group_method.get("uses_smiles_skeleton_fallback") is False
+        and validation_rows >= 2
+        and metrics.get("validation_r2") is not None
+        and bool(train_groups)
+        and bool(validation_groups)
+        and not overlap
+    )
+    if passed:
+        return {
+            "passed": True,
+            "reason": "RDKit chemical-group holdout diagnostic artifact present with disjoint groups",
+        }
+    if metrics.get("status") == "skipped":
+        return {
+            "passed": False,
+            "reason": f"chemical-group holdout skipped: {metrics.get('skip_reason', 'reason unavailable')}",
+        }
+    return {
+        "passed": False,
+        "reason": (
+            "chemical-group holdout diagnostic failed "
+            f"(status={metrics.get('status')!r}, validation_rows={validation_rows}, "
+            f"validation_r2={metrics.get('validation_r2')!r}, "
+            f"rdkit_available={group_method.get('rdkit_available')!r}, "
+            f"uses_smiles_skeleton_fallback={group_method.get('uses_smiles_skeleton_fallback')!r}, "
+            f"overlap_groups={overlap})"
+        ),
     }
 
 

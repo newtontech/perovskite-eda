@@ -28,6 +28,7 @@ from screening.verified_candidate_discovery import (
     CandidateDiscoveryArtifacts,
     VerifiedCandidateDiscovery,
 )
+from screening.chemical_split_validation import evaluate_chemical_group_holdout
 
 
 FeatureFn = Callable[[pd.Series], Any]
@@ -52,6 +53,8 @@ class VerifiedDiscoveryWorkflowArtifacts:
     model_manifest_json: Path
     model_validation_metrics_json: Path
     model_validation_predictions_csv: Path
+    model_scaffold_validation_metrics_json: Path
+    model_scaffold_validation_predictions_csv: Path
     ranked_candidates_csv: Path
     discovery_manifest_json: Path
     discovery_audit_report_md: Path
@@ -142,6 +145,8 @@ class VerifiedDiscoveryWorkflow:
         feature_fn = feature_fn or default_smiles_features
         validation_metrics_json = model_dir / "model_validation_metrics.json"
         validation_predictions_csv = model_dir / "model_validation_predictions.csv"
+        scaffold_validation_metrics_json = model_dir / "model_scaffold_validation_metrics.json"
+        scaffold_validation_predictions_csv = model_dir / "model_scaffold_validation_predictions.csv"
         validation_metrics, validation_predictions = _evaluate_internal_holdout(
             verified,
             model=_fresh_model(model),
@@ -152,6 +157,16 @@ class VerifiedDiscoveryWorkflow:
         )
         _write_json(validation_metrics, validation_metrics_json)
         validation_predictions.to_csv(validation_predictions_csv, index=False)
+        scaffold_validation_metrics, scaffold_validation_predictions = evaluate_chemical_group_holdout(
+            verified,
+            model=_fresh_model(model),
+            feature_fn=feature_fn,
+            dataset_id=dataset_id,
+            target_column=target_column,
+            smiles_column=smiles_column,
+        )
+        _write_json(scaffold_validation_metrics, scaffold_validation_metrics_json)
+        scaffold_validation_predictions.to_csv(scaffold_validation_predictions_csv, index=False)
         trained_model, metrics, feature_columns = _train_model(
             verified,
             model=model,
@@ -203,6 +218,8 @@ class VerifiedDiscoveryWorkflow:
             model_manifest_json,
             validation_metrics_json,
             validation_predictions_csv,
+            scaffold_validation_metrics_json,
+            scaffold_validation_predictions_csv,
             discovery_artifacts,
         )
         _write_json(
@@ -404,6 +421,8 @@ def _workflow_artifacts(
     model_manifest_json: Path,
     model_validation_metrics_json: Path,
     model_validation_predictions_csv: Path,
+    model_scaffold_validation_metrics_json: Path,
+    model_scaffold_validation_predictions_csv: Path,
     discovery_artifacts: CandidateDiscoveryArtifacts,
 ) -> dict[str, Any]:
     return {
@@ -417,6 +436,8 @@ def _workflow_artifacts(
         "model_manifest_json": model_manifest_json,
         "model_validation_metrics_json": model_validation_metrics_json,
         "model_validation_predictions_csv": model_validation_predictions_csv,
+        "model_scaffold_validation_metrics_json": model_scaffold_validation_metrics_json,
+        "model_scaffold_validation_predictions_csv": model_scaffold_validation_predictions_csv,
         "ranked_candidates_csv": discovery_artifacts.ranked_candidates_csv,
         "discovery_manifest_json": discovery_artifacts.discovery_manifest_json,
         "discovery_audit_report_md": discovery_artifacts.audit_report_md,

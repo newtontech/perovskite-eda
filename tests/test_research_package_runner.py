@@ -94,6 +94,8 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
         package.verified_discovery_dir / "model" / "model_manifest.json",
         package.verified_discovery_dir / "model" / "model_validation_metrics.json",
         package.verified_discovery_dir / "model" / "model_validation_predictions.csv",
+        package.verified_discovery_dir / "model" / "model_scaffold_validation_metrics.json",
+        package.verified_discovery_dir / "model" / "model_scaffold_validation_predictions.csv",
         package.verified_discovery_dir / "discovery" / "ranked_candidates.csv",
         package.verified_discovery_dir / "discovery" / "candidate_discovery_manifest.json",
         package.verified_discovery_dir / "discovery" / "candidate_discovery_audit.md",
@@ -159,6 +161,12 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert package_manifest["outputs"]["model_validation_predictions_csv"] == (
         "verified_discovery/model/model_validation_predictions.csv"
     )
+    assert package_manifest["outputs"]["model_scaffold_validation_metrics_json"] == (
+        "verified_discovery/model/model_scaffold_validation_metrics.json"
+    )
+    assert package_manifest["outputs"]["model_scaffold_validation_predictions_csv"] == (
+        "verified_discovery/model/model_scaffold_validation_predictions.csv"
+    )
     assert package_manifest["outputs"]["root_provenance_manifest_json"] == "provenance_manifest.json"
     assert package_manifest["outputs"]["closed_loop_iteration_dir"] == "closed_loop/iteration_000"
     assert package_manifest["outputs"]["closed_loop_iteration_manifest_json"] == (
@@ -178,6 +186,8 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert closure_readiness["publication_grade"] is False
     assert closure_readiness["publication_grade_false_reasons"]
     assert closure_readiness["gates"]["validation_artifacts"]["passed"] is True
+    assert closure_readiness["gates"]["chemical_generalization_validation"]["passed"] is False
+    assert "validation_rows" in closure_readiness["gates"]["chemical_generalization_validation"]["reason"]
     assert closure_readiness["gates"]["closed_loop_packet"]["passed"] is True
     assert closure_readiness["gates"]["external_validation"]["passed"] is False
     assert closure_readiness["gates"]["experimental_feedback"]["passed"] is False
@@ -265,6 +275,8 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert len(root_manifest["source_inputs"]["candidate_source_table"]["sha256"]) == 64
     assert "model_validation_metrics_json" in {item["id"] for item in root_manifest["artifacts"]["model"]}
     assert "model_validation_predictions_csv" in {item["id"] for item in root_manifest["artifacts"]["model"]}
+    assert "model_scaffold_validation_metrics_json" in {item["id"] for item in root_manifest["artifacts"]["model"]}
+    assert "model_scaffold_validation_predictions_csv" in {item["id"] for item in root_manifest["artifacts"]["model"]}
     assert {item["id"] for item in root_manifest["artifacts"]["source_completeness"]} == {
         "source_completeness_csv",
         "source_completeness_json",

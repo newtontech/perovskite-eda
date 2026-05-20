@@ -8,8 +8,10 @@ files on disk before a package is treated as a complete research deliverable.
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +43,10 @@ REQUIRED_PACKAGE_OUTPUTS = {
     "closed_loop_feedback_template_csv": "file",
     "closed_loop_verification_report_json": "file",
     "closure_readiness_report_json": "file",
+    "model_validation_metrics_json": "file",
+    "model_validation_predictions_csv": "file",
+    "model_scaffold_validation_metrics_json": "file",
+    "model_scaffold_validation_predictions_csv": "file",
     "root_provenance_manifest_json": "file",
     "package_manifest_json": "file",
 }
@@ -58,6 +64,8 @@ REQUIRED_ARTIFACT_FILES = (
     "verified_discovery/model/model_manifest.json",
     "verified_discovery/model/model_validation_metrics.json",
     "verified_discovery/model/model_validation_predictions.csv",
+    "verified_discovery/model/model_scaffold_validation_metrics.json",
+    "verified_discovery/model/model_scaffold_validation_predictions.csv",
     "verified_discovery/discovery/ranked_candidates.csv",
     "verified_discovery/discovery/candidate_discovery_manifest.json",
     "verified_discovery/discovery/candidate_discovery_audit.md",
@@ -101,6 +109,8 @@ REQUIRED_WORKFLOW_OUTPUTS = {
     "model_manifest_json",
     "model_validation_metrics_json",
     "model_validation_predictions_csv",
+    "model_scaffold_validation_metrics_json",
+    "model_scaffold_validation_predictions_csv",
     "ranked_candidates_csv",
     "discovery_manifest_json",
     "discovery_audit_report_md",
@@ -119,6 +129,15 @@ JSON_FIELD_REQUIREMENTS = {
         "dataset_id",
         "validation_scope",
         "external_validation",
+    ),
+    "verified_discovery/model/model_scaffold_validation_metrics.json": (
+        "schema_version",
+        "dataset_id",
+        "validation_scope",
+        "split_strategy",
+        "external_validation",
+        "chemical_generalization_diagnostic",
+        "chemical_group_column",
     ),
     "verified_discovery/discovery/candidate_discovery_manifest.json": ("dataset_id", "outputs"),
     "verified_discovery/workflow_manifest.json": ("dataset_id", "outputs"),
@@ -160,6 +179,8 @@ REQUIRED_ROOT_IDS = {
         "model_manifest_json",
         "model_validation_metrics_json",
         "model_validation_predictions_csv",
+        "model_scaffold_validation_metrics_json",
+        "model_scaffold_validation_predictions_csv",
     },
     "discovery": {"ranked_candidates_csv", "discovery_manifest_json"},
     "audit": {"discovery_audit_report_md"},
@@ -263,6 +284,7 @@ def verify_research_package(
         require_evidence_cache=require_evidence_cache,
         errors=errors,
     )
+    scaffold_validation_check = _check_scaffold_validation(package_manifest, root, errors=errors)
     closed_loop_check = _check_closed_loop_iteration_packet(package_manifest, root, errors=errors)
     closure_readiness_check = _check_closure_readiness(
         package_manifest,
@@ -291,6 +313,7 @@ def verify_research_package(
             "required_artifacts": required_artifacts_check,
             "root_provenance": root_provenance_check,
             "evidence_cache": evidence_cache_check,
+            "scaffold_validation": scaffold_validation_check,
             "closed_loop_iteration_packet": closed_loop_check,
             "closure_readiness": closure_readiness_check,
         },
@@ -545,6 +568,164 @@ def _check_closed_loop_iteration_packet(
     return report
 
 
+def _check_scaffold_validation(
+    manifest: dict[str, Any],
+    root: Path,
+    *,
+    errors: list[str],
+) -> dict[str, Any]:
+    outputs = _manifest_outputs(manifest)
+    metrics_value = outputs.get(
+        "model_scaffold_validation_metrics_json",
+        "verified_discovery/model/model_scaffold_validation_metrics.json",
+    )
+    predictions_value = outputs.get(
+        "model_scaffold_validation_predictions_csv",
+        "verified_discovery/model/model_scaffold_validation_predictions.csv",
+    )
+    metrics_path = _resolve_path(root, str(metrics_value))
+    predictions_path = _resolve_path(root, str(predictions_value))
+    metrics = _read_json_artifact(
+        metrics_path,
+        root,
+        context="verified_discovery/model/model_scaffold_validation_metrics.json",
+        errors=errors,
+    )
+    if not isinstance(metrics, dict):
+        return {"status": "failed", "reason": "scaffold validation metrics missing or invalid"}
+
+    if metrics.get("schema_version") != "model-scaffold-validation-metrics-v1":
+        errors.append(
+            "verified_discovery/model/model_scaffold_validation_metrics.json: "
+            f"schema_version={metrics.get('schema_version')!r}; expected 'model-scaffold-validation-metrics-v1'"
+        )
+    if metrics.get("validation_scope") != "chemical_group_holdout_verified_rows":
+        errors.append(
+            "verified_discovery/model/model_scaffold_validation_metrics.json: "
+            "validation_scope must be 'chemical_group_holdout_verified_rows'"
+        )
+    if metrics.get("external_validation") is not False:
+        errors.append(
+            "verified_discovery/model/model_scaffold_validation_metrics.json: external_validation must be false"
+        )
+    if metrics.get("random_holdout") is not False:
+        errors.append("verified_discovery/model/model_scaffold_validation_metrics.json: random_holdout must be false")
+    if metrics.get("chemical_generalization_diagnostic") is not True:
+        errors.append(
+            "verified_discovery/model/model_scaffold_validation_metrics.json: "
+            "chemical_generalization_diagnostic must be true"
+        )
+    if metrics.get("chemical_group_column") != "chemical_group_key":
+        errors.append(
+            "verified_discovery/model/model_scaffold_validation_metrics.json: "
+            "chemical_group_column must be 'chemical_group_key'"
+        )
+
+    train_groups = [str(group) for group in metrics.get("train_groups", [])]
+    validation_groups = [str(group) for group in metrics.get("validation_groups", [])]
+    overlap = sorted(set(train_groups) & set(validation_groups))
+    declared_overlap = [str(group) for group in metrics.get("overlap_groups", [])]
+    if overlap or declared_overlap:
+        errors.append(
+            "verified_discovery/model/model_scaffold_validation_metrics.json: "
+            f"train/validation groups overlap ({sorted(set(overlap) | set(declared_overlap))})"
+        )
+    status = metrics.get("status")
+    if status == "passed":
+        if not train_groups or not validation_groups:
+            errors.append(
+                "verified_discovery/model/model_scaffold_validation_metrics.json: "
+                "passed scaffold validation requires non-empty train_groups and validation_groups"
+            )
+        _check_scaffold_predictions(predictions_path, root, metrics=metrics, errors=errors)
+    elif status == "skipped":
+        if not metrics.get("skip_reason"):
+            errors.append(
+                "verified_discovery/model/model_scaffold_validation_metrics.json: "
+                "skipped scaffold validation requires skip_reason"
+            )
+    else:
+        errors.append(
+            "verified_discovery/model/model_scaffold_validation_metrics.json: "
+            f"status must be 'passed' or 'skipped'; observed {status!r}"
+        )
+    return {
+        "status": status,
+        "path": _display_path(metrics_path, root),
+        "skip_reason": metrics.get("skip_reason"),
+        "validation_rows": metrics.get("validation_rows"),
+        "train_groups": train_groups,
+        "validation_groups": validation_groups,
+    }
+
+
+def _check_scaffold_predictions(
+    path: Path,
+    root: Path,
+    *,
+    metrics: dict[str, Any],
+    errors: list[str],
+) -> None:
+    expected = [
+        "record_id",
+        "smiles",
+        "chemical_group_key",
+        "chemical_group_source",
+        "y_true",
+        "y_pred",
+        "residual",
+        "split",
+    ]
+    try:
+        with path.open(newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            header = reader.fieldnames
+            rows = list(reader)
+    except OSError as exc:
+        errors.append(f"{_display_path(path, root)}: cannot read scaffold predictions CSV ({exc})")
+        return
+    if header != expected:
+        errors.append(f"{_display_path(path, root)}: expected CSV header {expected}, observed {header}")
+        return
+
+    relative = _display_path(path, root)
+    expected_rows = int(metrics.get("validation_rows") or 0)
+    if len(rows) != expected_rows:
+        errors.append(f"{relative}: scaffold predictions row count {len(rows)} != validation_rows {expected_rows}")
+    train_groups = {str(group) for group in metrics.get("train_groups", [])}
+    validation_groups = {str(group) for group in metrics.get("validation_groups", [])}
+    record_ids: set[str] = set()
+    for row_number, row in enumerate(rows, start=2):
+        prefix = f"{relative}: scaffold predictions row {row_number}"
+        record_id = str(row.get("record_id", ""))
+        if record_id in record_ids:
+            errors.append(f"{prefix}: duplicate record_id {record_id!r}")
+        record_ids.add(record_id)
+        if row.get("split") != "validation":
+            errors.append(f"{prefix}: split must be 'validation'")
+        group_key = str(row.get("chemical_group_key", ""))
+        if group_key in train_groups:
+            errors.append(f"{prefix}: chemical_group_key {group_key!r} is a train group")
+        if group_key not in validation_groups:
+            errors.append(f"{prefix}: chemical_group_key {group_key!r} is not in validation_groups")
+        y_true = _parse_float(row.get("y_true"))
+        y_pred = _parse_float(row.get("y_pred"))
+        residual = _parse_float(row.get("residual"))
+        if y_true is None or y_pred is None or residual is None:
+            errors.append(f"{prefix}: y_true, y_pred, and residual must be finite numbers")
+            continue
+        if not math.isclose(residual, y_pred - y_true, rel_tol=1e-7, abs_tol=1e-7):
+            errors.append(f"{prefix}: residual does not equal y_pred - y_true")
+
+
+def _parse_float(value: Any) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) else None
+
+
 def _check_closure_readiness(
     manifest: dict[str, Any],
     root: Path,
@@ -580,6 +761,12 @@ def _check_closure_readiness(
     gates = report.get("gates")
     if not isinstance(gates, dict):
         errors.append(f"{CLOSURE_READINESS_REPORT_PATH}: gates must be an object")
+        gates = {}
+    chemical_gate = gates.get("chemical_generalization_validation")
+    if not isinstance(chemical_gate, dict):
+        errors.append(f"{CLOSURE_READINESS_REPORT_PATH}: gates.chemical_generalization_validation is required")
+    elif not isinstance(chemical_gate.get("passed"), bool):
+        errors.append(f"{CLOSURE_READINESS_REPORT_PATH}: gates.chemical_generalization_validation.passed must be boolean")
     overall_ready = report.get("overall_ready")
     if require_closure_readiness and overall_ready is not True:
         errors.append(
