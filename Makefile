@@ -31,8 +31,11 @@ PSC_CANDIDATE_CLOSURE_ARTIFACT_DIR ?= hybrid_agent_exploration/results/verified_
 PSC_CANDIDATE_CLOSURE_CACHE_DIR ?= $(abspath hybrid_agent_exploration/.cache/verified_discovery/psc-additive-closure-external-cached-full-source/evidence_cache)
 PSC_CANDIDATE_SOURCE ?= hybrid_agent_exploration/candidate_sources/psc_passivator_seed_candidates.csv
 PSC_CANDIDATE_SOURCE_NAME ?= psc-passivator-seed
+EXPERIMENTAL_FEEDBACK_CSV ?=
+EXPERIMENTAL_FEEDBACK_DATA_SCOPE ?= external_lab
 
 RUN_RESEARCH_PACKAGE := hybrid_agent_exploration/src/run_research_package.py
+RUN_EXPERIMENTAL_FEEDBACK_INGESTION := hybrid_agent_exploration/src/run_experimental_feedback_ingestion.py
 RUN_EVIDENCE_CACHE_PREFLIGHT := hybrid_agent_exploration/src/run_evidence_cache_preflight.py
 RUN_EVIDENCE_CACHE_COLLECTOR := hybrid_agent_exploration/src/run_evidence_cache_collector.py
 RUN_EVIDENCE_CACHE_MERGE := hybrid_agent_exploration/src/run_evidence_cache_merge.py
@@ -52,6 +55,7 @@ EVIDENCE_CACHE_MANIFEST := $(EVIDENCE_CACHE_PACKAGE_DIR)/evidence_cache_manifest
 PACKAGE_MANIFEST := $(ARTIFACT_DIR)/package_manifest.json
 ROOT_PROVENANCE_JSON := $(ARTIFACT_DIR)/provenance_manifest.json
 CLOSURE_READINESS_REPORT := $(ARTIFACT_DIR)/closure_readiness_report.json
+EXPERIMENTAL_FEEDBACK_DIR := $(ARTIFACT_DIR)/closed_loop/iteration_000/experimental_feedback
 MAIN_TEXT_MD := $(ARTIFACT_DIR)/report_bundle/main_text/main_text_report.md
 MAIN_TEXT_PDF := $(ARTIFACT_DIR)/report_bundle/main_text/main_text_report.pdf
 SI_MD := $(ARTIFACT_DIR)/report_bundle/si/supporting_information.md
@@ -61,6 +65,7 @@ SI_RESOURCE_PATH := $(SI_DIR):$(ARTIFACT_DIR)
 
 CANDIDATE_SOURCE_ARGS := $(if $(CANDIDATE_SOURCE),--candidate-source $(CANDIDATE_SOURCE),)
 CANDIDATE_SOURCE_NAME_ARGS := $(if $(CANDIDATE_SOURCE_NAME),--candidate-source-name $(CANDIDATE_SOURCE_NAME),)
+EXPERIMENTAL_FEEDBACK_ARGS := $(if $(EXPERIMENTAL_FEEDBACK_CSV),--experimental-feedback-csv $(EXPERIMENTAL_FEEDBACK_CSV) --experimental-feedback-data-scope $(EXPERIMENTAL_FEEDBACK_DATA_SCOPE),)
 CACHE_PREFLIGHT_CACHE_DIR_ARGS := $(if $(EVIDENCE_CACHE_DIR),--cache-dir $(EVIDENCE_CACHE_DIR),)
 CACHE_PREFLIGHT_MAX_ROWS_ARGS := $(if $(CACHE_PREFLIGHT_MAX_ROWS),--max-rows $(CACHE_PREFLIGHT_MAX_ROWS),)
 CACHE_COLLECT_SHARD_MODE := $(if $(CACHE_COLLECT_SHARD_COUNT),1,)
@@ -74,8 +79,9 @@ PSC_CANDIDATE_CLOSURE_CACHE_ARGS := $(if $(PSC_CANDIDATE_CLOSURE_CACHE_DIR),--ca
 VERIFY_CANDIDATE_LIBRARY_ARGS := $(if $(REQUIRE_CANDIDATE_LIBRARY),--require-candidate-library,)
 VERIFY_EVIDENCE_CACHE_ARGS := $(if $(REQUIRE_EVIDENCE_CACHE),--require-evidence-cache,)
 VERIFY_CLOSURE_READINESS_ARGS := $(if $(REQUIRE_CLOSURE_READINESS),--require-closure-readiness,)
+VERIFY_EXPERIMENTAL_FEEDBACK_ARGS := $(if $(REQUIRE_EXPERIMENTAL_FEEDBACK),--require-experimental-feedback,)
 
-.PHONY: research-package research-package-smoke research-package-cache-preflight research-package-cache-preflight-smoke research-package-cache-collect research-package-cache-collect-dry-run research-package-cache-merge research-package-psc-candidate-closure research-package-pdf research-package-verify test-research-package
+.PHONY: research-package research-package-smoke research-package-feedback-ingest research-package-cache-preflight research-package-cache-preflight-smoke research-package-cache-collect research-package-cache-collect-dry-run research-package-cache-merge research-package-psc-candidate-closure research-package-pdf research-package-verify test-research-package
 
 research-package:
 	$(PYTHON) $(RUN_RESEARCH_PACKAGE) \
@@ -88,7 +94,16 @@ research-package:
 		--top-k $(TOP_K) \
 		$(CANDIDATE_SOURCE_ARGS) \
 		$(CANDIDATE_SOURCE_NAME_ARGS) \
+		$(EXPERIMENTAL_FEEDBACK_ARGS) \
 		$(EXTRA_RUN_ARGS)
+
+research-package-feedback-ingest:
+	@test -n "$(EXPERIMENTAL_FEEDBACK_CSV)" || { echo "EXPERIMENTAL_FEEDBACK_CSV is required for research-package-feedback-ingest" >&2; exit 2; }
+	$(PYTHON) $(RUN_EXPERIMENTAL_FEEDBACK_INGESTION) \
+		--iteration-dir $(ARTIFACT_DIR)/closed_loop/iteration_000 \
+		--feedback-csv $(EXPERIMENTAL_FEEDBACK_CSV) \
+		--output-dir $(EXPERIMENTAL_FEEDBACK_DIR) \
+		--feedback-data-scope $(EXPERIMENTAL_FEEDBACK_DATA_SCOPE)
 
 research-package-smoke:
 	$(MAKE) research-package \
@@ -175,6 +190,8 @@ research-package-pdf:
 	if [ -f "$(EVIDENCE_CACHE_MANIFEST)" ]; then evidence_cache_args="--evidence-cache-manifest-path $(EVIDENCE_CACHE_MANIFEST)"; fi; \
 	closed_loop_args=""; \
 	if [ -d "$(ARTIFACT_DIR)/closed_loop/iteration_000" ]; then closed_loop_args="--closed-loop-iteration-dir $(ARTIFACT_DIR)/closed_loop/iteration_000"; fi; \
+	experimental_feedback_args=""; \
+	if [ -d "$(EXPERIMENTAL_FEEDBACK_DIR)" ]; then experimental_feedback_args="--experimental-feedback-dir $(EXPERIMENTAL_FEEDBACK_DIR)"; fi; \
 	closure_readiness_args=""; \
 	if [ -f "$(CLOSURE_READINESS_REPORT)" ]; then closure_readiness_args="--closure-readiness-report-path $(CLOSURE_READINESS_REPORT)"; fi; \
 	$(PYTHON) $(ROOT_PROVENANCE_MANIFEST) \
@@ -189,6 +206,7 @@ research-package-pdf:
 		$$candidate_source_args \
 		$$evidence_cache_args \
 		$$closed_loop_args \
+		$$experimental_feedback_args \
 		$$closure_readiness_args
 
 research-package-verify:
@@ -196,7 +214,8 @@ research-package-verify:
 		--package-dir $(ARTIFACT_DIR) \
 		$(VERIFY_CANDIDATE_LIBRARY_ARGS) \
 		$(VERIFY_EVIDENCE_CACHE_ARGS) \
-		$(VERIFY_CLOSURE_READINESS_ARGS)
+		$(VERIFY_CLOSURE_READINESS_ARGS) \
+		$(VERIFY_EXPERIMENTAL_FEEDBACK_ARGS)
 
 test-research-package:
 	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 $(PYTHON) -m pytest -q \
@@ -206,6 +225,7 @@ test-research-package:
 		tests/test_canonical_make_targets.py \
 		tests/test_evidence_cache_collector.py \
 		tests/test_evidence_cache_preflight.py \
+		tests/test_experimental_feedback_ingestion.py \
 		tests/test_research_package_contract.py \
 		tests/test_research_package_runner.py \
 		tests/test_run_verified_discovery_cli.py \

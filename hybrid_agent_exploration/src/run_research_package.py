@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from closed_loop.feedback_ingestion import ExperimentalFeedbackIngestionArtifacts, ingest_experimental_feedback
 from closed_loop.iteration_packet import generate_iteration_packet
 from data.source_completeness import (
     summarize_source_completeness,
@@ -51,6 +52,7 @@ class ResearchPackageArtifacts:
     evidence_cache_dir: Path | None
     candidate_library_dir: Path | None
     closed_loop_iteration_dir: Path
+    experimental_feedback_dir: Path | None
     report_dir: Path
     root_provenance_manifest_json: Path
     package_manifest_json: Path
@@ -73,6 +75,8 @@ def run_research_package(
     verified_discovery_top_n: int | None = None,
     iteration_index: int = 0,
     iteration_top_k: int = 10,
+    experimental_feedback_csv: str | Path | None = None,
+    experimental_feedback_data_scope: str = "external_lab",
 ) -> ResearchPackageArtifacts:
     """Generate the full verified-discovery research artifact package."""
 
@@ -180,6 +184,13 @@ def run_research_package(
         iteration_index=iteration_index,
         top_k=min(iteration_top_k, max(discovery_artifacts.ranked_candidates, 1)),
     )
+    experimental_feedback_artifacts: ExperimentalFeedbackIngestionArtifacts | None = None
+    if experimental_feedback_csv is not None:
+        experimental_feedback_artifacts = ingest_experimental_feedback(
+            iteration_dir=closed_loop_artifacts.output_dir,
+            feedback_csv=experimental_feedback_csv,
+            feedback_data_scope=experimental_feedback_data_scope,
+        )
 
     report_inputs = _report_inputs(
         verified_discovery_dir,
@@ -234,6 +245,7 @@ def run_research_package(
             candidate_library_rows=candidate_library_rows,
             evidence_cache_manifest_path=evidence_cache_manifest_path,
             closed_loop_iteration_dir=closed_loop_artifacts.output_dir,
+            experimental_feedback_artifacts=experimental_feedback_artifacts,
             validation_metrics_path=discovery_artifacts.model_validation_metrics_json,
             scaffold_validation_metrics_path=discovery_artifacts.model_scaffold_validation_metrics_json,
         ),
@@ -255,6 +267,8 @@ def run_research_package(
             input_path=Path(input_path),
             candidate_source_path=Path(candidate_source_path) if candidate_source_path is not None else None,
             candidate_source_name=candidate_source_name,
+            experimental_feedback_csv=Path(experimental_feedback_csv) if experimental_feedback_csv is not None else None,
+            experimental_feedback_data_scope=experimental_feedback_data_scope,
             cache_dir=cache_root if evidence_mode == "external-cached" else None,
             min_verified_rows=min_verified_rows,
             top_k=top_k,
@@ -268,6 +282,7 @@ def run_research_package(
             candidate_library_dir=candidate_library_dir,
             candidate_library_rows=candidate_library_rows,
             closed_loop_iteration_dir=closed_loop_artifacts.output_dir,
+            experimental_feedback_artifacts=experimental_feedback_artifacts,
             closure_readiness_report_path=closure_readiness_report_path,
             report_dir=report_dir,
             report_quality_score=main_bundle.quality_score,
@@ -285,6 +300,9 @@ def run_research_package(
         candidate_library_dir=candidate_library_dir,
         source_completeness_dir=source_completeness_artifacts.output_dir,
         closed_loop_iteration_dir=closed_loop_artifacts.output_dir,
+        experimental_feedback_dir=experimental_feedback_artifacts.output_dir
+        if experimental_feedback_artifacts is not None
+        else None,
         closure_readiness_report_path=closure_readiness_report_path,
         evidence_cache_manifest_path=evidence_cache_manifest_path,
         package_manifest_path=package_manifest_path,
@@ -299,6 +317,9 @@ def run_research_package(
         evidence_cache_dir=evidence_cache_dir,
         candidate_library_dir=candidate_library_dir,
         closed_loop_iteration_dir=closed_loop_artifacts.output_dir,
+        experimental_feedback_dir=experimental_feedback_artifacts.output_dir
+        if experimental_feedback_artifacts is not None
+        else None,
         report_dir=report_dir,
         root_provenance_manifest_json=root_manifest_path,
         package_manifest_json=package_manifest_path,
@@ -391,6 +412,8 @@ def _package_manifest(
     input_path: Path,
     candidate_source_path: Path | None,
     candidate_source_name: str | None,
+    experimental_feedback_csv: Path | None,
+    experimental_feedback_data_scope: str,
     cache_dir: Path | None,
     min_verified_rows: int,
     top_k: int,
@@ -404,6 +427,7 @@ def _package_manifest(
     candidate_library_dir: Path | None,
     candidate_library_rows: int | None,
     closed_loop_iteration_dir: Path,
+    experimental_feedback_artifacts: ExperimentalFeedbackIngestionArtifacts | None,
     closure_readiness_report_path: Path,
     report_dir: Path,
     report_quality_score: float,
@@ -429,11 +453,16 @@ def _package_manifest(
         "verified_discovery_top_n": verified_discovery_top_n,
         "iteration_index": iteration_index,
         "iteration_top_k": iteration_top_k,
+        "experimental_feedback_csv": str(experimental_feedback_csv) if experimental_feedback_csv is not None else None,
+        "experimental_feedback_data_scope": experimental_feedback_data_scope,
     }
     source_table_facts = _file_facts(input_path)
     candidate_source_facts = _file_facts(candidate_source_path) if candidate_source_path else None
     if candidate_source_facts is not None:
         candidate_source_facts["source_name"] = candidate_source_name
+    experimental_feedback_facts = _file_facts(experimental_feedback_csv) if experimental_feedback_csv else None
+    if experimental_feedback_facts is not None:
+        experimental_feedback_facts["feedback_data_scope"] = experimental_feedback_data_scope
     outputs = {
         "verified_discovery_dir": _relative(discovery_artifacts.output_dir, output_root),
         "source_completeness_dir": _relative(source_completeness_dir, output_root),
@@ -485,6 +514,24 @@ def _package_manifest(
             candidate_library_dir / "external_evidence_audit.md",
             output_root,
         )
+    if experimental_feedback_artifacts is not None:
+        outputs["experimental_feedback_dir"] = _relative(experimental_feedback_artifacts.output_dir, output_root)
+        outputs["experimental_feedback_validated_csv"] = _relative(
+            experimental_feedback_artifacts.validated_feedback_csv,
+            output_root,
+        )
+        outputs["experimental_feedback_vs_prediction_csv"] = _relative(
+            experimental_feedback_artifacts.feedback_vs_prediction_csv,
+            output_root,
+        )
+        outputs["experimental_feedback_ingestion_manifest_json"] = _relative(
+            experimental_feedback_artifacts.feedback_ingestion_manifest_json,
+            output_root,
+        )
+        outputs["experimental_feedback_validation_report_json"] = _relative(
+            experimental_feedback_artifacts.feedback_validation_report_json,
+            output_root,
+        )
     outputs["model_validation_metrics_json"] = _relative(
         discovery_artifacts.model_validation_metrics_json,
         output_root,
@@ -515,6 +562,7 @@ def _package_manifest(
         "inputs": {
             "source_table": source_table_facts,
             "candidate_source": candidate_source_facts,
+            "experimental_feedback": experimental_feedback_facts,
         },
         "evidence_mode": evidence_mode,
         "verification_level": verification_level,
@@ -552,11 +600,13 @@ def _closure_readiness_report(
     candidate_library_rows: int | None,
     evidence_cache_manifest_path: Path | None,
     closed_loop_iteration_dir: Path,
+    experimental_feedback_artifacts: ExperimentalFeedbackIngestionArtifacts | None,
     validation_metrics_path: Path,
     scaffold_validation_metrics_path: Path,
 ) -> dict[str, Any]:
     closure_blockers: list[str] = []
     chemical_generalization_gate = _chemical_generalization_gate(scaffold_validation_metrics_path)
+    experimental_feedback_gate = _experimental_feedback_gate(experimental_feedback_artifacts)
     gates = {
         "publication_grade": {
             "passed": publication_grade,
@@ -598,8 +648,13 @@ def _closure_readiness_report(
             "reason": "closed-loop handoff packet integrity artifact present",
         },
         "experimental_feedback": {
-            "passed": False,
-            "reason": "no real experimental feedback measurements have been ingested",
+            "passed": experimental_feedback_gate["passed"],
+            "reason": experimental_feedback_gate["reason"],
+            **{
+                key: value
+                for key, value in experimental_feedback_gate.items()
+                if key not in {"passed", "reason"}
+            },
         },
     }
     for gate_name, gate in gates.items():
@@ -617,6 +672,41 @@ def _closure_readiness_report(
         "publication_grade_false_reasons": false_reasons,
         "blocking_reasons": closure_blockers,
         "gates": gates,
+    }
+
+
+def _experimental_feedback_gate(artifacts: ExperimentalFeedbackIngestionArtifacts | None) -> dict[str, Any]:
+    if artifacts is None:
+        return {
+            "passed": False,
+            "reason": "no real experimental feedback measurements have been ingested",
+        }
+    report_path = artifacts.feedback_validation_report_json
+    try:
+        report = _read_json(report_path)
+    except (OSError, json.JSONDecodeError) as exc:
+        return {
+            "passed": False,
+            "reason": f"experimental feedback validation report unreadable: {exc}",
+        }
+    feedback_data_scope = report.get("feedback_data_scope")
+    if report.get("status") != "passed":
+        return {
+            "passed": False,
+            "reason": "experimental feedback validation report did not pass",
+            "feedback_data_scope": feedback_data_scope,
+        }
+    if feedback_data_scope != "external_lab":
+        return {
+            "passed": False,
+            "reason": f"feedback_data_scope={feedback_data_scope!r} is not external_lab",
+            "feedback_data_scope": feedback_data_scope,
+        }
+    return {
+        "passed": True,
+        "reason": "validated external_lab feedback artifact present",
+        "feedback_data_scope": feedback_data_scope,
+        "validated_feedback_rows": report.get("validated_feedback_rows"),
     }
 
 
@@ -802,6 +892,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--top-k", type=int, default=100)
     parser.add_argument("--iteration-index", type=int, default=0)
     parser.add_argument("--iteration-top-k", type=int, default=10)
+    parser.add_argument("--experimental-feedback-csv", help="Optional user-supplied experimental feedback CSV.")
+    parser.add_argument(
+        "--experimental-feedback-data-scope",
+        default="external_lab",
+        help="Scope label for experimental feedback provenance.",
+    )
     parser.add_argument("--report-quality-target", choices=("standard", "top-journal"), default="top-journal")
     return parser.parse_args(argv)
 
@@ -823,6 +919,8 @@ def main(argv: list[str] | None = None) -> int:
         report_quality_target=args.report_quality_target,
         iteration_index=args.iteration_index,
         iteration_top_k=args.iteration_top_k,
+        experimental_feedback_csv=args.experimental_feedback_csv,
+        experimental_feedback_data_scope=args.experimental_feedback_data_scope,
     )
     print(f"[research-package] package_manifest={artifacts.package_manifest_json}")
     print(f"[research-package] root_provenance_manifest={artifacts.root_provenance_manifest_json}")
