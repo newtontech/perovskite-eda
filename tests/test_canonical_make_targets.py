@@ -101,6 +101,18 @@ def test_psc_candidate_closure_target_uses_real_seed_source_and_strict_verify():
     assert "REQUIRE_EVIDENCE_CACHE=1" in output
 
 
+def test_research_package_verify_dry_run_accepts_closure_readiness_gate():
+    output = _make_dry_run(
+        "research-package-verify",
+        ARTIFACT_DIR="/tmp/artifacts",
+        REQUIRE_CLOSURE_READINESS="1",
+    )
+
+    assert "hybrid_agent_exploration/src/verify_research_package.py" in output
+    assert "--package-dir /tmp/artifacts" in output
+    assert "--require-closure-readiness" in output
+
+
 def test_smoke_target_dry_run_caps_rows_in_ignored_artifact_dir():
     output = _make_dry_run("research-package-smoke", SOURCE_TABLE="/tmp/source.csv")
 
