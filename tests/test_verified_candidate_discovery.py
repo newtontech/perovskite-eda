@@ -262,6 +262,58 @@ def test_candidate_library_contract_requires_status_backing_sources(tmp_path):
     assert "cand-001" in str(exc.value)
 
 
+def test_candidate_library_contract_requires_synthesis_backing_sources(tmp_path):
+    from screening.verified_candidate_discovery import CandidateLibraryContractError, VerifiedCandidateDiscovery
+
+    pool = _external_candidate_pool()
+    pool.loc[0, "synthesis_status"] = "reported_protocol"
+    pool.loc[0, "verification_sources"] = json.dumps([
+        {"kind": "molecule", "source": "pubchem", "pubchem_id": "702"},
+        {
+            "kind": "availability",
+            "source": "vendor_catalog",
+            "url": "https://www.sigmaaldrich.com/catalog/product/sial/459844",
+        },
+        {
+            "kind": "safety",
+            "source": "vendor_sds",
+            "url": "https://www.sigmaaldrich.com/US/en/sds/sial/459844",
+        },
+    ])
+
+    with pytest.raises(CandidateLibraryContractError) as exc:
+        VerifiedCandidateDiscovery(output_dir=tmp_path).discover(
+            pool,
+            model=LengthModel(),
+            feature_fn=_feature_fn,
+            dataset_id="missing-synthesis-source",
+        )
+
+    assert "synthesis_status" in str(exc.value)
+    assert "cand-001" in str(exc.value)
+
+
+def test_candidate_library_contract_rejects_non_object_source_entries(tmp_path):
+    from screening.verified_candidate_discovery import CandidateLibraryContractError, VerifiedCandidateDiscovery
+
+    pool = _external_candidate_pool()
+    sources = json.loads(pool.loc[0, "verification_sources"])
+    sources.append("not-a-source-object")
+    sources.append(None)
+    pool.loc[0, "verification_sources"] = json.dumps(sources)
+
+    with pytest.raises(CandidateLibraryContractError) as exc:
+        VerifiedCandidateDiscovery(output_dir=tmp_path).discover(
+            pool,
+            model=LengthModel(),
+            feature_fn=_feature_fn,
+            dataset_id="malformed-source-list",
+        )
+
+    assert "verification_sources[3]" in str(exc.value)
+    assert "must be an object" in str(exc.value)
+
+
 def test_candidate_library_contract_rejects_unknown_source_kind_and_missing_source_url(tmp_path):
     from screening.verified_candidate_discovery import CandidateLibraryContractError, VerifiedCandidateDiscovery
 
