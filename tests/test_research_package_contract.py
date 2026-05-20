@@ -1,4 +1,5 @@
 import json
+import hashlib
 import shutil
 import sys
 from pathlib import Path
@@ -65,6 +66,7 @@ def _write_source_table(path: Path) -> None:
 
 
 def _write_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
@@ -301,3 +303,78 @@ def test_contract_fails_when_required_json_sidecar_is_malformed(tmp_path):
         verify_research_package(package.output_dir, require_candidate_library=True)
 
     assert "report_bundle/main_text/claim_ledger.json" in str(exc.value)
+
+
+def test_contract_requires_evidence_cache_manifest_when_cache_is_required(tmp_path, monkeypatch):
+    import run_research_package as runner
+    from harness.authenticity import RealDataAuthenticator
+    from run_verified_discovery import SourceColumnMoleculeVerifier, SourceColumnReferenceVerifier
+    from verify_research_package import ResearchPackageContractError, verify_research_package
+
+    raw_csv = tmp_path / "raw_psc.csv"
+    _write_source_table(raw_csv)
+    cache_dir = tmp_path / "evidence_cache"
+    _write_json(cache_dir / "reference_cache.json", {"doi:10.1021/acs.jpclett.6c00119": {"title": "Verified"}})
+    _write_json(cache_dir / "molecule_cache.json", {"pubchem:701": {"smiles": "C"}})
+
+    def build_source_column_authenticator(evidence_mode, df, cache_dir):
+        return RealDataAuthenticator(
+            reference_verifier=SourceColumnReferenceVerifier(df),
+            molecule_verifier=SourceColumnMoleculeVerifier(),
+        )
+
+    monkeypatch.setattr(runner, "build_authenticator", build_source_column_authenticator)
+
+    package = runner.run_research_package(
+        input_path=raw_csv,
+        output_dir=tmp_path / "research_package",
+        dataset_id="evidence-cache-contract-fixture",
+        evidence_mode="external-cached",
+        cache_dir=cache_dir,
+        input_scope="full-source",
+        min_verified_rows=4,
+        top_k=1,
+    )
+
+    result = verify_research_package(package.output_dir, require_evidence_cache=True)
+    assert result["status"] == "passed"
+    assert result["checks"]["evidence_cache"]["manifest_path"].endswith(
+        "evidence_cache/evidence_cache_manifest.json"
+    )
+    assert result["checks"]["evidence_cache"]["cache_files"]["reference_cache"]["entry_count"] == 1
+
+    manifest_path = package.output_dir / "evidence_cache" / "evidence_cache_manifest.json"
+    evidence_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    def refresh_root_manifest_evidence_record() -> None:
+        root_manifest = json.loads(package.root_provenance_manifest_json.read_text(encoding="utf-8"))
+        for item in root_manifest["artifacts"]["evidence_cache"]:
+            if item["id"] == "evidence_cache_manifest_json":
+                item["size_bytes"] = manifest_path.stat().st_size
+                item["sha256_16"] = hashlib.sha256(manifest_path.read_bytes()).hexdigest()[:16]
+                break
+        _write_json(package.root_provenance_manifest_json, root_manifest)
+
+    bad_cache_dir_manifest = json.loads(json.dumps(evidence_manifest))
+    bad_cache_dir_manifest["cache_dir"] = str(cache_dir / "wrong-cache")
+    _write_json(manifest_path, bad_cache_dir_manifest)
+    refresh_root_manifest_evidence_record()
+    with pytest.raises(ResearchPackageContractError) as exc:
+        verify_research_package(package.output_dir, require_evidence_cache=True)
+    assert "cache_dir" in str(exc.value)
+
+    bad_file_path_manifest = json.loads(json.dumps(evidence_manifest))
+    bad_file_path_manifest["cache_files"]["reference_cache"]["path"] = str(cache_dir / "wrong-reference.json")
+    _write_json(manifest_path, bad_file_path_manifest)
+    refresh_root_manifest_evidence_record()
+    with pytest.raises(ResearchPackageContractError) as exc:
+        verify_research_package(package.output_dir, require_evidence_cache=True)
+    assert "cache_files.reference_cache.path" in str(exc.value)
+
+    _write_json(manifest_path, evidence_manifest)
+    refresh_root_manifest_evidence_record()
+    manifest_path.unlink()
+    with pytest.raises(ResearchPackageContractError) as exc:
+        verify_research_package(package.output_dir, require_evidence_cache=True)
+
+    assert "evidence_cache/evidence_cache_manifest.json" in str(exc.value)

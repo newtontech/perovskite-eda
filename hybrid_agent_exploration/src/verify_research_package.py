@@ -18,6 +18,8 @@ PACKAGE_MANIFEST_NAME = "package_manifest.json"
 ROOT_PROVENANCE_NAME = "provenance_manifest.json"
 PACKAGE_SCHEMA_VERSION = "research-package-manifest-v1"
 ROOT_PROVENANCE_SCHEMA_VERSION = "root-provenance-manifest-v1"
+EVIDENCE_CACHE_MANIFEST_SCHEMA_VERSION = "evidence-cache-manifest-v1"
+EVIDENCE_CACHE_MANIFEST_PATH = "evidence_cache/evidence_cache_manifest.json"
 
 REQUIRED_PACKAGE_OUTPUTS = {
     "verified_discovery_dir": "dir",
@@ -64,8 +66,8 @@ CANDIDATE_LIBRARY_FILES = (
 )
 
 EVIDENCE_CACHE_FILES = (
-    "reference_cache.json",
-    "molecule_cache.json",
+    ("reference_cache", "reference_cache.json"),
+    ("molecule_cache", "molecule_cache.json"),
 )
 
 REQUIRED_WORKFLOW_OUTPUTS = {
@@ -93,6 +95,7 @@ JSON_FIELD_REQUIREMENTS = {
     "verified_discovery/discovery/candidate_discovery_manifest.json": ("dataset_id", "outputs"),
     "verified_discovery/workflow_manifest.json": ("dataset_id", "outputs"),
     "source_completeness/source_completeness.json": ("schema_version", "dataset_id", "groups"),
+    "evidence_cache/evidence_cache_manifest.json": ("schema_version", "dataset_id", "cache_files"),
     "report_bundle/main_text/review_report.json": ("review", "claim_audit"),
     "report_bundle/main_text/run_manifest.json": ("generated_at", "best_model"),
     "candidate_library/source_summary.json": ("dataset_id", "output_rows"),
@@ -129,6 +132,10 @@ CANDIDATE_LIBRARY_ROOT_IDS = {
         "candidate_library:source_summary_json",
         "candidate_library:provenance_json",
     },
+}
+
+EVIDENCE_CACHE_ROOT_IDS = {
+    "evidence_cache": {"evidence_cache_manifest_json"},
 }
 
 
@@ -174,18 +181,21 @@ def verify_research_package(
         package_manifest,
         root,
         candidate_library_required=candidate_library_required,
+        require_evidence_cache=require_evidence_cache,
         errors=errors,
     )
     required_artifacts_check = _check_required_artifacts(
         package_manifest,
         root,
         candidate_library_required=candidate_library_required,
+        require_evidence_cache=require_evidence_cache,
         errors=errors,
     )
     root_provenance_check = _check_root_provenance(
         root_manifest,
         root,
         candidate_library_required=candidate_library_required,
+        require_evidence_cache=require_evidence_cache,
         errors=errors,
     )
     evidence_cache_check = _check_evidence_cache(
@@ -224,6 +234,7 @@ def _check_package_manifest(
     root: Path,
     *,
     candidate_library_required: bool,
+    require_evidence_cache: bool,
     errors: list[str],
 ) -> dict[str, Any]:
     if manifest.get("schema_version") != PACKAGE_SCHEMA_VERSION:
@@ -244,6 +255,20 @@ def _check_package_manifest(
             errors.append(f"{PACKAGE_MANIFEST_NAME}: outputs.candidate_library_dir is required")
         else:
             _check_path(root, value, kind="dir", errors=errors, context="outputs.candidate_library_dir")
+    if require_evidence_cache:
+        evidence_cache_dir = outputs.get("evidence_cache_dir")
+        if evidence_cache_dir != "evidence_cache":
+            errors.append(f"{PACKAGE_MANIFEST_NAME}: outputs.evidence_cache_dir must be 'evidence_cache'")
+        else:
+            _check_path(root, evidence_cache_dir, kind="dir", errors=errors, context="outputs.evidence_cache_dir")
+        value = outputs.get("evidence_cache_manifest_json")
+        if value != EVIDENCE_CACHE_MANIFEST_PATH:
+            errors.append(
+                f"{PACKAGE_MANIFEST_NAME}: outputs.evidence_cache_manifest_json must be "
+                f"{EVIDENCE_CACHE_MANIFEST_PATH!r}"
+            )
+        else:
+            _check_path(root, value, kind="file", errors=errors, context="outputs.evidence_cache_manifest_json")
     return {
         "status": "passed",
         "path": PACKAGE_MANIFEST_NAME,
@@ -257,6 +282,7 @@ def _check_required_artifacts(
     root: Path,
     *,
     candidate_library_required: bool,
+    require_evidence_cache: bool,
     errors: list[str],
 ) -> dict[str, Any]:
     required_paths = list(REQUIRED_ARTIFACT_FILES)
@@ -268,6 +294,8 @@ def _check_required_artifacts(
         else:
             _check_path(root, candidate_dir, kind="dir", errors=errors, context="outputs.candidate_library_dir")
         required_paths.extend(CANDIDATE_LIBRARY_FILES)
+    if require_evidence_cache:
+        required_paths.append(EVIDENCE_CACHE_MANIFEST_PATH)
 
     for relative_path in required_paths:
         _check_path(root, relative_path, kind="file", errors=errors, context=relative_path)
@@ -285,6 +313,7 @@ def _check_root_provenance(
     root: Path,
     *,
     candidate_library_required: bool,
+    require_evidence_cache: bool,
     errors: list[str],
 ) -> dict[str, Any]:
     if manifest.get("schema_version") != ROOT_PROVENANCE_SCHEMA_VERSION:
@@ -300,6 +329,9 @@ def _check_root_provenance(
     required_ids: dict[str, set[str]] = {category: set(ids) for category, ids in REQUIRED_ROOT_IDS.items()}
     if candidate_library_required:
         for category, ids in CANDIDATE_LIBRARY_ROOT_IDS.items():
+            required_ids.setdefault(category, set()).update(ids)
+    if require_evidence_cache:
+        for category, ids in EVIDENCE_CACHE_ROOT_IDS.items():
             required_ids.setdefault(category, set()).update(ids)
 
     artifact_ids_by_category: dict[str, list[str]] = {}
@@ -368,13 +400,53 @@ def _check_evidence_cache(
         return {"status": "failed", "reason": "runner_args.cache_dir missing"}
 
     cache_dir = _resolve_cache_dir(root, str(cache_dir_value))
-    paths: list[str] = []
-    for filename in EVIDENCE_CACHE_FILES:
+    manifest_path = root / EVIDENCE_CACHE_MANIFEST_PATH
+    evidence_manifest = _read_json_artifact(
+        manifest_path,
+        root,
+        context=EVIDENCE_CACHE_MANIFEST_PATH,
+        errors=errors,
+    )
+    if not isinstance(evidence_manifest, dict):
+        return {"status": "failed", "reason": "evidence cache manifest missing or invalid"}
+    if evidence_manifest.get("schema_version") != EVIDENCE_CACHE_MANIFEST_SCHEMA_VERSION:
+        errors.append(
+            f"{EVIDENCE_CACHE_MANIFEST_PATH}: schema_version={evidence_manifest.get('schema_version')!r}; "
+            f"expected {EVIDENCE_CACHE_MANIFEST_SCHEMA_VERSION!r}"
+        )
+    manifest_cache_dir = evidence_manifest.get("cache_dir")
+    if not isinstance(manifest_cache_dir, str) or not manifest_cache_dir:
+        errors.append(f"{EVIDENCE_CACHE_MANIFEST_PATH}: cache_dir is required")
+    elif _resolve_external_path(root, manifest_cache_dir).resolve() != cache_dir.resolve():
+        errors.append(
+            f"{EVIDENCE_CACHE_MANIFEST_PATH}: cache_dir={manifest_cache_dir!r} "
+            f"does not match runner_args.cache_dir={cache_dir_value!r}"
+        )
+    manifest_cache_files = evidence_manifest.get("cache_files")
+    if not isinstance(manifest_cache_files, dict):
+        errors.append(f"{EVIDENCE_CACHE_MANIFEST_PATH}: cache_files must be an object")
+        manifest_cache_files = {}
+
+    cache_files: dict[str, dict[str, Any]] = {}
+    for cache_key, filename in EVIDENCE_CACHE_FILES:
         path = cache_dir / filename
         if not path.is_file():
             errors.append(f"evidence_cache/{filename}: missing at {path}")
-        paths.append(str(path))
-    return {"status": "passed", "cache_dir": str(cache_dir), "paths": paths}
+            continue
+        cache_files[cache_key] = _check_cache_file_manifest(
+            cache_key,
+            filename,
+            path,
+            manifest_cache_files.get(cache_key),
+            root=root,
+            errors=errors,
+        )
+    return {
+        "status": "passed",
+        "cache_dir": str(cache_dir),
+        "manifest_path": _display_path(manifest_path, root),
+        "cache_files": cache_files,
+    }
 
 
 def _candidate_library_required(manifest: dict[str, Any], require_candidate_library: bool) -> bool:
@@ -484,6 +556,57 @@ def _read_json_artifact(path: Path, root: Path, *, context: str, errors: list[st
     return None
 
 
+def _check_cache_file_manifest(
+    cache_key: str,
+    filename: str,
+    path: Path,
+    manifest_record: Any,
+    *,
+    root: Path,
+    errors: list[str],
+) -> dict[str, Any]:
+    context = f"{EVIDENCE_CACHE_MANIFEST_PATH}: cache_files.{cache_key}"
+    if not isinstance(manifest_record, dict):
+        errors.append(f"{context} is required")
+        manifest_record = {}
+
+    payload = _read_json_artifact(path, path.parent, context=str(path), errors=errors)
+    entry_count = len(payload) if isinstance(payload, dict) else None
+    if payload is not None and entry_count is None:
+        errors.append(f"{path}: JSON payload must be an object")
+
+    size_bytes = path.stat().st_size
+    sha256 = _sha256(path)
+    expected_size = manifest_record.get("size_bytes")
+    expected_sha256 = manifest_record.get("sha256")
+    expected_entry_count = manifest_record.get("entry_count")
+    expected_exists = manifest_record.get("exists")
+    expected_filename = manifest_record.get("filename")
+    expected_path = manifest_record.get("path")
+
+    if expected_exists is not True:
+        errors.append(f"{context}.exists must be true")
+    if expected_filename != filename:
+        errors.append(f"{context}.filename={expected_filename!r} does not match {filename!r}")
+    if not isinstance(expected_path, str) or not expected_path:
+        errors.append(f"{context}.path is required")
+    elif _resolve_external_path(root, expected_path).resolve() != path.resolve():
+        errors.append(f"{context}.path={expected_path!r} does not match expected {path}")
+    if expected_size != size_bytes:
+        errors.append(f"{context}.size_bytes={expected_size!r} does not match disk size {size_bytes}")
+    if expected_sha256 != sha256:
+        errors.append(f"{context}.sha256 does not match disk content")
+    if expected_entry_count != entry_count:
+        errors.append(f"{context}.entry_count={expected_entry_count!r} does not match JSON object count {entry_count}")
+
+    return {
+        "path": str(path),
+        "size_bytes": size_bytes,
+        "sha256": sha256,
+        "entry_count": entry_count,
+    }
+
+
 def _check_root_record(
     root: Path,
     record: dict[str, Any],
@@ -524,6 +647,10 @@ def _resolve_path(root: Path, value: str | Path) -> Path:
 
 
 def _resolve_cache_dir(root: Path, value: str) -> Path:
+    return _resolve_external_path(root, value)
+
+
+def _resolve_external_path(root: Path, value: str) -> Path:
     path = Path(value)
     if path.is_absolute():
         return path
@@ -538,6 +665,14 @@ def _sha256_16(path: Path) -> str:
     with path.open("rb") as handle:
         digest.update(handle.read(1024 * 1024))
     return digest.hexdigest()[:16]
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _display_path(path: Path, root: Path) -> str:

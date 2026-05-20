@@ -50,6 +50,11 @@ def _candidate_source() -> pd.DataFrame:
     )
 
 
+def _write_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
 def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     from run_research_package import run_research_package
 
@@ -240,6 +245,7 @@ def test_external_cached_candidate_source_does_not_overclaim_publication_grade(t
 
     raw_csv = tmp_path / "raw_psc.csv"
     candidate_csv = tmp_path / "candidate_source.csv"
+    cache_dir = tmp_path / "evidence_cache"
     pd.DataFrame(
         [
             _raw_record("row-001", "10.1021/acs.jpclett.6c00119", "C", 0.25),
@@ -249,6 +255,8 @@ def test_external_cached_candidate_source_does_not_overclaim_publication_grade(t
         ]
     ).to_csv(raw_csv, index=False)
     _candidate_source().to_csv(candidate_csv, index=False)
+    _write_json(cache_dir / "reference_cache.json", {"doi:10.1021/acs.jpclett.6c00119": {"title": "Verified"}})
+    _write_json(cache_dir / "molecule_cache.json", {"pubchem:7843": {"smiles": "CCCC"}})
 
     def build_source_column_authenticator(evidence_mode, df, cache_dir):
         return RealDataAuthenticator(
@@ -265,11 +273,14 @@ def test_external_cached_candidate_source_does_not_overclaim_publication_grade(t
         evidence_mode="external-cached",
         candidate_source_path=candidate_csv,
         candidate_source_name="fixture-vendor-source",
+        cache_dir=cache_dir,
         min_verified_rows=4,
         top_k=1,
     )
 
     package_manifest = json.loads(package.package_manifest_json.read_text(encoding="utf-8"))
+    evidence_manifest_path = package.output_dir / "evidence_cache" / "evidence_cache_manifest.json"
+    evidence_manifest = json.loads(evidence_manifest_path.read_text(encoding="utf-8"))
     assert package_manifest["input_scope"] == "selected-subset"
     assert package_manifest["dataset_publication_grade"] is False
     assert package_manifest["candidate_library_publication_grade"] is False
@@ -280,6 +291,13 @@ def test_external_cached_candidate_source_does_not_overclaim_publication_grade(t
         "candidate library is offline-normalized",
     ]
     assert package_manifest["candidate_library_publication_grade_reason"] == "candidate library is offline-normalized"
+    assert package_manifest["outputs"]["evidence_cache_dir"] == "evidence_cache"
+    assert package_manifest["outputs"]["evidence_cache_manifest_json"] == "evidence_cache/evidence_cache_manifest.json"
+    assert evidence_manifest["schema_version"] == "evidence-cache-manifest-v1"
+    assert evidence_manifest["dataset_id"] == "external-cached-offline-candidates"
+    assert evidence_manifest["cache_files"]["reference_cache"]["entry_count"] == 1
+    assert evidence_manifest["cache_files"]["molecule_cache"]["entry_count"] == 1
+    assert len(evidence_manifest["cache_files"]["reference_cache"]["sha256"]) == 64
 
     run_manifest = json.loads(
         (package.report_dir / "main_text" / "run_manifest.json").read_text(encoding="utf-8")
@@ -296,6 +314,11 @@ def test_external_cached_candidate_source_does_not_overclaim_publication_grade(t
     si_text = (package.report_dir / "si" / "supporting_information.md").read_text(encoding="utf-8")
     assert "Publication-grade flag: `False`" in si_text
     assert "Candidate-library publication-grade flag: `False`" in si_text
+
+    root_manifest = json.loads(package.root_provenance_manifest_json.read_text(encoding="utf-8"))
+    assert "evidence_cache_manifest_json" in {
+        item["id"] for item in root_manifest["artifacts"]["evidence_cache"]
+    }
 
 
 def test_external_cached_full_source_without_candidate_source_can_be_publication_grade(tmp_path, monkeypatch):
@@ -338,6 +361,69 @@ def test_external_cached_full_source_without_candidate_source_can_be_publication
     assert package_manifest["publication_grade"] is True
     assert package_manifest["publication_grade_reason"] == "all publication-grade gates passed"
     assert package_manifest["publication_grade_reasons"] == []
+
+
+def test_external_cached_manifest_captures_post_workflow_cache_state(tmp_path, monkeypatch):
+    import run_research_package as runner
+    from harness.authenticity import MoleculeEvidence, RealDataAuthenticator, ReferenceEvidence
+
+    raw_csv = tmp_path / "raw_psc.csv"
+    cache_dir = tmp_path / "evidence_cache"
+    _write_json(cache_dir / "reference_cache.json", {})
+    _write_json(cache_dir / "molecule_cache.json", {})
+    pd.DataFrame(
+        [
+            _raw_record("row-001", "10.1021/acs.jpclett.6c00119", "C", 0.25),
+            _raw_record("row-002", "10.1021/acs.jpclett.6c00120", "CC", 0.50),
+            _raw_record("row-003", "10.1021/acs.jpclett.6c00121", "CCC", 0.75),
+            _raw_record("row-004", "10.1021/acs.jpclett.6c00122", "CCCC", 1.00),
+        ]
+    ).to_csv(raw_csv, index=False)
+
+    def build_mutating_authenticator(evidence_mode, df, cache_dir):
+        cache_root = Path(cache_dir)
+
+        def verify_reference(doi: str) -> ReferenceEvidence:
+            reference_cache = json.loads((cache_root / "reference_cache.json").read_text(encoding="utf-8"))
+            reference_cache[f"doi:{doi}"] = {"title": "Verified"}
+            _write_json(cache_root / "reference_cache.json", reference_cache)
+            return ReferenceEvidence(doi=doi, title="Verified PSC additive paper", source="test-cache")
+
+        def verify_molecule(record: dict) -> MoleculeEvidence:
+            pubchem_id = str(record["pubchem_id"])
+            molecule_cache = json.loads((cache_root / "molecule_cache.json").read_text(encoding="utf-8"))
+            molecule_cache[f"pubchem:{pubchem_id}"] = {"smiles": record["smiles"]}
+            _write_json(cache_root / "molecule_cache.json", molecule_cache)
+            return MoleculeEvidence(smiles=record["smiles"], pubchem_id=pubchem_id, source="test-cache")
+
+        return RealDataAuthenticator(reference_verifier=verify_reference, molecule_verifier=verify_molecule)
+
+    monkeypatch.setattr(runner, "build_authenticator", build_mutating_authenticator)
+
+    package = runner.run_research_package(
+        input_path=raw_csv,
+        output_dir=tmp_path / "research_package",
+        dataset_id="external-cache-mutation-fixture",
+        evidence_mode="external-cached",
+        cache_dir=cache_dir,
+        input_scope="full-source",
+        min_verified_rows=4,
+        top_k=1,
+    )
+
+    evidence_manifest = json.loads(
+        (package.output_dir / "evidence_cache" / "evidence_cache_manifest.json").read_text(encoding="utf-8")
+    )
+    reference_cache = json.loads((cache_dir / "reference_cache.json").read_text(encoding="utf-8"))
+    molecule_cache = json.loads((cache_dir / "molecule_cache.json").read_text(encoding="utf-8"))
+    assert evidence_manifest["cache_files"]["reference_cache"]["entry_count"] == len(reference_cache)
+    assert evidence_manifest["cache_files"]["molecule_cache"]["entry_count"] == len(molecule_cache)
+    assert evidence_manifest["cache_files"]["reference_cache"]["sha256"] == runner._sha256(
+        cache_dir / "reference_cache.json"
+    )
+    assert evidence_manifest["cache_files"]["molecule_cache"]["sha256"] == runner._sha256(
+        cache_dir / "molecule_cache.json"
+    )
 
 
 def test_research_package_rejects_invalid_input_scope(tmp_path):
