@@ -55,6 +55,29 @@ def _write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def _write_external_lab_feedback(path: Path) -> None:
+    pd.DataFrame(
+        [
+            {
+                "iteration_id": "iteration_000",
+                "candidate_id": "candidate-001",
+                "smiles": "CCCC",
+                "experimental_status": "measured",
+                "measured_pce_without_modulator": 18.0,
+                "measured_pce_with_modulator": 19.1,
+                "measured_delta_pce": 1.1,
+                "measurement_date": "2026-05-20",
+                "protocol_reference": "lab-protocol-v1",
+                "lab_or_operator": "operator-a",
+                "instrument_or_batch_id": "batch-001",
+                "raw_data_reference": "raw/run-001.csv",
+                "data_source": "lab-a",
+                "notes": "independent lab measurement row",
+            }
+        ]
+    ).to_csv(path, index=False)
+
+
 def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     from run_research_package import run_research_package
 
@@ -328,6 +351,90 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert set(feedback["experimental_status"]) == {"pending_external_measurement"}
     for column in ["measured_delta_pce", "measured_pce", "measurement_date", "protocol_reference", "notes"]:
         assert feedback[column].tolist() == [""]
+
+
+def test_research_package_runner_can_ingest_external_lab_feedback_without_making_closure_ready(tmp_path):
+    from run_research_package import run_research_package
+
+    raw_csv = tmp_path / "raw_psc.csv"
+    candidate_csv = tmp_path / "candidate_source.csv"
+    feedback_csv = tmp_path / "external_lab_feedback.csv"
+    output_dir = tmp_path / "research_package"
+    pd.DataFrame(
+        [
+            _raw_record("row-001", "10.1021/acs.jpclett.6c00119", "C", 0.25),
+            _raw_record("row-002", "10.1021/acs.jpclett.6c00120", "CC", 0.50),
+            _raw_record("row-003", "10.1021/acs.jpclett.6c00121", "CCC", 0.75),
+            _raw_record("row-004", "10.1021/acs.jpclett.6c00122", "CCCC", 1.00),
+        ]
+    ).to_csv(raw_csv, index=False)
+    candidate_source = _candidate_source()
+    candidate_source["candidate_id"] = "candidate-001"
+    candidate_source.to_csv(candidate_csv, index=False)
+    _write_external_lab_feedback(feedback_csv)
+
+    package = run_research_package(
+        input_path=raw_csv,
+        output_dir=output_dir,
+        dataset_id="external-lab-feedback-fixture",
+        evidence_mode="source-columns",
+        candidate_source_path=candidate_csv,
+        candidate_source_name="fixture-vendor-source",
+        experimental_feedback_csv=feedback_csv,
+        experimental_feedback_data_scope="external_lab",
+        min_verified_rows=4,
+        top_k=1,
+        report_quality_target="top-journal",
+    )
+
+    feedback_dir = package.output_dir / "closed_loop" / "iteration_000" / "experimental_feedback"
+    required_feedback_paths = [
+        feedback_dir / "validated_feedback.csv",
+        feedback_dir / "feedback_vs_prediction.csv",
+        feedback_dir / "feedback_ingestion_manifest.json",
+        feedback_dir / "feedback_validation_report.json",
+    ]
+    assert all(path.exists() for path in required_feedback_paths)
+
+    package_manifest = json.loads(package.package_manifest_json.read_text(encoding="utf-8"))
+    assert package_manifest["runner"]["args"]["experimental_feedback_csv"].endswith("external_lab_feedback.csv")
+    assert package_manifest["runner"]["args"]["experimental_feedback_data_scope"] == "external_lab"
+    assert package_manifest["outputs"]["experimental_feedback_dir"] == (
+        "closed_loop/iteration_000/experimental_feedback"
+    )
+    assert package_manifest["outputs"]["experimental_feedback_validated_csv"] == (
+        "closed_loop/iteration_000/experimental_feedback/validated_feedback.csv"
+    )
+    assert package_manifest["outputs"]["experimental_feedback_vs_prediction_csv"] == (
+        "closed_loop/iteration_000/experimental_feedback/feedback_vs_prediction.csv"
+    )
+    assert package_manifest["outputs"]["experimental_feedback_ingestion_manifest_json"] == (
+        "closed_loop/iteration_000/experimental_feedback/feedback_ingestion_manifest.json"
+    )
+    assert package_manifest["outputs"]["experimental_feedback_validation_report_json"] == (
+        "closed_loop/iteration_000/experimental_feedback/feedback_validation_report.json"
+    )
+
+    root_manifest = json.loads(package.root_provenance_manifest_json.read_text(encoding="utf-8"))
+    assert {item["id"] for item in root_manifest["artifacts"]["experimental_feedback"]} == {
+        "validated_feedback_csv",
+        "feedback_vs_prediction_csv",
+        "feedback_ingestion_manifest_json",
+        "feedback_validation_report_json",
+    }
+
+    closure_readiness = json.loads((package.output_dir / "closure_readiness_report.json").read_text(encoding="utf-8"))
+    assert closure_readiness["gates"]["experimental_feedback"]["passed"] is True
+    assert closure_readiness["gates"]["external_validation"]["passed"] is False
+    assert closure_readiness["overall_ready"] is False
+
+    feedback_template = pd.read_csv(
+        package.output_dir / "closed_loop" / "iteration_000" / "feedback_template.csv",
+        keep_default_na=False,
+    )
+    assert set(feedback_template["experimental_status"]) == {"pending_external_measurement"}
+    for column in ["measured_delta_pce", "measured_pce", "measurement_date", "protocol_reference", "notes"]:
+        assert feedback_template[column].tolist() == [""]
 
 
 def test_external_cached_candidate_source_does_not_overclaim_publication_grade(tmp_path, monkeypatch):

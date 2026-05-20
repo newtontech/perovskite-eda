@@ -25,6 +25,11 @@ ROOT_PROVENANCE_SCHEMA_VERSION = "root-provenance-manifest-v1"
 EVIDENCE_CACHE_MANIFEST_SCHEMA_VERSION = "evidence-cache-manifest-v1"
 EVIDENCE_CACHE_MANIFEST_PATH = "evidence_cache/evidence_cache_manifest.json"
 CLOSURE_READINESS_REPORT_PATH = "closure_readiness_report.json"
+EXPERIMENTAL_FEEDBACK_DIR = "closed_loop/iteration_000/experimental_feedback"
+EXPERIMENTAL_FEEDBACK_MANIFEST_PATH = f"{EXPERIMENTAL_FEEDBACK_DIR}/feedback_ingestion_manifest.json"
+EXPERIMENTAL_FEEDBACK_VALIDATION_REPORT_PATH = f"{EXPERIMENTAL_FEEDBACK_DIR}/feedback_validation_report.json"
+EXPERIMENTAL_FEEDBACK_VALIDATED_CSV_PATH = f"{EXPERIMENTAL_FEEDBACK_DIR}/validated_feedback.csv"
+EXPERIMENTAL_FEEDBACK_VS_PREDICTION_PATH = f"{EXPERIMENTAL_FEEDBACK_DIR}/feedback_vs_prediction.csv"
 
 REQUIRED_PACKAGE_OUTPUTS = {
     "verified_discovery_dir": "dir",
@@ -49,6 +54,14 @@ REQUIRED_PACKAGE_OUTPUTS = {
     "model_scaffold_validation_predictions_csv": "file",
     "root_provenance_manifest_json": "file",
     "package_manifest_json": "file",
+}
+
+EXPERIMENTAL_FEEDBACK_OUTPUTS = {
+    "experimental_feedback_dir": "dir",
+    "experimental_feedback_validated_csv": "file",
+    "experimental_feedback_vs_prediction_csv": "file",
+    "experimental_feedback_ingestion_manifest_json": "file",
+    "experimental_feedback_validation_report_json": "file",
 }
 
 REQUIRED_ARTIFACT_FILES = (
@@ -98,6 +111,13 @@ CANDIDATE_LIBRARY_FILES = (
 EVIDENCE_CACHE_FILES = (
     ("reference_cache", "reference_cache.json"),
     ("molecule_cache", "molecule_cache.json"),
+)
+
+EXPERIMENTAL_FEEDBACK_FILES = (
+    EXPERIMENTAL_FEEDBACK_VALIDATED_CSV_PATH,
+    EXPERIMENTAL_FEEDBACK_VS_PREDICTION_PATH,
+    EXPERIMENTAL_FEEDBACK_MANIFEST_PATH,
+    EXPERIMENTAL_FEEDBACK_VALIDATION_REPORT_PATH,
 )
 
 REQUIRED_WORKFLOW_OUTPUTS = {
@@ -228,6 +248,15 @@ EVIDENCE_CACHE_ROOT_IDS = {
     "evidence_cache": {"evidence_cache_manifest_json"},
 }
 
+EXPERIMENTAL_FEEDBACK_ROOT_IDS = {
+    "experimental_feedback": {
+        "validated_feedback_csv",
+        "feedback_vs_prediction_csv",
+        "feedback_ingestion_manifest_json",
+        "feedback_validation_report_json",
+    },
+}
+
 
 class ResearchPackageContractError(RuntimeError):
     """Raised when a research package violates the artifact contract."""
@@ -239,6 +268,7 @@ def verify_research_package(
     require_candidate_library: bool = False,
     require_evidence_cache: bool = False,
     require_closure_readiness: bool = False,
+    require_experimental_feedback: bool = False,
 ) -> dict[str, Any]:
     """Verify that a research package contains every required deliverable.
 
@@ -247,6 +277,8 @@ def verify_research_package(
         require_candidate_library: Require candidate-library artifacts even if
             the package manifest does not declare a candidate source.
         require_evidence_cache: Require external evidence cache JSON files.
+        require_experimental_feedback: Require validated closed-loop
+            experimental feedback artifacts.
 
     Returns:
         A JSON-serializable pass report.
@@ -268,11 +300,16 @@ def verify_research_package(
         _raise_if_errors(errors)
 
     candidate_library_required = _candidate_library_required(package_manifest, require_candidate_library)
+    experimental_feedback_required = _experimental_feedback_required(
+        package_manifest,
+        require_experimental_feedback,
+    )
     package_manifest_check = _check_package_manifest(
         package_manifest,
         root,
         candidate_library_required=candidate_library_required,
         require_evidence_cache=require_evidence_cache,
+        require_experimental_feedback=experimental_feedback_required,
         errors=errors,
     )
     required_artifacts_check = _check_required_artifacts(
@@ -280,6 +317,7 @@ def verify_research_package(
         root,
         candidate_library_required=candidate_library_required,
         require_evidence_cache=require_evidence_cache,
+        require_experimental_feedback=experimental_feedback_required,
         errors=errors,
     )
     root_provenance_check = _check_root_provenance(
@@ -287,6 +325,7 @@ def verify_research_package(
         root,
         candidate_library_required=candidate_library_required,
         require_evidence_cache=require_evidence_cache,
+        require_experimental_feedback=experimental_feedback_required,
         errors=errors,
     )
     evidence_cache_check = _check_evidence_cache(
@@ -297,6 +336,12 @@ def verify_research_package(
     )
     scaffold_validation_check = _check_scaffold_validation(package_manifest, root, errors=errors)
     closed_loop_check = _check_closed_loop_iteration_packet(package_manifest, root, errors=errors)
+    experimental_feedback_check = _check_experimental_feedback(
+        package_manifest,
+        root,
+        require_experimental_feedback=experimental_feedback_required,
+        errors=errors,
+    )
     closure_readiness_check = _check_closure_readiness(
         package_manifest,
         root,
@@ -318,6 +363,7 @@ def verify_research_package(
             "ranked_candidates": package_manifest.get("ranked_candidates"),
             "candidate_library_rows": package_manifest.get("candidate_library_rows"),
             "candidate_library_required": candidate_library_required,
+            "experimental_feedback_required": experimental_feedback_required,
         },
         "checks": {
             "package_manifest": package_manifest_check,
@@ -326,6 +372,7 @@ def verify_research_package(
             "evidence_cache": evidence_cache_check,
             "scaffold_validation": scaffold_validation_check,
             "closed_loop_iteration_packet": closed_loop_check,
+            "experimental_feedback": experimental_feedback_check,
             "closure_readiness": closure_readiness_check,
         },
     }
@@ -337,6 +384,7 @@ def _check_package_manifest(
     *,
     candidate_library_required: bool,
     require_evidence_cache: bool,
+    require_experimental_feedback: bool,
     errors: list[str],
 ) -> dict[str, Any]:
     if manifest.get("schema_version") != PACKAGE_SCHEMA_VERSION:
@@ -371,6 +419,13 @@ def _check_package_manifest(
             )
         else:
             _check_path(root, value, kind="file", errors=errors, context="outputs.evidence_cache_manifest_json")
+    if require_experimental_feedback:
+        for key, kind in EXPERIMENTAL_FEEDBACK_OUTPUTS.items():
+            value = outputs.get(key)
+            if not value:
+                errors.append(f"{PACKAGE_MANIFEST_NAME}: outputs.{key} is required for experimental feedback")
+                continue
+            _check_path(root, value, kind=kind, errors=errors, context=f"outputs.{key}")
     return {
         "status": "passed",
         "path": PACKAGE_MANIFEST_NAME,
@@ -385,6 +440,7 @@ def _check_required_artifacts(
     *,
     candidate_library_required: bool,
     require_evidence_cache: bool,
+    require_experimental_feedback: bool,
     errors: list[str],
 ) -> dict[str, Any]:
     required_paths = list(REQUIRED_ARTIFACT_FILES)
@@ -398,6 +454,17 @@ def _check_required_artifacts(
         required_paths.extend(CANDIDATE_LIBRARY_FILES)
     if require_evidence_cache:
         required_paths.append(EVIDENCE_CACHE_MANIFEST_PATH)
+    if require_experimental_feedback:
+        outputs = _manifest_outputs(manifest)
+        for key in EXPERIMENTAL_FEEDBACK_OUTPUTS:
+            value = outputs.get(key)
+            if key == "experimental_feedback_dir":
+                if not value:
+                    errors.append(f"{PACKAGE_MANIFEST_NAME}: outputs.{key} is required for experimental feedback")
+                elif not _resolve_path(root, str(value)).is_dir():
+                    errors.append(f"outputs.{key}: missing directory {value}")
+                continue
+            required_paths.append(str(value or EXPERIMENTAL_FEEDBACK_FILES[0]))
 
     for relative_path in required_paths:
         _check_path(root, relative_path, kind="file", errors=errors, context=relative_path)
@@ -416,6 +483,7 @@ def _check_root_provenance(
     *,
     candidate_library_required: bool,
     require_evidence_cache: bool,
+    require_experimental_feedback: bool,
     errors: list[str],
 ) -> dict[str, Any]:
     if manifest.get("schema_version") != ROOT_PROVENANCE_SCHEMA_VERSION:
@@ -434,6 +502,9 @@ def _check_root_provenance(
             required_ids.setdefault(category, set()).update(ids)
     if require_evidence_cache:
         for category, ids in EVIDENCE_CACHE_ROOT_IDS.items():
+            required_ids.setdefault(category, set()).update(ids)
+    if require_experimental_feedback:
+        for category, ids in EXPERIMENTAL_FEEDBACK_ROOT_IDS.items():
             required_ids.setdefault(category, set()).update(ids)
 
     artifact_ids_by_category: dict[str, list[str]] = {}
@@ -548,6 +619,86 @@ def _check_evidence_cache(
         "cache_dir": str(cache_dir),
         "manifest_path": _display_path(manifest_path, root),
         "cache_files": cache_files,
+    }
+
+
+def _check_experimental_feedback(
+    manifest: dict[str, Any],
+    root: Path,
+    *,
+    require_experimental_feedback: bool,
+    errors: list[str],
+) -> dict[str, Any]:
+    outputs = _manifest_outputs(manifest)
+    declared = any(outputs.get(key) for key in EXPERIMENTAL_FEEDBACK_OUTPUTS)
+    if not require_experimental_feedback and not declared:
+        return {"status": "skipped", "reason": "experimental feedback not declared"}
+    if require_experimental_feedback and not declared:
+        errors.append("experimental feedback required, but package manifest does not declare feedback artifacts")
+        return {"status": "failed", "reason": "experimental feedback required but absent"}
+
+    paths = {
+        key: _resolve_path(root, str(outputs.get(key, "")))
+        for key in EXPERIMENTAL_FEEDBACK_OUTPUTS
+        if key != "experimental_feedback_dir"
+    }
+    manifest_path = paths.get("experimental_feedback_ingestion_manifest_json")
+    validation_path = paths.get("experimental_feedback_validation_report_json")
+    validated_csv = paths.get("experimental_feedback_validated_csv")
+    comparison_csv = paths.get("experimental_feedback_vs_prediction_csv")
+    feedback_manifest = _read_json_artifact(
+        manifest_path,
+        root,
+        context=outputs.get("experimental_feedback_ingestion_manifest_json", EXPERIMENTAL_FEEDBACK_MANIFEST_PATH),
+        errors=errors,
+    )
+    validation_report = _read_json_artifact(
+        validation_path,
+        root,
+        context=outputs.get("experimental_feedback_validation_report_json", EXPERIMENTAL_FEEDBACK_VALIDATION_REPORT_PATH),
+        errors=errors,
+    )
+    validated_rows = _read_csv_rows(validated_csv, root, errors=errors, context="experimental_feedback_validated_csv")
+    comparison_rows = _read_csv_rows(comparison_csv, root, errors=errors, context="experimental_feedback_vs_prediction_csv")
+
+    if isinstance(feedback_manifest, dict):
+        if feedback_manifest.get("schema_version") != "closed-loop-feedback-ingestion-manifest-v1":
+            errors.append(
+                "experimental feedback ingestion manifest schema_version must be "
+                "'closed-loop-feedback-ingestion-manifest-v1'"
+            )
+        input_file = feedback_manifest.get("input_feedback_file")
+        if not isinstance(input_file, dict) or not input_file.get("sha256"):
+            errors.append("experimental feedback ingestion manifest requires input_feedback_file.sha256")
+        row_counts = feedback_manifest.get("row_counts")
+        if not isinstance(row_counts, dict):
+            errors.append("experimental feedback ingestion manifest requires row_counts")
+            row_counts = {}
+        if row_counts.get("validated_feedback_rows") != len(validated_rows):
+            errors.append(
+                "experimental feedback manifest row_counts.validated_feedback_rows "
+                f"does not match validated_feedback.csv rows ({len(validated_rows)})"
+            )
+    if isinstance(validation_report, dict):
+        if validation_report.get("schema_version") != "closed-loop-feedback-validation-report-v1":
+            errors.append(
+                "experimental feedback validation report schema_version must be "
+                "'closed-loop-feedback-validation-report-v1'"
+            )
+        if validation_report.get("status") != "passed":
+            errors.append("experimental feedback validation report status must be passed")
+        if validation_report.get("validated_feedback_rows") != len(validated_rows):
+            errors.append(
+                "experimental feedback validation report row count does not match validated_feedback.csv"
+            )
+    if len(comparison_rows) != len(validated_rows):
+        errors.append("feedback_vs_prediction.csv row count must match validated_feedback.csv row count")
+    return {
+        "status": "passed",
+        "validated_feedback_rows": len(validated_rows),
+        "feedback_data_scope": validation_report.get("feedback_data_scope")
+        if isinstance(validation_report, dict)
+        else None,
     }
 
 
@@ -773,12 +924,28 @@ def _check_closure_readiness(
     if not isinstance(gates, dict):
         errors.append(f"{CLOSURE_READINESS_REPORT_PATH}: gates must be an object")
         gates = {}
-    chemical_gate = gates.get("chemical_generalization_validation")
-    if not isinstance(chemical_gate, dict):
-        errors.append(f"{CLOSURE_READINESS_REPORT_PATH}: gates.chemical_generalization_validation is required")
-    elif not isinstance(chemical_gate.get("passed"), bool):
-        errors.append(f"{CLOSURE_READINESS_REPORT_PATH}: gates.chemical_generalization_validation.passed must be boolean")
+    for gate_name in (
+        "chemical_generalization_validation",
+        "external_validation",
+        "experimental_feedback",
+    ):
+        gate = gates.get(gate_name)
+        if not isinstance(gate, dict):
+            errors.append(f"{CLOSURE_READINESS_REPORT_PATH}: gates.{gate_name} is required")
+        elif not isinstance(gate.get("passed"), bool):
+            errors.append(f"{CLOSURE_READINESS_REPORT_PATH}: gates.{gate_name}.passed must be boolean")
     overall_ready = report.get("overall_ready")
+    if overall_ready is True:
+        failed_gates = [
+            name
+            for name, gate in sorted(gates.items())
+            if not isinstance(gate, dict) or gate.get("passed") is not True
+        ]
+        if failed_gates:
+            errors.append(
+                "overall_ready=true requires all closure gates to pass; "
+                f"failed gates: {failed_gates}"
+            )
     if require_closure_readiness and overall_ready is not True:
         errors.append(
             "closure readiness required overall_ready=true; "
@@ -806,6 +973,22 @@ def _candidate_library_required(manifest: dict[str, Any], require_candidate_libr
         or manifest.get("candidate_library_rows") is not None
         or inputs.get("candidate_source") is not None
         or runner_args.get("candidate_source") is not None
+    )
+
+
+def _experimental_feedback_required(manifest: dict[str, Any], require_experimental_feedback: bool) -> bool:
+    outputs = _manifest_outputs(manifest)
+    inputs = manifest.get("inputs")
+    if not isinstance(inputs, dict):
+        inputs = {}
+    runner_args = manifest.get("runner_args")
+    if not isinstance(runner_args, dict):
+        runner_args = {}
+    return (
+        require_experimental_feedback
+        or any(outputs.get(key) is not None for key in EXPERIMENTAL_FEEDBACK_OUTPUTS)
+        or inputs.get("experimental_feedback") is not None
+        or runner_args.get("experimental_feedback_csv") is not None
     )
 
 
@@ -897,6 +1080,15 @@ def _read_json_artifact(path: Path, root: Path, *, context: str, errors: list[st
     except OSError as exc:
         errors.append(f"{context}: cannot read JSON ({exc})")
     return None
+
+
+def _read_csv_rows(path: Path, root: Path, *, context: str, errors: list[str]) -> list[dict[str, str]]:
+    try:
+        with path.open(newline="", encoding="utf-8") as handle:
+            return list(csv.DictReader(handle))
+    except OSError as exc:
+        errors.append(f"{context}: cannot read CSV {_display_path(path, root)} ({exc})")
+    return []
 
 
 def _check_cache_file_manifest(
@@ -1037,6 +1229,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--require-candidate-library", action="store_true")
     parser.add_argument("--require-evidence-cache", action="store_true")
     parser.add_argument("--require-closure-readiness", action="store_true")
+    parser.add_argument("--require-experimental-feedback", action="store_true")
     return parser.parse_args(argv)
 
 
@@ -1048,6 +1241,7 @@ def main(argv: list[str] | None = None) -> int:
             require_candidate_library=args.require_candidate_library,
             require_evidence_cache=args.require_evidence_cache,
             require_closure_readiness=args.require_closure_readiness,
+            require_experimental_feedback=args.require_experimental_feedback,
         )
     except ResearchPackageContractError as exc:
         print(json.dumps({"status": "failed", "error": str(exc)}, ensure_ascii=False, indent=2))

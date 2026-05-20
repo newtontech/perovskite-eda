@@ -30,6 +30,7 @@ ARTIFACT_CATEGORIES = (
     "audit",
     "source_completeness",
     "closed_loop",
+    "experimental_feedback",
     "closure_readiness",
     "evidence_cache",
     "package",
@@ -44,6 +45,7 @@ def generate_root_provenance_manifest(
     candidate_library_dir: str | Path | None = None,
     source_completeness_dir: str | Path | None = None,
     closed_loop_iteration_dir: str | Path | None = None,
+    experimental_feedback_dir: str | Path | None = None,
     closure_readiness_report_path: str | Path | None = None,
     evidence_cache_manifest_path: str | Path | None = None,
     package_manifest_path: str | Path | None = None,
@@ -64,6 +66,8 @@ def generate_root_provenance_manifest(
             JSON, CSV, and Markdown artifacts from the package runner.
         closed_loop_iteration_dir: Optional directory containing the closed-loop
             iteration handoff packet.
+        experimental_feedback_dir: Optional directory containing validated
+            external experimental feedback artifacts.
         closure_readiness_report_path: Optional closure-readiness gate report.
         evidence_cache_manifest_path: Optional package-local evidence cache
             manifest emitted by run_research_package for external-cached runs.
@@ -85,6 +89,7 @@ def generate_root_provenance_manifest(
     candidate_root = Path(candidate_library_dir) if candidate_library_dir is not None else None
     source_completeness_root = Path(source_completeness_dir) if source_completeness_dir is not None else None
     closed_loop_root = Path(closed_loop_iteration_dir) if closed_loop_iteration_dir is not None else None
+    experimental_feedback_root = Path(experimental_feedback_dir) if experimental_feedback_dir is not None else None
     closure_readiness_report = (
         Path(closure_readiness_report_path) if closure_readiness_report_path is not None else None
     )
@@ -167,6 +172,8 @@ def generate_root_provenance_manifest(
 
     if closed_loop_root is not None:
         for path in _iter_files(closed_loop_root):
+            if experimental_feedback_root is not None and _is_relative_to(path, experimental_feedback_root):
+                continue
             artifacts["closed_loop"].append(
                 _artifact_record(
                     _artifact_id_from_path(path),
@@ -174,6 +181,18 @@ def generate_root_provenance_manifest(
                     root_dir=root_dir,
                     source_root=closed_loop_root,
                     declared_in="closed_loop_iteration_dir",
+                )
+            )
+
+    if experimental_feedback_root is not None:
+        for path in _iter_files(experimental_feedback_root):
+            artifacts["experimental_feedback"].append(
+                _artifact_record(
+                    _artifact_id_from_path(path),
+                    path,
+                    root_dir=root_dir,
+                    source_root=experimental_feedback_root,
+                    declared_in="experimental_feedback_dir",
                 )
             )
 
@@ -246,6 +265,8 @@ def generate_root_provenance_manifest(
         manifest["roots"]["source_completeness_dir"] = _display_path(source_completeness_root, root_dir)
     if closed_loop_root is not None:
         manifest["roots"]["closed_loop_iteration_dir"] = _display_path(closed_loop_root, root_dir)
+    if experimental_feedback_root is not None:
+        manifest["roots"]["experimental_feedback_dir"] = _display_path(experimental_feedback_root, root_dir)
     if closure_readiness_report is not None:
         manifest["roots"]["closure_readiness_report_path"] = _display_path(closure_readiness_report, root_dir)
     if evidence_cache_manifest is not None:
@@ -268,6 +289,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--candidate-library-dir")
     parser.add_argument("--source-completeness-dir")
     parser.add_argument("--closed-loop-iteration-dir")
+    parser.add_argument("--experimental-feedback-dir")
     parser.add_argument("--closure-readiness-report-path")
     parser.add_argument("--evidence-cache-manifest-path")
     parser.add_argument("--package-manifest-path")
@@ -282,6 +304,7 @@ def main(argv: list[str] | None = None) -> int:
         candidate_library_dir=args.candidate_library_dir,
         source_completeness_dir=args.source_completeness_dir,
         closed_loop_iteration_dir=args.closed_loop_iteration_dir,
+        experimental_feedback_dir=args.experimental_feedback_dir,
         closure_readiness_report_path=args.closure_readiness_report_path,
         evidence_cache_manifest_path=args.evidence_cache_manifest_path,
         package_manifest_path=args.package_manifest_path,
@@ -402,6 +425,14 @@ def _iter_files(root: Path) -> list[Path]:
     if not root.exists():
         return []
     return sorted(path for path in root.rglob("*") if path.is_file() and path.name != MANIFEST_NAME)
+
+
+def _is_relative_to(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+    except ValueError:
+        return False
+    return True
 
 
 def _artifact_id_from_path(path: Path) -> str:
