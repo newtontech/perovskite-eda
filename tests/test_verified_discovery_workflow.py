@@ -87,6 +87,8 @@ def test_workflow_generates_training_and_candidate_discovery_artifacts(tmp_path)
     assert artifacts.model_validation_predictions_csv.exists()
     assert artifacts.model_scaffold_validation_metrics_json.exists()
     assert artifacts.model_scaffold_validation_predictions_csv.exists()
+    assert artifacts.model_temporal_validation_metrics_json.exists()
+    assert artifacts.model_temporal_validation_predictions_csv.exists()
     assert artifacts.ranked_candidates_csv.exists()
     assert artifacts.discovery_manifest_json.exists()
     assert artifacts.discovery_audit_report_md.exists()
@@ -149,6 +151,8 @@ def test_workflow_generates_training_and_candidate_discovery_artifacts(tmp_path)
         "model_validation_predictions_csv",
         "model_scaffold_validation_metrics_json",
         "model_scaffold_validation_predictions_csv",
+        "model_temporal_validation_metrics_json",
+        "model_temporal_validation_predictions_csv",
         "ranked_candidates_csv",
         "discovery_manifest_json",
         "discovery_audit_report_md",

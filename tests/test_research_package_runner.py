@@ -334,6 +334,8 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert "model_validation_predictions_csv" in {item["id"] for item in root_manifest["artifacts"]["model"]}
     assert "model_scaffold_validation_metrics_json" in {item["id"] for item in root_manifest["artifacts"]["model"]}
     assert "model_scaffold_validation_predictions_csv" in {item["id"] for item in root_manifest["artifacts"]["model"]}
+    assert "model_temporal_validation_metrics_json" in {item["id"] for item in root_manifest["artifacts"]["model"]}
+    assert "model_temporal_validation_predictions_csv" in {item["id"] for item in root_manifest["artifacts"]["model"]}
     assert "candidate_library:external_evidence_audit_json" in {
         item["id"] for item in root_manifest["artifacts"]["audit"]
     }
