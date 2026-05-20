@@ -428,6 +428,14 @@ def test_research_package_runner_can_ingest_external_lab_feedback_without_making
     assert closure_readiness["gates"]["external_validation"]["passed"] is False
     assert closure_readiness["overall_ready"] is False
 
+    feedback_template = pd.read_csv(
+        package.output_dir / "closed_loop" / "iteration_000" / "feedback_template.csv",
+        keep_default_na=False,
+    )
+    assert set(feedback_template["experimental_status"]) == {"pending_external_measurement"}
+    for column in ["measured_delta_pce", "measured_pce", "measurement_date", "protocol_reference", "notes"]:
+        assert feedback_template[column].tolist() == [""]
+
 
 def test_external_cached_candidate_source_does_not_overclaim_publication_grade(tmp_path, monkeypatch):
     import run_research_package as runner

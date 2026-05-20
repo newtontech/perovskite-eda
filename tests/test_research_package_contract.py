@@ -465,6 +465,44 @@ def test_contract_rejects_publication_grade_false_without_closure_reason(tmp_pat
     assert "publication_grade_false_reasons must be non-empty" in str(exc.value)
 
 
+def test_contract_rejects_overall_ready_when_external_validation_gate_fails(tmp_path):
+    from run_research_package import run_research_package
+    from verify_research_package import ResearchPackageContractError, verify_research_package
+
+    raw_csv = tmp_path / "raw_psc.csv"
+    candidate_csv = tmp_path / "candidate_source.csv"
+    _write_source_table(raw_csv)
+    _candidate_source().to_csv(candidate_csv, index=False)
+    package = run_research_package(
+        input_path=raw_csv,
+        output_dir=tmp_path / "research_package",
+        dataset_id="closure-overclaim-fixture",
+        evidence_mode="source-columns",
+        candidate_source_path=candidate_csv,
+        candidate_source_name="fixture-vendor-source",
+        min_verified_rows=4,
+        top_k=1,
+    )
+    report_path = package.output_dir / "closure_readiness_report.json"
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report["overall_ready"] = True
+    report["gates"]["experimental_feedback"]["passed"] = True
+    report["gates"]["experimental_feedback"]["reason"] = "tampered feedback gate"
+    report["gates"]["external_validation"]["passed"] = False
+    report["gates"]["external_validation"]["reason"] = "tampered missing external validation"
+    _write_json(report_path, report)
+
+    with pytest.raises(ResearchPackageContractError) as exc:
+        verify_research_package(
+            package.output_dir,
+            require_candidate_library=True,
+            require_closure_readiness=True,
+        )
+
+    assert "overall_ready=true requires all closure gates to pass" in str(exc.value)
+    assert "external_validation" in str(exc.value)
+
+
 def test_contract_fails_when_root_provenance_record_lies(tmp_path):
     from run_research_package import run_research_package
     from verify_research_package import ResearchPackageContractError, verify_research_package
