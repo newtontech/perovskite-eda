@@ -24,7 +24,6 @@ models/*.onnx
 ML-Master/
 
 # ===== Python =====
-.worktrees/
 __pycache__/
 *.pyc
 *.pyo
