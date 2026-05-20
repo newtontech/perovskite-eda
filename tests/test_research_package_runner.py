@@ -42,7 +42,18 @@ def _candidate_source() -> pd.DataFrame:
                 "verification_sources": json.dumps(
                     [
                         {"kind": "molecule", "source": "pubchem", "pubchem_id": "7843"},
-                        {"kind": "availability", "source": "vendor_catalog", "vendor_name": "TCI"},
+                        {
+                            "kind": "availability",
+                            "source": "vendor_catalog",
+                            "vendor_name": "TCI",
+                            "url": "https://www.tcichemicals.com/US/en/p/B0001",
+                        },
+                        {
+                            "kind": "safety",
+                            "source": "vendor_sds",
+                            "vendor_name": "TCI",
+                            "url": "https://www.tcichemicals.com/US/en/sds/B0001",
+                        },
                     ]
                 ),
             }

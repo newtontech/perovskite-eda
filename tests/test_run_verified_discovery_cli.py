@@ -216,13 +216,25 @@ def test_cli_accepts_external_candidate_pool_path(tmp_path):
                 "vendor_name": "TCI",
                 "vendor_catalog_id": "B0001",
                 "source_name": "vendor_catalog",
-                "source_url": "https://example.com/catalog/B0001",
+                "source_url": "https://www.tcichemicals.com/US/en/p/B0001",
                 "availability_status": "commercial",
                 "synthesis_status": "commercial",
                 "safety_status": "sds_available",
                 "verification_status": "verified",
                 "verification_sources": json.dumps([
-                    {"kind": "molecule", "source": "pubchem", "pubchem_id": "7843"}
+                    {"kind": "molecule", "source": "pubchem", "pubchem_id": "7843"},
+                    {
+                        "kind": "availability",
+                        "source": "vendor_catalog",
+                        "vendor_name": "TCI",
+                        "url": "https://www.tcichemicals.com/US/en/p/B0001",
+                    },
+                    {
+                        "kind": "safety",
+                        "source": "vendor_sds",
+                        "vendor_name": "TCI",
+                        "url": "https://www.tcichemicals.com/US/en/sds/B0001",
+                    },
                 ]),
             }
         ]
