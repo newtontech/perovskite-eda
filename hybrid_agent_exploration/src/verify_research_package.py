@@ -414,6 +414,14 @@ def _check_evidence_cache(
             f"{EVIDENCE_CACHE_MANIFEST_PATH}: schema_version={evidence_manifest.get('schema_version')!r}; "
             f"expected {EVIDENCE_CACHE_MANIFEST_SCHEMA_VERSION!r}"
         )
+    manifest_cache_dir = evidence_manifest.get("cache_dir")
+    if not isinstance(manifest_cache_dir, str) or not manifest_cache_dir:
+        errors.append(f"{EVIDENCE_CACHE_MANIFEST_PATH}: cache_dir is required")
+    elif _resolve_external_path(root, manifest_cache_dir).resolve() != cache_dir.resolve():
+        errors.append(
+            f"{EVIDENCE_CACHE_MANIFEST_PATH}: cache_dir={manifest_cache_dir!r} "
+            f"does not match runner_args.cache_dir={cache_dir_value!r}"
+        )
     manifest_cache_files = evidence_manifest.get("cache_files")
     if not isinstance(manifest_cache_files, dict):
         errors.append(f"{EVIDENCE_CACHE_MANIFEST_PATH}: cache_files must be an object")
@@ -430,6 +438,7 @@ def _check_evidence_cache(
             filename,
             path,
             manifest_cache_files.get(cache_key),
+            root=root,
             errors=errors,
         )
     return {
@@ -553,6 +562,7 @@ def _check_cache_file_manifest(
     path: Path,
     manifest_record: Any,
     *,
+    root: Path,
     errors: list[str],
 ) -> dict[str, Any]:
     context = f"{EVIDENCE_CACHE_MANIFEST_PATH}: cache_files.{cache_key}"
@@ -572,11 +582,16 @@ def _check_cache_file_manifest(
     expected_entry_count = manifest_record.get("entry_count")
     expected_exists = manifest_record.get("exists")
     expected_filename = manifest_record.get("filename")
+    expected_path = manifest_record.get("path")
 
     if expected_exists is not True:
         errors.append(f"{context}.exists must be true")
     if expected_filename != filename:
         errors.append(f"{context}.filename={expected_filename!r} does not match {filename!r}")
+    if not isinstance(expected_path, str) or not expected_path:
+        errors.append(f"{context}.path is required")
+    elif _resolve_external_path(root, expected_path).resolve() != path.resolve():
+        errors.append(f"{context}.path={expected_path!r} does not match expected {path}")
     if expected_size != size_bytes:
         errors.append(f"{context}.size_bytes={expected_size!r} does not match disk size {size_bytes}")
     if expected_sha256 != sha256:
@@ -632,6 +647,10 @@ def _resolve_path(root: Path, value: str | Path) -> Path:
 
 
 def _resolve_cache_dir(root: Path, value: str) -> Path:
+    return _resolve_external_path(root, value)
+
+
+def _resolve_external_path(root: Path, value: str) -> Path:
     path = Path(value)
     if path.is_absolute():
         return path
