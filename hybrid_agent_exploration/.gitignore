@@ -34,10 +34,17 @@ results/**/*.svg
 !results/**/*.json
 !results/**/*.md
 
+# Full research-story bundles are large generated outputs. Keep only the
+# active-tree pointer file; archive full bundles outside this repository.
+results/research_stories/**
+!results/research_stories/
+!results/research_stories/README.md
+
 # Report artifacts (only final PDFs are kept)
 reports/temp/
 reports/figures/temp/
 results/report_artifacts/
+results/harness_logs/
 results/reports/**/*.png
 results/reports/**/*.jpg
 results/reports/**/*.svg
