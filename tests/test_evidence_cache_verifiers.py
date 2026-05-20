@@ -31,10 +31,12 @@ def test_pubchem_verifier_normalizes_excel_float_cid(monkeypatch):
 
     monkeypatch.setattr(authenticity.requests, "get", fake_get)
 
-    evidence = PubChemMoleculeVerifier(timeout=3)({
-        "pubchem_id": "104810.0",
-        "cas_number": "22541-12-4",
-    })
+    evidence = PubChemMoleculeVerifier(timeout=3)(
+        {
+            "pubchem_id": "104810.0",
+            "cas_number": "22541-12-4",
+        }
+    )
 
     assert evidence is not None
     assert evidence.pubchem_id == "104810"
@@ -68,10 +70,12 @@ def test_pubchem_verifier_accepts_current_smiles_payloads(monkeypatch):
     for prop_key in ("SMILES", "ConnectivitySMILES"):
         monkeypatch.setattr(authenticity.requests, "get", make_get(prop_key))
 
-        evidence = PubChemMoleculeVerifier(timeout=3)({
-            "pubchem_id": "7843",
-            "cas_number": "106-97-8",
-        })
+        evidence = PubChemMoleculeVerifier(timeout=3)(
+            {
+                "pubchem_id": "7843",
+                "cas_number": "106-97-8",
+            }
+        )
 
         assert evidence is not None
         assert evidence.smiles == "CCCC"
@@ -130,8 +134,12 @@ def test_cached_molecule_verifier_keys_by_normalized_pubchem_id(tmp_path):
     cache_path = tmp_path / "molecule_cache.json"
     cached = CachedMoleculeVerifier(resolver, cache_path)
 
-    first = cached({"pubchem_id": "104810.0", "cas_number": "22541-12-4", "smiles": "[Ba+2]"})
-    second = cached({"pubchem_id": "104810", "cas_number": "22541-12-4", "smiles": "[Ba+2]"})
+    first = cached(
+        {"pubchem_id": "104810.0", "cas_number": "22541-12-4", "smiles": "[Ba+2]"}
+    )
+    second = cached(
+        {"pubchem_id": "104810", "cas_number": "22541-12-4", "smiles": "[Ba+2]"}
+    )
 
     assert calls == ["104810.0"]
     assert first == second
@@ -152,6 +160,43 @@ def test_external_reference_timeout_returns_none_without_abort(monkeypatch):
     monkeypatch.setattr(authenticity.requests, "get", fake_get)
 
     assert CrossrefReferenceVerifier(timeout=1)("10.1021/acs.jpclett.6c00119") is None
+
+
+def test_crossref_verifier_ignores_unusable_year_date_parts(monkeypatch):
+    from harness import authenticity
+    from harness.authenticity import CrossrefReferenceVerifier
+
+    class Response:
+        status_code = 200
+
+        def __init__(self, date_parts):
+            self.date_parts = date_parts
+
+        def json(self):
+            return {
+                "message": {
+                    "DOI": "10.1073/pnas",
+                    "title": ["Proceedings citation"],
+                    "container-title": [
+                        "Proceedings of the National Academy of Sciences"
+                    ],
+                    "issued": {"date-parts": self.date_parts},
+                    "URL": "https://doi.org/10.1073/pnas",
+                }
+            }
+
+    for date_parts in ([[None]], [["unknown"]]):
+        monkeypatch.setattr(
+            authenticity.requests,
+            "get",
+            lambda url, timeout, date_parts=date_parts: Response(date_parts),
+        )
+
+        evidence = CrossrefReferenceVerifier(timeout=1)("10.1073/pnas")
+
+        assert evidence is not None
+        assert evidence.year is None
+        assert evidence.title == "Proceedings citation"
 
 
 def test_external_molecule_timeout_returns_none_without_abort(monkeypatch):
