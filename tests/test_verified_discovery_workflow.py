@@ -1,0 +1,323 @@
+import json
+import sys
+from pathlib import Path
+
+import pandas as pd
+import pytest
+from sklearn.linear_model import LinearRegression
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1] / "hybrid_agent_exploration"
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+
+def _record(record_id: str, doi: str, smiles: str, delta: float, *, title: str = "Verified PSC additive paper") -> dict:
+    return {
+        "record_id": record_id,
+        "doi": doi,
+        "title": title,
+        "year": 2026,
+        "journal": "Journal of Physical Chemistry Letters",
+        "smiles": smiles,
+        "pubchem_id": str(700 + int(record_id.split("-")[-1])),
+        "cas_number": f"64-17-{record_id[-1]}",
+        "jv_reverse_scan_pce_without_modulator": 18.0,
+        "jv_reverse_scan_pce": 18.0 + delta,
+        "delta_pce": delta,
+    }
+
+
+def _authenticator():
+    from harness.authenticity import MoleculeEvidence, RealDataAuthenticator, ReferenceEvidence
+
+    return RealDataAuthenticator(
+        reference_verifier=lambda doi: ReferenceEvidence(
+            doi=doi,
+            title="Verified PSC additive paper",
+            year=2026,
+            journal="Journal of Physical Chemistry Letters",
+            source="fixture-crossref",
+            url=f"https://doi.org/{doi}",
+        ) if doi else None,
+        molecule_verifier=lambda record: MoleculeEvidence(
+            smiles=record["smiles"],
+            pubchem_id=record.get("pubchem_id"),
+            cas_number=record.get("cas_number"),
+            source="fixture-pubchem",
+            url=f"https://pubchem.ncbi.nlm.nih.gov/compound/{record.get('pubchem_id')}",
+        ),
+    )
+
+
+def _feature_fn(smiles_series):
+    return pd.DataFrame({"smiles_length": smiles_series.astype(str).str.len()})
+
+
+def test_workflow_generates_training_and_candidate_discovery_artifacts(tmp_path):
+    from screening.verified_discovery_workflow import VerifiedDiscoveryWorkflow
+
+    raw_df = pd.DataFrame(
+        [
+            _record("row-001", "10.1021/acs.jpclett.6c00119", "C", 0.25),
+            _record("row-002", "10.1021/acs.jpclett.6c00120", "CC", 0.50),
+            _record("row-003", "10.1021/acs.jpclett.6c00121", "CCC", 0.75),
+            _record("row-004", "10.1021/acs.jpclett.6c00122", "CCCC", 1.00),
+            _record("row-005", "", "CCO", 0.40, title="Missing DOI row"),
+        ]
+    )
+
+    artifacts = VerifiedDiscoveryWorkflow(output_dir=tmp_path, authenticator=_authenticator()).run_from_dataframe(
+        raw_df,
+        dataset_id="workflow-fixture",
+        model=LinearRegression(),
+        feature_fn=_feature_fn,
+        top_k=2,
+        min_verified_rows=4,
+    )
+
+    assert artifacts.verified_train_csv.exists()
+    assert artifacts.quarantine_csv.exists()
+    assert artifacts.candidate_pool_csv.exists()
+    assert artifacts.doi_manifest_json.exists()
+    assert artifacts.provenance_json.exists()
+    assert artifacts.data_audit_report_md.exists()
+    assert artifacts.model_metrics_json.exists()
+    assert artifacts.model_manifest_json.exists()
+    assert artifacts.model_validation_metrics_json.exists()
+    assert artifacts.model_validation_predictions_csv.exists()
+    assert artifacts.model_scaffold_validation_metrics_json.exists()
+    assert artifacts.model_scaffold_validation_predictions_csv.exists()
+    assert artifacts.model_temporal_validation_metrics_json.exists()
+    assert artifacts.model_temporal_validation_predictions_csv.exists()
+    assert artifacts.ranked_candidates_csv.exists()
+    assert artifacts.discovery_manifest_json.exists()
+    assert artifacts.discovery_audit_report_md.exists()
+    assert artifacts.workflow_manifest_json.exists()
+
+    verified = pd.read_csv(artifacts.verified_train_csv)
+    quarantine = pd.read_csv(artifacts.quarantine_csv)
+    ranked = pd.read_csv(artifacts.ranked_candidates_csv)
+
+    assert verified["record_id"].tolist() == ["row-001", "row-002", "row-003", "row-004"]
+    assert quarantine["record_id"].tolist() == ["row-005"]
+    assert "row-005" not in set(ranked["record_id"])
+    assert ranked["record_id"].tolist() == ["row-004", "row-003"]
+    assert ranked["rank"].tolist() == [1, 2]
+    assert ranked["verification_status"].tolist() == ["verified", "verified"]
+
+    metrics = json.loads(artifacts.model_metrics_json.read_text(encoding="utf-8"))
+    assert metrics["dataset_id"] == "workflow-fixture"
+    assert metrics["train_rows"] == 4
+    assert metrics["target_column"] == "delta_pce"
+    assert metrics["feature_columns"] == ["smiles_length"]
+    assert metrics["model_class"] == "LinearRegression"
+
+    validation = json.loads(artifacts.model_validation_metrics_json.read_text(encoding="utf-8"))
+    assert validation["schema_version"] == "model-validation-metrics-v1"
+    assert validation["dataset_id"] == "workflow-fixture"
+    assert validation["validation_scope"] == "internal_random_holdout_verified_rows"
+    assert validation["external_validation"] is False
+    assert validation["split_strategy"] == "random_holdout_verified_rows"
+    assert validation["test_size"] == 0.2
+    scaffold_validation = json.loads(
+        artifacts.model_scaffold_validation_metrics_json.read_text(encoding="utf-8")
+    )
+    assert scaffold_validation["schema_version"] == "model-scaffold-validation-metrics-v1"
+    assert scaffold_validation["dataset_id"] == "workflow-fixture"
+    assert scaffold_validation["validation_scope"] == "chemical_group_holdout_verified_rows"
+    assert scaffold_validation["split_strategy"] == "rdkit_murcko_or_anonymous_graph_group_holdout"
+    assert scaffold_validation["external_validation"] is False
+    assert scaffold_validation["chemical_generalization_diagnostic"] is True
+    assert scaffold_validation["train_groups"]
+    assert scaffold_validation["validation_groups"]
+    assert set(scaffold_validation["train_groups"]).isdisjoint(scaffold_validation["validation_groups"])
+
+    manifest = json.loads(artifacts.workflow_manifest_json.read_text(encoding="utf-8"))
+    assert manifest["dataset_id"] == "workflow-fixture"
+    assert manifest["verified_rows"] == 4
+    assert manifest["quarantine_rows"] == 1
+    assert manifest["ranked_candidates"] == 2
+    assert manifest["artifact_policy"] == "verified-light-artifacts-in-git"
+    assert set(manifest["outputs"]) == {
+        "verified_train_csv",
+        "quarantine_csv",
+        "candidate_pool_csv",
+        "doi_manifest_json",
+        "provenance_json",
+        "data_audit_report_md",
+        "model_metrics_json",
+        "model_manifest_json",
+        "model_validation_metrics_json",
+        "model_validation_predictions_csv",
+        "model_scaffold_validation_metrics_json",
+        "model_scaffold_validation_predictions_csv",
+        "model_temporal_validation_metrics_json",
+        "model_temporal_validation_predictions_csv",
+        "ranked_candidates_csv",
+        "discovery_manifest_json",
+        "discovery_audit_report_md",
+        "workflow_manifest_json",
+    }
+
+
+def test_workflow_validation_metrics_report_real_holdout_rows(tmp_path):
+    from screening.verified_discovery_workflow import VerifiedDiscoveryWorkflow
+
+    raw_df = pd.DataFrame(
+        [
+            _record(f"row-{idx:03d}", f"10.1021/acs.jpclett.6c{idx:05d}", "C" * idx, float(idx) / 10)
+            for idx in range(1, 11)
+        ]
+    )
+
+    artifacts = VerifiedDiscoveryWorkflow(output_dir=tmp_path, authenticator=_authenticator()).run_from_dataframe(
+        raw_df,
+        dataset_id="workflow-validation-fixture",
+        model=LinearRegression(),
+        feature_fn=_feature_fn,
+        top_k=2,
+        min_verified_rows=10,
+    )
+
+    validation = json.loads(artifacts.model_validation_metrics_json.read_text(encoding="utf-8"))
+    assert validation["status"] == "passed"
+    assert validation["train_rows"] == 8
+    assert validation["validation_rows"] == 2
+    assert validation["validation_r2"] is not None
+    assert validation["validation_rmse"] is not None
+    assert validation["validation_mae"] is not None
+    assert validation["validation_pearson_r"] is not None
+
+    predictions = pd.read_csv(artifacts.model_validation_predictions_csv)
+    assert list(predictions.columns) == ["record_id", "smiles", "y_true", "y_pred", "residual", "split"]
+    assert predictions["split"].tolist() == ["validation", "validation"]
+    assert len(predictions) == 2
+
+
+def test_workflow_scaffold_validation_reports_disjoint_chemical_groups(tmp_path):
+    from screening.verified_discovery_workflow import VerifiedDiscoveryWorkflow
+
+    smiles = [
+        "CCCC",
+        "CCO",
+        "CCN",
+        "c1ccccc1O",
+        "c1ccccc1N",
+        "c1ccncc1",
+        "C1CCCCC1",
+        "C1CCNCC1",
+        "CC(C)O",
+        "CC(C)N",
+    ]
+    raw_df = pd.DataFrame(
+        [
+            _record(f"row-{idx:03d}", f"10.1021/acs.jpclett.7c{idx:05d}", smi, float(idx) / 10)
+            for idx, smi in enumerate(smiles, start=1)
+        ]
+    )
+
+    artifacts = VerifiedDiscoveryWorkflow(output_dir=tmp_path, authenticator=_authenticator()).run_from_dataframe(
+        raw_df,
+        dataset_id="workflow-scaffold-validation-fixture",
+        model=LinearRegression(),
+        feature_fn=_feature_fn,
+        top_k=2,
+        min_verified_rows=10,
+    )
+
+    metrics = json.loads(artifacts.model_scaffold_validation_metrics_json.read_text(encoding="utf-8"))
+    assert metrics["status"] == "passed"
+    assert metrics["validation_rows"] > 0
+    assert metrics["train_rows"] > 0
+    assert metrics["validation_r2"] is not None
+    assert metrics["chemical_group_column"] == "chemical_group_key"
+    assert set(metrics["train_groups"]).isdisjoint(metrics["validation_groups"])
+
+    predictions = pd.read_csv(artifacts.model_scaffold_validation_predictions_csv)
+    assert list(predictions.columns) == [
+        "record_id",
+        "smiles",
+        "chemical_group_key",
+        "chemical_group_source",
+        "y_true",
+        "y_pred",
+        "residual",
+        "split",
+    ]
+    assert set(predictions["split"]) == {"validation"}
+    assert set(predictions["chemical_group_key"]).issubset(set(metrics["validation_groups"]))
+
+
+def test_workflow_temporal_validation_reports_latest_year_holdout(tmp_path):
+    from harness.authenticity import MoleculeEvidence, RealDataAuthenticator, ReferenceEvidence
+    from screening.verified_discovery_workflow import VerifiedDiscoveryWorkflow
+
+    rows = [
+        _record(f"row-{idx:03d}", f"10.1021/acs.jpclett.temporal.{idx:03d}", "C" * idx, float(idx) / 10)
+        for idx in range(1, 11)
+    ]
+    for row, year in zip(rows, [2020, 2020, 2020, 2020, 2021, 2021, 2021, 2021, 2022, 2022], strict=True):
+        row["year"] = year
+    year_by_doi = {row["doi"]: row["year"] for row in rows}
+    authenticator = RealDataAuthenticator(
+        reference_verifier=lambda doi: ReferenceEvidence(
+            doi=doi,
+            title="Verified PSC additive paper",
+            year=year_by_doi[doi],
+            source="fixture-crossref",
+        ) if doi else None,
+        molecule_verifier=lambda record: MoleculeEvidence(
+            smiles=record["smiles"],
+            pubchem_id=record.get("pubchem_id"),
+            cas_number=record.get("cas_number"),
+            source="fixture-pubchem",
+        ),
+    )
+
+    artifacts = VerifiedDiscoveryWorkflow(output_dir=tmp_path, authenticator=authenticator).run_from_dataframe(
+        pd.DataFrame(rows),
+        dataset_id="workflow-temporal-validation-fixture",
+        model=LinearRegression(),
+        feature_fn=_feature_fn,
+        top_k=2,
+        min_verified_rows=10,
+    )
+
+    metrics = json.loads(artifacts.model_temporal_validation_metrics_json.read_text(encoding="utf-8"))
+    assert metrics["schema_version"] == "model-temporal-validation-metrics-v1"
+    assert metrics["status"] == "passed"
+    assert metrics["validation_scope"] == "temporal_holdout_verified_rows"
+    assert metrics["split_strategy"] == "latest_reference_year_holdout"
+    assert metrics["external_validation"] is False
+    assert metrics["independent_external_validation"] is False
+    assert metrics["temporal_generalization_diagnostic"] is True
+    assert metrics["validation_years"] == [2022]
+    assert max(metrics["train_years"]) < min(metrics["validation_years"])
+    assert metrics["doi_overlap_count"] == 0
+
+    predictions = pd.read_csv(artifacts.model_temporal_validation_predictions_csv)
+    assert list(predictions.columns) == ["record_id", "smiles", "year", "y_true", "y_pred", "residual", "split"]
+    assert len(predictions) == metrics["validation_rows"]
+    assert set(predictions["split"]) == {"validation"}
+    assert predictions["year"].tolist() == [2022, 2022]
+
+
+def test_workflow_refuses_training_when_strict_gate_finds_too_few_verified_rows(tmp_path):
+    from screening.verified_discovery_workflow import InsufficientVerifiedDataError, VerifiedDiscoveryWorkflow
+
+    raw_df = pd.DataFrame([
+        _record("row-001", "", "C", 0.25, title="Missing DOI row"),
+        _record("row-002", "", "CC", 0.50, title="Missing DOI row"),
+    ])
+
+    with pytest.raises(InsufficientVerifiedDataError) as exc:
+        VerifiedDiscoveryWorkflow(output_dir=tmp_path, authenticator=_authenticator()).run_from_dataframe(
+            raw_df,
+            dataset_id="no-verified-fixture",
+            model=LinearRegression(),
+            feature_fn=_feature_fn,
+            top_k=1,
+            min_verified_rows=2,
+        )
+
+    assert "min_verified_rows=2" in str(exc.value)

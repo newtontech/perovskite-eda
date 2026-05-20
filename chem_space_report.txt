@@ -1,0 +1,94 @@
+================================================================================
+CHEMICAL SPACE ANALYSIS REPORT FOR QSPR STUDY
+Analysis Date: 2026-02-20
+================================================================================
+
+1. DATA SUMMARY
+--------------------------------------------------------------------------------
+Total samples: 5354
+Valid samples: 5354
+Chemical descriptors: molecular_weight, h_bond_donors, h_bond_acceptors, rotatable_bonds, tpsa, log_p
+
+2. DELTA_PCE STATISTICS
+--------------------------------------------------------------------------------
+Mean: 1.893%
+Median: 1.600%
+Std Dev: 3.460%
+Min: -19.190%
+Max: 44.800%
+Range: 63.990%
+
+Quartile Statistics:
+  Q1: n=1341, mean=-1.546%, std=2.680%
+  Q2: n=1343, mean=1.058%, std=0.324%
+  Q3: n=1333, mean=2.196%, std=0.383%
+  Q4: n=1337, mean=5.878%, std=3.457%
+
+3. PCA ANALYSIS RESULTS
+--------------------------------------------------------------------------------
+Explained Variance:
+  PC1: 62.51%
+  PC2: 25.55%
+  PC3: 4.80%
+  PC4: 3.98%
+  PC5: 2.01%
+
+Cumulative variance:
+  2 PCs: 88.06%
+  3 PCs: 92.86%
+
+PCA Loadings (descriptor contributions):
+  molecular_weight: PC1=0.444, PC2=0.338, PC3=0.005
+  h_bond_donors: PC1=0.335, PC2=-0.524, PC3=0.702
+  h_bond_acceptors: PC1=0.475, PC2=-0.113, PC3=-0.576
+  rotatable_bonds: PC1=0.456, PC2=0.164, PC3=0.192
+  tpsa: PC1=0.434, PC2=-0.382, PC3=-0.270
+  log_p: PC1=0.261, PC2=0.653, PC3=0.255
+
+4. CLUSTERING RESULTS
+--------------------------------------------------------------------------------
+Cluster 1: n=4292, mean Delta_PCE=1.833%, std=3.427%
+Cluster 2: n=187, mean Delta_PCE=3.644%, std=4.266%
+Cluster 3: n=14, mean Delta_PCE=2.504%, std=3.308%
+Cluster 4: n=861, mean Delta_PCE=1.799%, std=3.328%
+
+Silhouette Score: 0.541
+
+DBSCAN: 1 clusters, 33 noise points
+
+5. CHEMICAL DIVERSITY METRICS
+--------------------------------------------------------------------------------
+Mean pairwise Euclidean distance: 2.2415
+
+Descriptor Ranges:
+  molecular_weight: min=2.016, max=4514.000, mean=258.580
+  h_bond_donors: min=0.000, max=62.000, mean=0.728
+  h_bond_acceptors: min=0.000, max=88.000, mean=1.954
+  rotatable_bonds: min=0.000, max=150.000, mean=2.415
+  tpsa: min=0.000, max=1827.070, mean=38.149
+  log_p: min=-21.556, max=41.406, mean=1.578
+
+6. INTERPRETATION AND RECOMMENDATIONS
+--------------------------------------------------------------------------------
+Key Findings:
+- First 2 PCs explain 88.1% of variance
+- First 3 PCs explain 92.9% of variance
+- Delta_PCE ranges from -19.19% to 44.80% (std=3.46%)
+- K-means identified 4 clusters with silhouette score 0.541
+- Chemical diversity shows mean pairwise distance of 2.241
+
+Recommendations for QSPR Modeling:
+- Use top 3-5 PCs as features for ML models
+- Consider cluster membership as additional categorical feature
+- Explore non-linear relationships captured by t-SNE/UMAP
+- Focus on descriptors with high PCA loadings for feature selection
+
+================================================================================
+Generated Visualizations:
+- chem_space_pca_2d.png: 2D PCA with continuous and quartile coloring
+- chem_space_pca_3d.png: 3D PCA visualization
+- chem_space_pca_loadings.png: Descriptor contributions to PCs
+- chem_space_tsne.png: t-SNE non-linear dimensionality reduction
+- chem_space_umap.png: UMAP visualization
+- chem_space_clusters.png: Clustering and density analysis
+================================================================================
