@@ -34,6 +34,7 @@ def test_canonical_research_package_targets_are_declared():
         "research-package-cache-collect",
         "research-package-cache-collect-dry-run",
         "research-package-cache-merge",
+        "research-package-psc-candidate-closure",
         "research-package-pdf",
         "research-package-verify",
         "test-research-package",
@@ -68,6 +69,25 @@ def test_research_package_dry_run_uses_canonical_runner_and_ignored_artifact_dir
         "hybrid_agent_exploration/results/verified_discovery_runs/unit-dataset"
         in output
     )
+
+
+def test_psc_candidate_closure_target_uses_real_seed_source_and_strict_verify():
+    output = _make_dry_run("research-package-psc-candidate-closure")
+
+    assert "research-package" in output
+    assert "research-package-pdf" in output
+    assert "research-package-verify" in output
+    assert "DATASET_ID=psc-additive-closure-candidate-loop" in output
+    assert "EVIDENCE_MODE=external-cached" in output
+    assert "INPUT_SCOPE=full-source" in output
+    assert (
+        "CANDIDATE_SOURCE=hybrid_agent_exploration/candidate_sources/"
+        "psc_passivator_seed_candidates.csv"
+        in output
+    )
+    assert "CANDIDATE_SOURCE_NAME=psc-passivator-seed" in output
+    assert "REQUIRE_CANDIDATE_LIBRARY=1" in output
+    assert "REQUIRE_EVIDENCE_CACHE=1" in output
 
 
 def test_smoke_target_dry_run_caps_rows_in_ignored_artifact_dir():

@@ -26,6 +26,10 @@ CACHE_MERGE_ENTITY_TYPE ?= all
 CACHE_MERGE_CONFLICT_POLICY ?= fail
 PANDOC_PDF_ENGINE ?= xelatex
 PANDOC_MAINFONT ?= DejaVu Serif
+PSC_CANDIDATE_CLOSURE_DATASET_ID ?= psc-additive-closure-candidate-loop
+PSC_CANDIDATE_CLOSURE_ARTIFACT_DIR ?= hybrid_agent_exploration/results/verified_discovery_runs/$(PSC_CANDIDATE_CLOSURE_DATASET_ID)
+PSC_CANDIDATE_SOURCE ?= hybrid_agent_exploration/candidate_sources/psc_passivator_seed_candidates.csv
+PSC_CANDIDATE_SOURCE_NAME ?= psc-passivator-seed
 
 RUN_RESEARCH_PACKAGE := hybrid_agent_exploration/src/run_research_package.py
 RUN_EVIDENCE_CACHE_PREFLIGHT := hybrid_agent_exploration/src/run_evidence_cache_preflight.py
@@ -65,7 +69,7 @@ CACHE_MERGE_SHARD_ARGS := $(foreach dir,$(CACHE_SHARD_DIRS),--shard-cache-dir $(
 VERIFY_CANDIDATE_LIBRARY_ARGS := $(if $(REQUIRE_CANDIDATE_LIBRARY),--require-candidate-library,)
 VERIFY_EVIDENCE_CACHE_ARGS := $(if $(REQUIRE_EVIDENCE_CACHE),--require-evidence-cache,)
 
-.PHONY: research-package research-package-smoke research-package-cache-preflight research-package-cache-preflight-smoke research-package-cache-collect research-package-cache-collect-dry-run research-package-cache-merge research-package-pdf research-package-verify test-research-package
+.PHONY: research-package research-package-smoke research-package-cache-preflight research-package-cache-preflight-smoke research-package-cache-collect research-package-cache-collect-dry-run research-package-cache-merge research-package-psc-candidate-closure research-package-pdf research-package-verify test-research-package
 
 research-package:
 	$(PYTHON) $(RUN_RESEARCH_PACKAGE) \
@@ -88,6 +92,24 @@ research-package-smoke:
 		MIN_VERIFIED_ROWS=$(SMOKE_MIN_VERIFIED_ROWS) \
 		TOP_K=$(SMOKE_TOP_K) \
 		EXTRA_RUN_ARGS="--max-rows $(SMOKE_MAX_ROWS)"
+
+research-package-psc-candidate-closure:
+	$(MAKE) research-package \
+		DATASET_ID=$(PSC_CANDIDATE_CLOSURE_DATASET_ID) \
+		ARTIFACT_DIR=$(PSC_CANDIDATE_CLOSURE_ARTIFACT_DIR) \
+		EVIDENCE_MODE=external-cached \
+		INPUT_SCOPE=full-source \
+		CANDIDATE_SOURCE=$(PSC_CANDIDATE_SOURCE) \
+		CANDIDATE_SOURCE_NAME=$(PSC_CANDIDATE_SOURCE_NAME)
+	$(MAKE) research-package-pdf \
+		DATASET_ID=$(PSC_CANDIDATE_CLOSURE_DATASET_ID) \
+		ARTIFACT_DIR=$(PSC_CANDIDATE_CLOSURE_ARTIFACT_DIR) \
+		CANDIDATE_SOURCE=$(PSC_CANDIDATE_SOURCE)
+	$(MAKE) research-package-verify \
+		DATASET_ID=$(PSC_CANDIDATE_CLOSURE_DATASET_ID) \
+		ARTIFACT_DIR=$(PSC_CANDIDATE_CLOSURE_ARTIFACT_DIR) \
+		REQUIRE_CANDIDATE_LIBRARY=1 \
+		REQUIRE_EVIDENCE_CACHE=1
 
 research-package-cache-preflight:
 	$(PYTHON) $(RUN_EVIDENCE_CACHE_PREFLIGHT) \
@@ -159,9 +181,13 @@ research-package-verify:
 
 test-research-package:
 	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 $(PYTHON) -m pytest -q \
+		tests/test_candidate_library_builder.py \
+		tests/test_candidate_source_contract.py \
 		tests/test_canonical_make_targets.py \
 		tests/test_evidence_cache_collector.py \
 		tests/test_evidence_cache_preflight.py \
+		tests/test_research_package_contract.py \
 		tests/test_research_package_runner.py \
 		tests/test_run_verified_discovery_cli.py \
-		tests/test_root_provenance_manifest.py
+		tests/test_root_provenance_manifest.py \
+		tests/test_verified_candidate_discovery.py
