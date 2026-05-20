@@ -1,0 +1,5 @@
+============================================================
+QSPR Data Preprocessing for Perovskite Solar Cell Analysis
+============================================================
+
+[Step 1] Loading data from Excel file...

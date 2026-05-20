@@ -1,0 +1,31 @@
+# 数据版本信息
+
+## 数据源
+- **仓库**: https://github.com/Jesperkemist/perovskitedatabase_data
+- **文件**: Perovskite_database_content_all_data.csv
+- **版本**: Latest (as of 2026-03-12)
+
+## 下载信息
+- **下载日期**: 2026-03-12
+- **文件大小**: ~84 MB
+- **记录数**: ~50,000+
+- **特征数**: 65+
+
+## 数据完整性
+- ✅ 文件已验证
+- ✅ 数据完整性检查通过
+- ✅ 缺失值统计完成
+
+## 使用说明
+1. 数据文件位于: `data/raw/perovskite_database_all.csv`
+2. 数据字典位于: `data/data_dictionary.md`
+3. 概览脚本: `scripts/data_overview.py`
+
+## 更新频率
+- 按需更新（当源仓库有重大更新时）
+- 建议每季度检查一次更新
+
+---
+
+**创建日期**: 2026-03-12
+**创建者**: OpenClaw AI Assistant
