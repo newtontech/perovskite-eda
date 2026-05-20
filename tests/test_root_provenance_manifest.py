@@ -66,6 +66,10 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
     _write(closed_loop_dir / "feedback_schema.json", '{"type": "object"}\n')
     _write(closed_loop_dir / "feedback_template.csv", "candidate_id,experimental_status\ncand-001,pending_external_measurement\n")
     _write(closed_loop_dir / "verification_report.json", '{"status": "passed"}\n')
+    closure_readiness_report = _write(
+        tmp_path / "closure_readiness_report.json",
+        '{"schema_version": "closure-readiness-report-v1", "overall_ready": false}\n',
+    )
     package_manifest = _write(
         tmp_path / "package_manifest.json",
         '{"schema_version": "research-package-manifest-v1"}\n',
@@ -78,6 +82,7 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
         candidate_library_dir=candidate_library_dir,
         source_completeness_dir=source_completeness_dir,
         closed_loop_iteration_dir=closed_loop_dir,
+        closure_readiness_report_path=closure_readiness_report,
         package_manifest_path=package_manifest,
         input_path=input_table,
         candidate_source_path=candidate_source,
@@ -129,6 +134,9 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
         "selected_candidates_csv",
         "verification_report_json",
     }
+    assert {item["id"] for item in manifest["artifacts"]["closure_readiness"]} == {
+        "closure_readiness_report_json",
+    }
     assert manifest["source_manifests"]["package_manifest_json"]["exists"] is True
     assert manifest["source_inputs"]["input_table"]["path"].endswith("raw_source.csv")
     assert len(manifest["source_inputs"]["input_table"]["sha256"]) == 64
@@ -142,6 +150,7 @@ def test_root_provenance_manifest_indexes_verified_discovery_report_and_si(tmp_p
     assert manifest["roots"]["candidate_library_dir"] == str(candidate_library_dir)
     assert manifest["roots"]["source_completeness_dir"] == str(source_completeness_dir)
     assert manifest["roots"]["closed_loop_iteration_dir"] == str(closed_loop_dir)
+    assert manifest["roots"]["closure_readiness_report_path"] == str(closure_readiness_report)
 
 
 def test_root_provenance_manifest_records_missing_declared_outputs(tmp_path):

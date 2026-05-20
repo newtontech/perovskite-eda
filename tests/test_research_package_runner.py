@@ -115,6 +115,7 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
         package.output_dir / "closed_loop" / "iteration_000" / "feedback_schema.json",
         package.output_dir / "closed_loop" / "iteration_000" / "feedback_template.csv",
         package.output_dir / "closed_loop" / "iteration_000" / "verification_report.json",
+        package.output_dir / "closure_readiness_report.json",
         package.root_provenance_manifest_json,
         package.package_manifest_json,
     ]
@@ -169,6 +170,17 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
     assert package_manifest["outputs"]["closed_loop_feedback_template_csv"] == (
         "closed_loop/iteration_000/feedback_template.csv"
     )
+    assert package_manifest["outputs"]["closure_readiness_report_json"] == "closure_readiness_report.json"
+    closure_readiness = json.loads((package.output_dir / "closure_readiness_report.json").read_text(encoding="utf-8"))
+    assert closure_readiness["schema_version"] == "closure-readiness-report-v1"
+    assert closure_readiness["dataset_id"] == "package-fixture"
+    assert closure_readiness["overall_ready"] is False
+    assert closure_readiness["publication_grade"] is False
+    assert closure_readiness["publication_grade_false_reasons"]
+    assert closure_readiness["gates"]["validation_artifacts"]["passed"] is True
+    assert closure_readiness["gates"]["closed_loop_packet"]["passed"] is True
+    assert closure_readiness["gates"]["external_validation"]["passed"] is False
+    assert closure_readiness["gates"]["experimental_feedback"]["passed"] is False
 
     workflow_manifest = json.loads(
         (package.verified_discovery_dir / "workflow_manifest.json").read_text(encoding="utf-8")
@@ -268,6 +280,9 @@ def test_research_package_runner_generates_all_scientific_artifacts(tmp_path):
         "iteration_manifest_json",
         "selected_candidates_csv",
         "verification_report_json",
+    }
+    assert {item["id"] for item in root_manifest["artifacts"]["closure_readiness"]} == {
+        "closure_readiness_report_json",
     }
 
     ranked = pd.read_csv(package.verified_discovery_dir / "discovery" / "ranked_candidates.csv")

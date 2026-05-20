@@ -220,6 +220,24 @@ def run_research_package(
 
     root_manifest_path = output_root / "provenance_manifest.json"
     package_manifest_path = output_root / "package_manifest.json"
+    closure_readiness_report_path = output_root / "closure_readiness_report.json"
+    _write_json(
+        _closure_readiness_report(
+            dataset_id=dataset_id,
+            evidence_mode=evidence_mode,
+            input_scope=input_scope,
+            max_rows=max_rows,
+            publication_grade=publication_grade,
+            publication_grade_reasons=publication_grade_reasons,
+            dataset_publication_grade=dataset_publication_grade,
+            candidate_library_publication_grade=candidate_library_publication_grade,
+            candidate_library_rows=candidate_library_rows,
+            evidence_cache_manifest_path=evidence_cache_manifest_path,
+            closed_loop_iteration_dir=closed_loop_artifacts.output_dir,
+            validation_metrics_path=discovery_artifacts.model_validation_metrics_json,
+        ),
+        closure_readiness_report_path,
+    )
     _write_json(
         _package_manifest(
             dataset_id=dataset_id,
@@ -249,6 +267,7 @@ def run_research_package(
             candidate_library_dir=candidate_library_dir,
             candidate_library_rows=candidate_library_rows,
             closed_loop_iteration_dir=closed_loop_artifacts.output_dir,
+            closure_readiness_report_path=closure_readiness_report_path,
             report_dir=report_dir,
             report_quality_score=main_bundle.quality_score,
             root_manifest_path=root_manifest_path,
@@ -265,6 +284,7 @@ def run_research_package(
         candidate_library_dir=candidate_library_dir,
         source_completeness_dir=source_completeness_artifacts.output_dir,
         closed_loop_iteration_dir=closed_loop_artifacts.output_dir,
+        closure_readiness_report_path=closure_readiness_report_path,
         evidence_cache_manifest_path=evidence_cache_manifest_path,
         package_manifest_path=package_manifest_path,
         input_path=input_path,
@@ -373,6 +393,7 @@ def _package_manifest(
     candidate_library_dir: Path | None,
     candidate_library_rows: int | None,
     closed_loop_iteration_dir: Path,
+    closure_readiness_report_path: Path,
     report_dir: Path,
     report_quality_score: float,
     root_manifest_path: Path,
@@ -434,6 +455,7 @@ def _package_manifest(
             closed_loop_iteration_dir / "verification_report.json",
             output_root,
         ),
+        "closure_readiness_report_json": _relative(closure_readiness_report_path, output_root),
         "report_dir": _relative(report_dir, output_root),
         "main_text_report_md": _relative(report_dir / "main_text" / "main_text_report.md", output_root),
         "supporting_information_md": _relative(report_dir / "si" / "supporting_information.md", output_root),
@@ -486,6 +508,84 @@ def _package_manifest(
         "candidate_library_rows": candidate_library_rows,
         "report_quality_score": report_quality_score,
         "outputs": outputs,
+    }
+
+
+def _closure_readiness_report(
+    *,
+    dataset_id: str,
+    evidence_mode: str,
+    input_scope: str,
+    max_rows: int | None,
+    publication_grade: bool,
+    publication_grade_reasons: list[str],
+    dataset_publication_grade: bool,
+    candidate_library_publication_grade: bool,
+    candidate_library_rows: int | None,
+    evidence_cache_manifest_path: Path | None,
+    closed_loop_iteration_dir: Path,
+    validation_metrics_path: Path,
+) -> dict[str, Any]:
+    closure_blockers: list[str] = []
+    gates = {
+        "publication_grade": {
+            "passed": publication_grade,
+            "reason": "publication_grade is true" if publication_grade else "publication_grade is false",
+        },
+        "dataset_publication_grade": {
+            "passed": dataset_publication_grade,
+            "reason": "dataset gate passed" if dataset_publication_grade else "dataset gate failed",
+        },
+        "candidate_library_publication_grade": {
+            "passed": candidate_library_publication_grade,
+            "reason": (
+                "candidate library is publication-grade"
+                if candidate_library_publication_grade
+                else "candidate library is offline-normalized"
+            ),
+        },
+        "full_source_scope": {
+            "passed": input_scope == "full-source" and max_rows is None,
+            "reason": f"input_scope={input_scope}, max_rows={max_rows}",
+        },
+        "evidence_cache": {
+            "passed": evidence_mode == "external-cached" and evidence_cache_manifest_path is not None,
+            "reason": "external-cached evidence manifest present"
+            if evidence_mode == "external-cached" and evidence_cache_manifest_path is not None
+            else "external-cached evidence manifest absent",
+        },
+        "validation_artifacts": {
+            "passed": validation_metrics_path.is_file(),
+            "reason": "internal holdout validation artifact present",
+        },
+        "external_validation": {
+            "passed": False,
+            "reason": "no independent external, scaffold, temporal, or experimental validation artifact",
+        },
+        "closed_loop_packet": {
+            "passed": (closed_loop_iteration_dir / "verification_report.json").is_file(),
+            "reason": "closed-loop handoff packet integrity artifact present",
+        },
+        "experimental_feedback": {
+            "passed": False,
+            "reason": "no real experimental feedback measurements have been ingested",
+        },
+    }
+    for gate_name, gate in gates.items():
+        if not gate["passed"]:
+            closure_blockers.append(f"{gate_name}: {gate['reason']}")
+    false_reasons = list(publication_grade_reasons)
+    if not publication_grade and not false_reasons:
+        false_reasons = ["publication_grade is false"]
+    return {
+        "schema_version": "closure-readiness-report-v1",
+        "dataset_id": dataset_id,
+        "generated_at": _now_iso(),
+        "overall_ready": not closure_blockers,
+        "publication_grade": publication_grade,
+        "publication_grade_false_reasons": false_reasons,
+        "blocking_reasons": closure_blockers,
+        "gates": gates,
     }
 
 
