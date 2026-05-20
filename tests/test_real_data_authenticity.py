@@ -72,6 +72,34 @@ def test_title_conflict_quarantines_reference_even_with_valid_doi():
     assert "reference_title_mismatch" in result.reasons
 
 
+def test_explicit_year_conflict_quarantines_reference_record():
+    from harness.authenticity import MoleculeEvidence, RealDataAuthenticator, ReferenceEvidence
+
+    authenticator = RealDataAuthenticator(
+        reference_verifier=lambda doi: ReferenceEvidence(
+            doi=doi,
+            title=_valid_record()["title"],
+            year=2026,
+            journal="Journal of Physical Chemistry Letters",
+            source="fixture-crossref",
+        ),
+        molecule_verifier=lambda record: MoleculeEvidence(
+            smiles=record["smiles"],
+            pubchem_id=record.get("pubchem_id"),
+            cas_number=record.get("cas_number"),
+            source="fixture-pubchem",
+        ),
+    )
+    record = _valid_record()
+    record["year"] = 2025
+
+    result = authenticator.verify_record(record)
+
+    assert result.status == "quarantine"
+    assert "reference_year_mismatch" in result.reasons
+    assert result.normalized["year"] == 2025
+
+
 def test_invalid_smiles_physical_bounds_and_delta_mismatch_are_quarantined():
     from harness.authenticity import MoleculeEvidence, RealDataAuthenticator, ReferenceEvidence
 

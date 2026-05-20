@@ -142,6 +142,47 @@ def test_builder_loads_csv_and_computes_delta_when_missing(tmp_path):
     assert verified.loc[0, "delta_pce"] == 2.5
 
 
+def test_builder_backfills_missing_year_from_reference_evidence(tmp_path):
+    from data.verified_dataset_builder import VerifiedDatasetBuilder
+
+    record = _record("row-004", "10.1021/acs.jpclett.6c00123")
+    record.pop("year")
+
+    artifacts = VerifiedDatasetBuilder(_authenticator(), output_dir=tmp_path).build_from_dataframe(
+        pd.DataFrame([record]),
+        dataset_id="reference-year-fixture",
+    )
+
+    verified = pd.read_csv(artifacts.verified_train_csv)
+    candidate_pool = pd.read_csv(artifacts.candidate_pool_csv)
+    doi_manifest = json.loads(artifacts.doi_manifest_json.read_text(encoding="utf-8"))
+
+    assert verified.loc[0, "year"] == 2026
+    assert candidate_pool.loc[0, "year"] == 2026
+    assert doi_manifest["references"][0]["year"] == 2026
+
+
+def test_builder_backfills_canonical_year_when_publication_date_exists(tmp_path):
+    from data.verified_dataset_builder import VerifiedDatasetBuilder
+
+    record = _record("row-005", "10.1021/acs.jpclett.6c00124")
+    record.pop("year")
+    record["publication_date"] = "2026-02-16"
+
+    artifacts = VerifiedDatasetBuilder(_authenticator(), output_dir=tmp_path).build_from_dataframe(
+        pd.DataFrame([record]),
+        dataset_id="publication-date-year-fixture",
+    )
+
+    verified = pd.read_csv(artifacts.verified_train_csv)
+    candidate_pool = pd.read_csv(artifacts.candidate_pool_csv)
+    doi_manifest = json.loads(artifacts.doi_manifest_json.read_text(encoding="utf-8"))
+
+    assert verified.loc[0, "year"] == 2026
+    assert candidate_pool.loc[0, "year"] == 2026
+    assert doi_manifest["references"][0]["year"] == 2026
+
+
 def test_builder_assigns_stable_record_ids_when_source_has_none(tmp_path):
     from data.verified_dataset_builder import VerifiedDatasetBuilder
 

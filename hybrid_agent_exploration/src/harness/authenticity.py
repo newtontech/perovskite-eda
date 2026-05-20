@@ -142,6 +142,8 @@ class RealDataAuthenticator:
                 and record_year != reference.year
             ):
                 reasons.append("reference_year_mismatch")
+            if not _clean_text(record.get("year")) and reference.year is not None:
+                normalized["year"] = reference.year
         elif self.strict:
             reasons.append("missing_reference_evidence")
 
