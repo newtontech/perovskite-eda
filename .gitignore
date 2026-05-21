@@ -99,9 +99,21 @@ hybrid_agent_exploration/results/verified_discovery_runs/
 hybrid_agent_exploration/results/verified_discovery_smoke*/
 
 # ===== Article preview images (duplicates of figures/) =====
+hybrid_agent_exploration/article/figures/
 hybrid_agent_exploration/article/preview-*.png
 hybrid_agent_exploration/article/preview_fig-*.png
 hybrid_agent_exploration/article/v2_preview*.png
+hybrid_agent_exploration/article/manuscript.md
+hybrid_agent_exploration/article/manuscript.pdf
+hybrid_agent_exploration/article/manuscript_with_figures.md
+hybrid_agent_exploration/article/manuscript_with_figures.html
+
+# ===== Hybrid agent generated run bundles =====
+hybrid_agent_exploration/results/report_artifacts/
+hybrid_agent_exploration/results/harness_logs/
+hybrid_agent_exploration/results/research_stories/**
+!hybrid_agent_exploration/results/research_stories/
+!hybrid_agent_exploration/results/research_stories/README.md
 
 # ===== Exploration profile figures (bulk plots, not key) =====
 hybrid_agent_exploration/explorations/data_source_exploration/raw_profile/*.png

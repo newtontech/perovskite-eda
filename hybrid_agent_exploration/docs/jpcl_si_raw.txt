@@ -1,0 +1,1135 @@
+Supporting Information
+Machine Learning Accelerated Design of Self-Assembled Monolayers 
+for High-Performance Perovskite Solar Cells
+Haifeng Li, Yue Zang,* Zhikang zhu, Chenyang Zhu, Weihong Liu, Wensheng Yan*
+Institute of Carbon Neutrality and New Energy, School of Electronics and 
+Information
+Hangzhou Dianzi University
+Hangzhou 310018, PR China 
+Corresponding authors:
+zangyue@hdu.edu.cn (Y. Zang), 
+wensheng.yan@hdu.edu.cn (W. Yan)
+Table S1 Nine low-PCE data points that were removed
+SAM Name
+SMILES
+Molecular Structure
+Experimental PCE
+（%）
+AB
+NC1=CC=C(C(O)=O)
+C=C1
+7.6[1]
+AM
+NCC1=CC=C(C(O)=
+O)C=C1
+5.3[1]
+AE
+NCCC1=CC=C(C(O)
+=O)C=C1
+5.2[1]
+NB
+O=C(C1=CC=C([N+]
+([O-])=O)C=C1)O
+4.5[1]
+BCB-C4PA
+OP(CCCCN1C2=C(C
+(C=CC=C3)=C3C=C
+2)C4=C1C=CC=C4)(
+O)=O
+4.7[2]
+BCB-C4PA
+OP(CCCCN1C2=C(C
+(C=CC=C3)=C3C=C
+2)C4=C1C=CC=C4)(
+O)=O
+9.7[2]
+EA-50
+FC1=C(F)C(F)=CC(C
+2=C(CCCCCC)C=C(
+C3=C(CCCCCC)C=C
+(C4=CC=C(C(O)=O)
+C=C4)S3)S2)=C1
+9.09[3]
+EA-56
+FC1=CC(F)=CC(C2=
+C(CCCCCC)C=C(C3
+=C(CCCCCC)C=C(C
+8.71[3]
+H2N
+OH
+O
+H2N
+OH
+O
+H2N
+OH
+O
+NO2
+COOH
+HO P
+N
+HO
+O
+HO P
+N
+HO
+O
+F
+F
+F
+OH
+O
+S
+S
+F
+F
+OH
+O
+S
+S
+4=CC=C(C(O)=O)C=
+C4)S3)S2)=C1
+2BrCzPA
+BrC(C=C1)=CC2=C1
+N(CCCCP(O)(O)=O)
+C3=C2C=C(Br)C=C3
+4.24[4]
+Figure S1. The data distribution of the processed dataset used for model training.
+Br
+N
+P OH
+OH
+O
+Br
+Table S2 Information of SAM molecular
+SAM Name
+SMILES
+Molecular Structure
+2PACz
+OP(CCN1C2=C(C=CC=C2)C
+3=C1C=CC=C3)(O)=O
+9CPA
+OC(CCN1C2=C(C=CC=C2)C
+3=C1C=CC=C3)=O
+9CAA
+OC(CN1C2=C(C=CC=C2)C3
+=C1C=CC=C3)=O
+BCB-C4PA
+OP(CCCCN1C2=C(C(C=CC
+=C3)=C3C=C2)C4=C1C=CC
+=C4)(O)=O
+EA-46
+OC(C(C=C1)=CC=C1C(S2)=
+CC(CCCCCC)=C2C(S3)=CC
+(CCCCCC)=C3C4=CC(OC)=
+C(OC)C(OC)=C4)=O
+EA-49
+OC(C(C=C1)=CC=C1C(S2)=
+CC(CCCCCC)=C2C(S3)=CC
+(CCCCCC)=C3C4=CC(OC)=
+CC(OC)=C4)=O
+EA-41
+BrC1=C(CCCCCC)C=C(C2=
+C(CCCCCC)C=C(C3=CC=C(
+C(O)=O)C=C3)S2)S1
+OH
+P
+N
+OH
+O
+OH
+N
+O
+OH
+N
+O
+HO P
+N
+HO
+O
+OH
+S
+S
+O
+O
+O
+O
+OH
+S
+S
+O
+O
+O
+Br
+OH
+O
+S
+S
+MeO-2PACz
+OP(CCN1C2=C(C=C(OC)C=
+C2)C3=C1C=CC(OC)=C3)(O
+)=O
+CBSA
+ClC1=CC=C(S(=O)(O)=O)C=
+C1
+HC-A1
+CCC(CCCC)COC(C=C1)=C
+C=C1C(C=C2)=CC3=C2N(C
+4=CC=C(C(O)=O)C=C4)C5=
+C3C=C(C6=CC=C(OCC(CC
+CC)CC)C=C6)C=C5
+HC-A4
+CC1(C)C2=C(C=CC=C2)C(C
+1=C3)=CC=C3N(C4=CC(C(C
+=CC=C5)=C5C6(C)C)=C6C=
+C4)C7=C8C(C=CC=C8)=C(C
+(O)=O)C=C7
+SAM4
+O=C(O)C(C=C1)=CC=C1C(
+C=C2)=CC=C2N3C4=C(C=C
+(C5=CC=CS5)C=C4)C6=C3C
+=CC(C7=CC=CS7)=C6
+SAM5
+O=C(O)C(C=C1)=CC=C1C(
+C=C2)=CC=C2N3C4=C(C=C
+(C5=CC=C(C6=CC=CS6)C=
+C5)C=C4)C7=C3C=CC(C8=
+CC=C(C9=CC=CS9)C=C8)=
+C7
+OH
+P
+N
+O
+O
+OH
+O
+Cl
+S
+O
+OH
+O
+O
+N
+OH
+O
+O
+N
+OH
+O
+O
+OH
+N
+S
+S
+O
+OH
+N
+S
+S
+SAM6
+O=C(O)C(C=C1)=CC=C1C(
+C=C2)=CC=C2N3C4=C(C=C
+(C5=CC=C(CO)C=C5)C=C4)
+C6=C3C=CC(C7=CC=C(CO)
+C=C7)=C6
+SAM7
+O=C(O)C(C=C1)=CC=C1C(
+C=C2)=CC=C2N3C4=C(C=C
+C=C4)C5=C3C=CC=C5
+EADR03
+OC(C(C=C1)=CC=C1N2C3=
+C(C=C(C4=C(OC)C=C(OC)C
+=C4)C=C3)C5=C2C=CC(C6=
+C(OC)C=C(OC)C=C6)=C5)=
+O
+Me-4PACz
+OP(CCCCN1C2=CC=C(C)C
+=C2C3=CC(C)=CC=C31)(O)
+=O
+GM-4PACz
+OP(CCCCN1C2=C(C=C(OC
+COC)C=C2)C3=C1C=CC(OC
+COC)=C3)(O)=O
+O
+OH
+N
+OH
+HO
+O
+OH
+N
+OH
+N
+O
+O
+O
+O
+O
+OH
+P
+N
+OH
+O
+OH
+P
+N
+O
+O
+O
+O
+OH
+O
+MeO-4PACz
+OP(CCCCN1C2=CC=C(C=C
+2C3=CC(OC)=CC=C31)OC)(
+O)=O
+SAM1
+O=C(O)C(C=C1)=CC=C1N2
+C3=C(C=C(N(C4=CC=C(C)C
+=C4)C5=CC=C(C)C=C5)C=C
+3)C6=C2C=CC(N(C7=CC=C(
+C)C=C7)C8=CC=C(C)C=C8)
+=C6
+SAM2
+CC(C=C1)=CC=C1N(C2=CC
+=C(C)C=C2)C(C=C3)=CC4=
+C3N(C5=CC=C(C6=CC=C(C
+(O)=O)C=C6)C=C5)C7=C4C
+=C(N(C8=CC=C(C)C=C8)C9
+=CC=C(C)C=C9)C=C7
+SAM3
+O=C(O)C(C=C1)=CC=C1C(
+C=C2)=CC=C2N3C4=C(C=C
+(C5=CC=CC=C5)C=C4)C6=
+C3C=CC(C7=CC=CC=C7)=C
+6
+OH
+P
+N
+O
+O
+OH
+O
+O
+OH
+N
+N
+N
+N
+N
+OH
+O
+N
+O
+OH
+N
+TBT-BA
+COC(C=C1)=CC=C1N(C2=C
+C=C(OC)C=C2)C(C=C3)=CC
+=C3C4=CC=C(C5=CC=C(C(
+O)=O)C=C5)C6=NSN=C64
+TBT-FBA
+COC(C=C1)=CC=C1N(C2=C
+C=C(OC)C=C2)C(C=C3)=CC
+=C3C4=CC=C(C5=CC(F)=C(
+C(O)=O)C=C5)C6=NSN=C6
+4
+TBT-DBA
+COC(C=C1)=CC=C1N(C2=C
+C=C(OC)C=C2)C(C=C3)=CC
+=C3C4=CC=C(C5=CC(C(O)
+=O)=CC(C(O)=O)=C5)C6=N
+SN=C64
+4-PCA
+O=C(O)C1=CNN=C1
+3-TA
+O=C(O)C1=CSC=C1
+BA
+OC(C1=CC=CC=C1)=O
+O
+N
+O
+HO
+O
+N
+S
+N
+O
+N
+O
+F
+HO
+O
+N
+S
+N
+O
+N
+O
+HO
+O
+OH
+O
+N
+S
+N
+O
+OH
+HN
+N
+O
+OH
+S
+OH
+O
+MC-45
+O=C(C(C=C1)=CC=C1C2=C
+C=C(N(C3=CC=C(OC)C=C3
+)C4=CC=C(OC)C=C4)C=C2)
+O
+MC-54
+CC1=CC=CC(N(C2=CC=C(C
+3=CC=C(C(O)=O)C=C3)C=C
+2)C4=CC=C(C5=CC=C(N(C6
+=CC=C(C7=CC=C(C(O)=O)
+C=C7)C=C6)C8=CC=CC(C)=
+C8)C=C5)C=C4)=C1
+MC-55
+O=C(C(C=C1)=CC=C1C(C=
+C2)=CC=C2N(C3=C(C=CC=
+C4)C4=CC=C3)C5=CC=C(C
+6=CC=C(N(C7=CC=C(C8=C
+C=C(C(O)=O)C=C8)C=C7)C
+9=CC=CC%10=C9C=CC=C
+%10)C=C6)C=C5)O
+EA-59
+CC1=CC=CC(N(C2=CC=C(C
+3=CC=C(N(C4=CC=C(C5=C
+C=C(C6=CC=C(C7=CC=C(C
+(OC)=O)C=C7)S6)S5)C=C4)
+C8=CC=CC(C)=C8)C=C3)C=
+C2)C9=CC=C(C%10=CC=C(
+C%11=CC=C(C%12=CC=C(
+C(OC)=O)C=C%12)S%11)S
+O
+N
+O
+O
+OH
+N
+OH
+O
+N
+HO
+O
+O
+N
+N
+HO
+O
+OH
+N
+N
+O
+O
+S
+S
+O
+O
+S
+S
+%10)C=C9)=C1
+EA-60
+CC1=CC=CC(N(C2=CC=C(C
+3=CC=C(N(C4=CC=C(C5=C
+(CCCCCC)C=C(C6=C(CCCC
+CC)C=C(C7=CC=C(C(OC)=
+O)C=C7)S6)S5)C=C4)C8=C
+C=CC(C)=C8)C=C3)C=C2)C
+9=CC=C(C%10=C(CCCCCC
+)C=C(C%11=C(CCCCCC)C=
+C(C%12=CC=C(C(OC)=O)C
+=C%12)S%11)S%10)C=C9)=
+C1
+RC-24
+O=C(O)C1=CC=C(N(C2=CC
+=C(C3=C(OC)C=C(OC)C=C
+3)C=C2)C4=CC=C(C5=C(OC
+)C=C(OC)C=C5)C=C4)C=C1
+RC-25
+O=C(O)C1=CC=C(N(C2=CC
+=C(C3=C(OC)C=CC(OC)=C
+3)C=C2)C4=CC=C(C5=C(OC
+)C=CC(OC)=C5)C=C4)C=C1
+RC-34
+O=C(O)C1=CC=C(N(C2=CC
+=C(C3=CC=C(OC)C(OC)=C
+3)C=C2)C4=CC=C(C5=CC=
+C(OC)C(OC)=C5)C=C4)C=C
+1
+N
+N
+O
+O
+S
+S
+O
+O
+S
+S
+O
+OH
+N
+O
+O
+O
+O
+O
+OH
+N
+O
+O
+O
+O
+O
+HO
+N
+O
+O
+O
+O
+MPA-BT-CA
+COC(C=C1)=CC=C1N(C2=C
+C=C(OC)C=C2)C3=CC=C(C
+4=CC=C(/C=C(C(O)=O)\C#N
+)C5=NSN=C54)C=C3
+MPA-BT-BA
+COC(C=C1)=CC=C1N(C2=C
+C=C(OC)C=C2)C3=CC=C(C
+4=CC=C(C5=CC=C(C(O)=O)
+C=C5)C6=NSN=C64)C=C3
+MPA-BT-RA
+COC(C=C1)=CC=C1N(C2=C
+C=C(OC)C=C2)C3=CC=C(C
+4=CC=C(/C=C(C(N5CC(O)=
+O)=O)\SC5=S)C6=NSN=C64
+)C=C3
+Spiro-Acid
+OC(COC(C=C1)=CC=C1N(C
+2=CC=C(OC)C=C2)C3=CC4
+=C(C5=CC=C(N(C6=CC=C(
+OC)C=C6)C7=CC=C(OC)C=
+C7)C=C5C4(C8=CC(N(C9=C
+C=C(OC)C=C9)C%10=CC=C
+(OC)C=C%10)=CC=C8%11)
+C%12=C%11C=CC(N(C%13
+=CC=C(OC)C=C%13)C%14=
+CC=C(OC)C=C%14)=C%12)
+O
+N
+O
+HO
+O
+N
+N
+S
+N
+O
+N
+O
+HO
+O
+N
+S
+N
+O
+N
+O
+N
+OH
+O
+O
+S
+S
+N
+S
+N
+OH
+O
+N
+O
+N
+O
+O
+N
+O
+O
+N
+O
+O
+O
+C=C3)=O
+TPT-H6
+COC1=CC=C(N(C2=CC=C(
+C3=CC=C(N4CCCCCC)C(S
+C5=C4C=CC(C6=CC=C(N(C
+7=CC=C(OC)C=C7)C8=CC=
+C(OC)C=C8)C=C6)=C5)=C3)
+C=C2)C9=CC=C(OC)C=C9)
+C=C1
+TPT-S6
+COC1=CC=C(N(C2=CC=C(
+C3=CC=C(N4CCCCCCS(=O
+)(O)=O)C(SC5=C4C=CC(C6
+=CC=C(N(C7=CC=C(OC)C=
+C7)C8=CC=C(OC)C=C8)C=
+C6)=C5)=C3)C=C2)C9=CC=
+C(OC)C=C9)C=C1
+TPT-C6
+COC(C=C1)=CC=C1N(C2=C
+C=C(C=C2)OC)C(C=C3)=CC
+=C3C(C=C4SC5=C6C=CC(C
+7=CC=C(C=C7)N(C8=CC=C
+(C=C8)OC)C9=CC=C(C=C9)
+OC)=C5)=CC=C4N6CCCCC
+CC(O)=O
+TPT-P6
+COC1=CC=C(N(C2=CC=C(
+C3=CC=C(N4CCCCCCP(O)(
+O)=O)C(SC5=C4C=CC(C6=
+CC=C(N(C7=CC=C(OC)C=C
+7)C8=CC=C(OC)C=C8)C=C6
+)=C5)=C3)C=C2)C9=CC=C(
+O
+N
+N
+S
+N
+O
+O
+O
+O
+N
+N
+S O
+OH
+O
+S
+N
+O
+O
+O
+O
+N
+O
+S
+N
+O
+O
+N
+OH
+O
+O
+N
+N
+P OH
+OH
+O
+S
+N
+O
+O
+O
+OC)C=C9)C=C1
+Br-2EPT
+O=P(O)(O)CCN1C2=CC=C(
+Br)C=C2SC3=C1C=CC(Br)=
+C3
+Br-2EPO
+O=P(O)(CCN1C2=CC=C(C=
+C2OC3=C1C=CC(Br)=C3)Br
+)O
+2BrPTZPA
+BrC1=CC=C2N(C3=C(SC2=
+C1)C=C(Br)C=C3)CCCCP(O
+)(O)=O
+CbzPh
+OP(CCCCN1C2=C(C(C=CC
+=C3)=C3C=C2)C4=C1C=CC
+=C4)(O)=O
+CbzNaph
+OP(CCCCN1C2=C(C(C=CC
+=C3)=C3C=C2)C4=C1C=CC
+5=C4C=CC=C5)(O)=O
+4PACz
+OP(CCCCN1C2=C(C=CC=C
+2)C3=C1C=CC=C3)(O)=O
+MTPA-BA
+OB(C1=CC=C(C=C1)N(C2=
+CC=C(C=C2)C)C3=CC=C(C
+=C3)C)O
+O P OH
+OH
+N
+Br
+S
+Br
+O P OH
+N
+O
+Br
+Br
+OH
+Br
+N
+S
+Br
+P OH
+OH
+O
+HO P
+N
+HO
+O
+OH
+P
+N
+OH
+O
+OH
+P
+N
+OH
+O
+OH
+B
+N
+OH
+FNE29
+CCCCCCC1=C(C2=CC(CCC
+CCC)=C(C3=CC(CCCCCC)=
+C(/C=C(C(O)=O)\C#N)S3)S2
+)SC(C4=CC=C(N(C5=CC=C
+C=C5)C6=CC=CC=C6)C=C4
+)=C1
+DT-1
+CCCCCCN1N=C2C(C(C(C=
+C(C3=CC=C(N(C4=CC=CC=
+C4)C5=CC=CC=C5)C=C3)S6
+)=C6N7CCCCCC)=C7C8=C2
+N(CCCCCC)C9=C8C=C(/C=
+C(C(O)=O)\C#N)S9)=N1
+TPA
+O=C(O)C1=CC(C2=CC=C(N
+(C3=CC=CC=C3)C4=CC=CC
+=C4)C=C2)=CC(C5=CC=C(
+N(C6=CC=CC=C6)C7=CC=
+CC=C7)C=C5)=C1
+MC-43
+OC(C(C=C1)=CC=C1C2=CC
+=C(N(C3=CC=C(C4=CC=C(
+OC)C=C4OC)C=C3)C5=CC=
+C(C6=C(OC)C=C(OC)C=C6)
+C=C5)C=C2)=O
+OH
+O
+N
+S
+S
+S
+N
+N
+N
+N
+S
+N
+N
+HO
+O
+N
+S
+N
+O
+HO
+N
+N
+OH
+N
+O
+O
+O
+O
+O
+EADR04
+COC(C=C1)=CC(OC)=C1C(
+C=C2)=CC3=C2N(C4=CC=C
+(C5=CC=C(C(O)=O)C=C5)C
+=C4)C6=C3C=C(C7=C(OC)C
+=C(OC)C=C7)C=C6
+BCBBR-C4PA
+OP(CCCCN1C2=C(C(C=CC
+=C3)=C3C=C2)C4=C1C=CC(
+Br)=C4)(O)=O
+O
+O
+N
+OH
+O
+O
+O
+OH
+P
+N
+Br
+OH
+O
+Table S3 The 26 features used to input ML models and their meanings
+Input features 
+Description
+Cs
+ratio of Cs cations to all A-site cations in the perovskite layer
+FA
+ratio of FA cations to all A-site cations in the perovskite layer
+MA
+ratio of MA cations to all A-site cations in the perovskite 
+layer
+Pb
+ratio of Pb cations to all B-site cations in the perovskite layer
+Sn
+ratio of Sn cations to all B-site cations in the perovskite layer
+I
+Ratio of I anions to all anions in the perovskite layer
+Br
+Ratio of Br anions to all anions in the perovskite layer
+Cl
+Ratio of CI anions to all anions in the perovskite layer
+E
+The HOMO level offset between the perovskite layer and the 
+SAM
+Concentration(mg/mL)
+Concentration of the solvent
+wash
+Whether the SAM was washed（0: unwashed; 1: washed）
+NiO2
+Whether the NiO2 was used（0: no used; 1: used）
+ethanol, toluene, 
+isopropanol,
+tetrahydrofuran,
+2-Methoxyethanol,
+chlorobenzene,
+CH2Cl2
+Whether the solvent was used（0: no used; 1: used）
+C60, BCP, PC60BM,
+PCBM, PC61BM,
+PEAI, ALD-SnO2
+Whether the electron transport layer material was used（0: 
+no used; 1: used）
+Table S4 Hyperparameter tuning results of full dataset
+Model
+hyperparameter tuning result
+RDKit&XGBoost
+learning_rate: 0.93; n_estimators: 400; max_depth: 7; 
+subsample: 0.9; colsample_bytree: 0.05; gamma: 0.57; 
+min_child_weight: 5; reg_alpha: 0.1; reg_lambda: 1
+256&XGBoost
+learning_rate: 0.58; n_estimators: 400; max_depth: 7; 
+subsample: 0.9; colsample_bytree: 0.3; gamma: 0.67; 
+min_child_weight: 5; reg_alpha: 0.1; reg_lambda: 1
+512&XGBoost
+learning_rate: 0.58; n_estimators: 400; max_depth: 7; 
+subsample: 0.9; colsample_bytree: 0.45; gamma: 0.5; 
+min_child_weight: 5; reg_alpha: 0.1; reg_lambda: 1
+1024&XGBoost
+learning_rate: 0.22; n_estimators: 400; max_depth: 11; 
+subsample: 0.9; colsample_bytree: 0.42; gamma: 0.35; 
+min_child_weight: 5; reg_alpha: 0.1; reg_lambda: 1
+RDKit&RF
+n_estimators: 400; max_depth: 10; min_samples_split: 3; 
+max_features: 0.6; random_state: 2
+256&RF
+n_estimators: 400; max_depth: 10; min_samples_split: 8; 
+max_features: 0.85; random_state: 2
+512&RF
+n_estimators: 400; max_depth: 8; min_samples_split: 10; 
+max_features: 0.8; random_state: 2
+1024&RF
+n_estimators: 400; max_depth: 11; min_samples_split: 2; 
+max_features: 0.69; random_state: 2
+RDKit&GBDT
+n_estimators: 400; learning_rate: 0.68; max_depth: 3; 
+min_samples_split: 2; min_samples_leaf: 1; max_features: 
+None; subsample: 1; alpha: 0.9; loss: ‘squared_error’; 
+random_state: 5
+256&GBDT
+n_estimators: 400; learning_rate: 0.45; max_depth: 4; 
+min_samples_split: 2; min_samples_leaf: 1; max_features: 
+None; subsample: 1; alpha: 0.9; loss: ‘squared_error’; 
+random_state: 5
+512&GBDT
+n_estimators: 400; learning_rate: 0.58; max_depth: 4; 
+min_samples_split: 2; min_samples_leaf: 1; max_features: 
+None; subsample: 1; alpha: 0.9; loss: ‘squared_error’; 
+random_state: 5
+1024&GBDT
+n_estimators: 400; learning_rate: 0.76; max_depth: 5; 
+min_samples_split: 2; min_samples_leaf: 1; max_features: 
+None; subsample: 0.7; alpha: 0.9; loss: ‘squared_error’; 
+random_state: 5
+Table S5 10-fold cross-validation performance metrics of 12 models for PCE 
+prediction
+RMSE
+R²
+r
+MAE
+RDKit
+1.954 ±
+0.592
+0.6085 ±
+0.1834
+0.8375 ±
+0.0941
+1.493 ±
+0.469
+Morgan_256
+1.925 ±
+0.606
+0.5925 ±
+0.2461
+0.8158 ±
+0.1379
+1.510 ±
+0.497
+Morgan_512
+2.017 ±
+0.821
+0.5459 ±
+0.3466
+0.7765 ±
+0.1991
+1.579 ±
+0.552
+XGBoost
+Morgan_1024
+1.695 ±
+0.714
+0.6649 ±
+0.2680
+0.8576 ±
+0.1456
+1.329 ±
+0.531
+RDKit
+2.134 ±
+0.596
+0.5277 ±
+0.2328
+0.7759 ±
+0.1510
+1.607 ±
+0.441
+Morgan_256
+2.112 ±
+0.714
+0.5317 ±
+0.2611
+0.7525 ±
+0.1875
+1.589 ±
+0.496
+Morgan_512
+2.147 ±
+0.713
+0.5148 ±
+0.2697
+0.7366 ±
+0.1967
+1.639 ±
+0.483
+RF
+Morgan_1024
+1.929 ±
+0.650
+0.6019 ±
+0.2403
+0.7974 ±
+0.1623
+1.436 ±
+0.442
+RDKit
+2.159 ±
+0.688
+0.5096 ±
+0.2485
+0.7799 ±
+0.1026
+1.649 ±
+0.528
+Morgan_256
+1.974 ±
+0.403
+0.5938 ±
+0.1512
+0.7994 ±
+0.1003
+1.476 ±
+0.288
+Morgan_512
+2.043 ±
+0.644
+0.5740 ±
+0.1922
+0.8088 ±
+0.1034
+1.586 ±
+0.516
+GBDT
+Morgan_1024
+2.569 ±
+0.634
+0.1984 ±
+0.6469
+0.7545 ±
+0.1227
+2.025 ±
+0.496
+Figure S2. Importance and contribution of the top 10 features to 
+Morgan_256&XGBoost model decision. a) Summary bar plot of 
+Morgan_256&XGBoost . b) Swarm summary plot of Morgan_256&XGBoost
+Figure S3. Importance and contribution of the top 10 features to 
+Morgan_512&XGBoost model decision. a) Summary bar plot of 
+Morgan_512&XGBoost . b) Swarm summary plot of Morgan_512&XGBoost
+Figure S4. Importance and contribution of the top 10 features to 
+Morgan_1024&XGBoost model decision. a) Summary bar plot of 
+Morgan_1024&XGBoost . b) Swarm summary plot of Morgan_1024&XGBoost
+Figure S5. Importance and contribution of the top 10 features to RDKit&RF model 
+decision. a) Summary bar plot of RDKit&RF . b) Swarm summary plot of RDKit&RF
+Figure S6. Importance and contribution of the top 10 features to Morgan_256&RF 
+model decision. a) Summary bar plot of Morgan_256&RF . b) Swarm summary plot 
+of Morgan_256&RF
+Figure S7. Importance and contribution of the top 10 features to Morgan_512&RF 
+model decision. a) Summary bar plot of Morgan_512&RF . b) Swarm summary plot 
+of Morgan_512&RF
+Figure S8. Importance and contribution of the top 10 features to Morgan_1024&RF 
+model decision. a) Summary bar plot of Morgan_1024&RF . b) Swarm summary plot 
+of Morgan_1024&RF
+Figure S9. Importance and contribution of the top 10 features to RDKit&GBDT 
+model decision. a) Summary bar plot of RDKit&GBDT . b) Swarm summary plot of 
+RDKit&GBDT
+Figure S10. Importance and contribution of the top 10 features to 
+Morgan_256&GBDT model decision. a) Summary bar plot of Morgan_256&GBDT . 
+b) Swarm summary plot of Morgan_256&GBDT
+Figure S11. Importance and contribution of the top 10 features to 
+Morgan_512&GBDT model decision. a) Summary bar plot of Morgan_512&GBDT . 
+b) Swarm summary plot of Morgan_512&GBDT
+Figure S12. Importance and contribution of the top 10 features to 
+Morgan_1024&GBDT model decision. a) Summary bar plot of 
+Morgan_1024&GBDT . b) Swarm summary plot of Morgan_1024&GBDT
+Figure S13. SAM molecular structures for model validation
+REFERENCES
+[1] A. Abid, P. Rajamanickam, and E. Diau, “Design of a simple bifunctional 
+system as a self-assembled monolayer (SAM) for inverted tin-based perovskite solar 
+cells,” Chemical Engineering Journal, vol. 477, Dec. 2023.
+[2] W. Wang, K. Wei, L. Yang, J. Deng, J. Zhang, and W. Tang, “Dynamic self-
+assembly of small molecules enables the spontaneous fabrication of hole conductors 
+at perovskite/electrode interfaces for over 22% stable inverted perovskite solar 
+cells,” Materials Horizons, vol. 10, no. 7, pp. 2609–2617, Jul. 2023.
+[3] E. Arkan et al., “Effect of functional groups of self assembled monolayer 
+molecules on the performance of inverted perovskite solar cell,” Materials 
+Chemistry and Physics, vol. 254, Nov. 2020.
+[4] Z. Li et al., “Simple and robust phenoxazine phosphonic acid molecules as self-
+assembled hole selective contacts for high-performance inverted perovskite solar 
+cells,” Nanoscale, vol. 15, no. 4, pp. 1676–1686, Jan. 2023.
+[5] Z. Zhang et al., “Anchoring Charge Selective Self-Assembled Monolayers for 
+Tin-Lead Perovskite Solar Cells,” Advanced Materials, vol. 36, no. 18, May 2024.
+[6] A. Al-Ashouri et al., “Conformal monolayer contacts with lossless interfaces for 
+perovskite single junction and monolithic tandem solar cells,” Energy & 
+Environmental Science, vol. 12, no. 11, pp. 3356–3369, Nov. 2019.
+[7] W. Wang, K. Wei, L. Yang, J. Deng, J. Zhang, and W. Tang, “Dynamic self-
+assembly of small molecules enables the spontaneous fabrication of hole conductors 
+at perovskite/electrode interfaces for over 22% stable inverted perovskite solar 
+cells,” Materials Horizons, vol. 10, no. 7, pp. 2609–2617, July 2023.
+[8] E. Arkan et al., “Effect of functional groups of self assembled monolayer 
+molecules on the performance of inverted perovskite solar cell,” Materials 
+Chemistry and Physics, vol. 254, Nov. 2020.
+[9] Y. Guo et al., “Efficient inverted perovskite solar cells with a low-temperature 
+processed NiOx/SAM hole transport layer,” Journal of Materials Chemistry C, vol. 
+12, no. 4, pp. 1507–1515, Jan. 2024.
+[10] J. Zhang et al., “Elimination of Interfacial Lattice Mismatch and Detrimental 
+Reaction by Self-Assembled Layer Dual-Passivation for Efficient and Stable Inverted 
+Perovskite Solar Cells,” Advanced Energy Materials, vol. 12, no. 18, May 2022.
+[11] N. Phung et al., “Enhanced Self-Assembled Monolayer Surface Coverage by 
+ALD NiO in p-i-n Perovskite Solar Cells,” ACS Applied Materials & Interfaces, 
+vol. 14, no. 1, pp. 2166–2176, Jan. 2022.
+[12] G. Kim et al., “Enhancing Surface Modification and Carrier Extraction in 
+Inverted Perovskite Solar Cells via Self-Assembled Monolayers,” Nano Materials, 
+vol. 14, no. 2, Jan. 2024.
+[13] D. González et al., “Exploring the Interactions at the Interface: Tailoring 
+Carbazole-Based Self-Assembled Molecules with Varying Functional Groups for 
+Enhancing the Performance of Inverted Perovskite Solar Cells,” Solar RRL, vol. 8, 
+no. 12, June 2024.
+[14] X. Luo, X. Liu, J. Nakazaki, H. Segawa, Y. Wang, and L. Han, “Facile 
+Posttreatment of Self-Assembled Monolayers for Efficient Inverted Perovskite Solar 
+Cells,” Solar RRL, vol. 8, no. 3, Feb. 2024.
+[15] H. Zhou et al., “Glycol Monomethyl Ether-Substituted Carbazolyl Hole-
+Transporting Material for Stable Inverted Perovskite Solar Cells with Efficiency of 
+25.52 %,” Angewandte Chemie-International Edition, vol. 63, no. 33, Aug. 2024.
+[16] T. Li et al., “In Situ Dehydration Condensation of Self-Assembled Molecules 
+Enables Stabilization of CsPbI3 Perovskites for Efficient Photovoltaics,” Advanced 
+Functional  Materials, vol. 34, no. 51, Dec. 2024.
+[17] D. González et al., “Influence of the carbazole moiety in self-assembling 
+molecules as selective contacts in perovskite solar cells: interfacial charge transfer 
+kinetics and solar-to-energy efficiency effects,” Nanoscale Advances, vol. 5, no. 23, 
+pp. 6542–6547, Nov. 2023.
+[18] Y. Zhou et al., “Interfacial Modification of NiOx for Highly Efficient and 
+Stable Inverted Perovskite Solar Cells,” Advanced Energy Materials, vol. 14, no. 
+25, July 2024.
+[19] X. Yuan et al., “Modulation on electrostatic potential to build a firm bridge at 
+NiOx/ perovskite interface for efficient and stable perovskite solar cells,” Journal of 
+Energy Chemistry, vol. 96, pp. 249–258, Sept. 2024.
+[20] E. Yalcin et al., “Monodentate versus Bidentate Anchoring Groups in Self-
+Assembling Molecules (SAMs) for Robust p-i-n Perovskite Solar Cells,” ACS 
+Applied Materials & Interfaces, vol. 15, no. 49, pp. 57153–57164, Dec. 2023.
+[21] E. Arkan et al., “Performance enhancement of inverted perovskite solar cells 
+through interface engineering by TPD based bidentate self-assembled monolayers,” 
+Optical Materials, vol. 105, July 2020.
+[22] E. Aktas et al., “Role of Terminal Group Position in Triphenylamine-Based 
+Self-Assembled Hole-Selective Molecules in Perovskite Solar Cells,” ACS Applied 
+Materials & Interfaces, vol. 14, no. 15, pp. 17461–17469, Apr. 2022.
+[23] Q. Liao et al., “Self-assembled donor-acceptor hole contacts for inverted 
+perovskite solar cells with an efficiency approaching 22%: The impact of anchoring 
+groups,” Journal of Energy Chemistry, vol. 68, pp. 87–95, May 2022.
+[24] W. Li, M. Cariello, M. Méndez, G. Cooke, and E. Palomares, “Self-Assembled 
+Molecules for Hole-Selective Electrodes in Highly Stable and Efficient Inverted 
+Perovskite Solar Cells with Ultralow Energy Loss,” ACS Applied Energy Materials, 
+vol. 6, no. 3, pp. 1239–1247, Jan. 2023.
+[25] E. Li et al., “Bonding Strength Regulates Anchoring-Based Self-Assembly 
+Monolayers for Efficient and Stable Perovskite Solar Cells,” Advanced Functional 
+Materials, vol. 31, no. 35, Aug. 2021.
+[26] A. Ullah et al., “Novel Phenothiazine-Based Self-Assembled Monolayer as a 
+Hole Selective Contact for Highly Efficient and Stable p-i-n Perovskite Solar Cells,” 
+Advanced Energy Materials, vol. 12, no. 2, Jan. 2022.
+[27] A. Ullah et al., “Versatile Hole Selective Molecules Containing a Series of 
+Heteroatoms as Self-Assembled Monolayers for Efficient p-i-n Perovskite and 
+Organic Solar Cells,” Advanced Functional Materials, vol. 32, no. 49, Dec. 2022.
+[28] Z. Li et al., “Simple and robust phenoxazine phosphonic acid molecules as 
+self-assembled hole selective contacts for high-performance inverted perovskite solar 
+cells,” Nanoscale, vol. 15, no. 4, pp. 1676–1686, Jan. 2023.
+[29] W. Jiang, F. Li, M. Li, F. Qi, F. Lin, and A. Jen, “π-Expanded Carbazoles as 
+Hole-Selective Self-Assembled Monolayers for High-Performance Perovskite Solar 
+Cells,” Angewandte Chemie-International Edition, vol. 61, no. 51, Dec. 2022.
+[30] H. Guo et al., “Neglected acidity pitfall: boric acid-anchoring hole-selective 
+contact for perovskite solar cells,” National Science Review, vol. 10, no. 5, Apr. 
+2023.
+[31] H. Cheng and Z. Huang, “Self-assembled organic molecules with a fused 
+aromatic ring as hole-transport layers for inverted perovskite solar cells: the effect of 
+linkers on performance,” New Journal of Chemistry, vol. 48, no. 15, pp. 6833–
+6841, Apr. 2024.
+[32] E. Yalcin et al., “Semiconductor self-assembled monolayers as selective 
+contacts for efficient PiN perovskite solar cells,” Energy & Environmental Science, 
+vol. 12, no. 1, pp. 230–237, Jan. 2019.
+[33] E. Aktas et al., “Understanding the perovskite/self-assembled selective contact 
+interface for ultra-stable and highly efficient p-i-n perovskite solar cells,” Energy & 
+Environmental Science, vol. 14, no. 7, pp. 3976–3985, July 2021.
+[34] W. Wang et al., “Versatile Self-Assembled Molecule Enables High-Efficiency 
+Wide-Bandgap Perovskite Solar Cells and Organic Solar Cells,” Advanced Energy 
+Materials, vol. 13, no. 23, June 2023.

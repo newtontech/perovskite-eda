@@ -31,7 +31,7 @@ import numpy as np
 def run_complete_research():
     """
     Execute complete research pipeline.
-    
+
     This function orchestrates all research components:
     - Data preparation
     - Model training
@@ -39,7 +39,7 @@ def run_complete_research():
     - Analysis
     - Report generation
     """
-    
+
     print("=" * 70)
     print(" MULTI-OBJECTIVE PREDICTION FOR PEROVSKITE SOLAR CELLS ")
     print(" Physics-Informed Learning with Pareto Optimization ")
@@ -47,18 +47,18 @@ def run_complete_research():
     print("\n🎯 Target: Nature Machine Intelligence")
     print("📊 Research: Joint prediction of PCE, Voc, Jsc, FF")
     print("\n")
-    
+
     # Phase 1: Data Preparation
     print("\n" + "=" * 70)
     print("PHASE 1: DATA PREPARATION")
     print("=" * 70)
-    
+
     try:
         prep = MultiObjectiveDataPreparation(
             input_path='/home/yhm/desktop/code/perovskite-eda-research/data/processed/perovskite_cleaned.csv',
             output_dir='multi_objective/data'
         )
-        
+
         prep.load_data()
         prep.extract_targets()
         prep.clean_data()
@@ -66,58 +66,58 @@ def run_complete_research():
         prep.create_visualizations()
         prep.save_cleaned_data()
         prep.generate_report()
-        
+
         print("\n✅ Phase 1 Complete: Data prepared successfully")
-        
+
     except Exception as e:
         print(f"\n❌ Phase 1 Error: {e}")
         print("Continuing with synthetic data for demonstration...")
-    
+
     # Phase 2: Multi-Output Modeling
     print("\n" + "=" * 70)
     print("PHASE 2: MULTI-OUTPUT MODELING")
     print("=" * 70)
-    
+
     try:
         config = ModelConfig()
         predictor = MultiOutputPredictor(config)
-        
+
         # Load prepared data
         data_path = Path('multi_objective/data/multi_target_data.csv')
-        
+
         if data_path.exists():
             df = pd.read_csv(data_path)
             print(f"\n📊 Loaded data: {df.shape}")
-            
+
             # Note: Full training requires feature engineering
             # This is a framework demonstration
-            
+
         print("\n✅ Phase 2 Complete: Multi-output model framework ready")
-        
+
     except Exception as e:
         print(f"\n❌ Phase 2 Error: {e}")
-    
+
     # Phase 3: Pareto Optimization
     print("\n" + "=" * 70)
     print("PHASE 3: PARETO OPTIMIZATION")
     print("=" * 70)
-    
+
     try:
         opt_config = OptimizationConfig()
         optimizer = ParetoOptimizer(opt_config)
-        
+
         print("\n✅ Phase 3 Complete: Pareto optimization framework ready")
-        
+
     except Exception as e:
         print(f"\n❌ Phase 3 Error: {e}")
-    
+
     # Phase 4: Report Generation
     print("\n" + "=" * 70)
     print("PHASE 4: FINAL REPORT")
     print("=" * 70)
-    
+
     generate_final_report()
-    
+
     print("\n" + "=" * 70)
     print("✅ RESEARCH PIPELINE COMPLETE")
     print("=" * 70)
@@ -125,10 +125,10 @@ def run_complete_research():
 
 def generate_final_report():
     """Generate final comprehensive research report."""
-    
+
     output_path = Path('reports/multi_objective/FINAL_RESEARCH_REPORT.md')
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     report = """# Multi-Objective Prediction for Perovskite Solar Cells
 
 ## 🎯 Final Research Report
@@ -324,10 +324,10 @@ MIT License - Open for research and development
 
 🦞 OpenClaw AI Research Team
 """
-    
+
     with open(output_path, 'w') as f:
         f.write(report)
-    
+
     print(f"\n📝 Final report saved to: {output_path}")
 
 

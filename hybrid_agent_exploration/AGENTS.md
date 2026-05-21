@@ -53,7 +53,7 @@
 | F26 | 学习型表示 | 128-512 dim | SMILES token, molecular graph embedding, crystal graph, **JTVAE latent**, **Uni-Mol 3D embedding** |
 | F27 | 图像/谱学表征 | 变长 | PL/TRPL/UV-vis, XRD/GIWAXS, SEM/AFM, in situ PL/reflection |
 
-**本项目已实现**: F21 (RDKit Descriptors), F22 (ECFP4, MACCS, KRFP, AP, TT), F25 (部分工艺特征)
+**本项目已实现**: F21 (RDKit Descriptors), F22 (ECFP4, MACCS, KRFP, AP, TT, Morgan 256/512/1024), F25 (部分工艺特征)
 
 **前沿趋势**: F26 学习型表示（JTVAE latent, Uni-Mol embedding）正在取代手工特征。Co-PAS 已用 scaffold 预筛选 + JTVAE latent + PubChem 25万分子做添加剂筛选。
 

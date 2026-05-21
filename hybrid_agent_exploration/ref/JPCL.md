@@ -56,6 +56,6 @@ Image
 
 值得注意的是，当前模型的R²约为0.51，仍有较大提升空间，这主要受限于数据集规模（99个样本）和器件制备条件的多样性。随着SAM相关实验数据的持续积累，模型性能有望进一步提高。本工作为SAM材料的高效数字化开发提供了可行方案，对加速下一代光伏材料的发现具有重要参考价值。
 
-参考文献：Haifeng Li, Wensheng Yan* et al. Machine Learning Accelerated Design of Self-Assembled Monolayers for High-Performance Perovskite Solar Cells  
+参考文献：Haifeng Li, Wensheng Yan* et al. Machine Learning Accelerated Design of Self-Assembled Monolayers for High-Performance Perovskite Solar Cells
 
 J.Phys.Chem.Lett. (2026). https://doi.org/10.1021/acs.jpclett.6c00119

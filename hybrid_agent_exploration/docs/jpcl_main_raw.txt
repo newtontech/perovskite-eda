@@ -1,0 +1,1064 @@
+Machine Learning Accelerated Design of Self-Assembled
+Monolayers for High-Performance Perovskite Solar Cells
+Haifeng Li, Yue Zang,* Zhikang Zhu, Chenyang Zhu, Weihong Liu, Zihao Zhang, and Wensheng Yan*
+Cite This: J. Phys. Chem. Lett. 2026, 17, 3362−3373
+Read Online
+ACCESS
+Metrics & More
+Article Recommendations
+*
+sı
+Supporting Information
+ABSTRACT: Self-assembled monolayers (SAMs) have emerged as a new generation of hole
+transport materials (HTMs) for perovskite solar cells (PSCs), particularly in inverted
+architectures. Compared to conventional HTMs, SAMs demonstrate superior power
+conversion efficiency (PCE) and enhanced operational stability. However, the current
+discovery of SAMs still relies heavily on empirical trial-and-error approaches, suffering from
+long development cycles, high costs, and low success rates. Here we present a novel machine
+learning (ML) platform for accelerated SAM discovery and design. We constructed a
+comprehensive feature space combining RDKit molecular descriptors and Morgan
+fingerprints, and then systematically evaluated various ML algorithms. Multiple evaluation
+metrics were used to assess model reliability. The results demonstrate that the RDKit-based
+XGBoost model achieved optimal performance with a root-mean-square error (RMSE) of
+1.862, a coefficient of determination (R2) of 0.5058, a Pearson correlation coefficient (r) of
+0.8161 and a mean absolute error (MAE) of 1.528. Then, SHapley Additive exPlanations
+(SHAP) analysis further elucidated the structure−property relationships between key molecular features and photovoltaic
+performance. The SHAP values revealed that the top five most important features were all RDKit descriptors, specifically
+EState_VSA5, fr_benzene, EState_VSA2, SlogP_VSA1, and Chi0v. The external validation using recently reported SAM molecules
+demonstrated remarkable prediction accuracy. The relative errors between predicted and experimental PCE values were mostly
+within 10%, with the minimum being only 0.55%. Meanwhile, three new SAM molecules were designed based on the model, with
+the highest predicted PCE approaching 27%. Therefore, this work provides an efficient digital solution for SAM development,
+offering valuable guidance for accelerating the discovery of next-generation photovoltaic materials.
+P
+erovskite solar cells (PSCs) have attracted significant
+attention as a third-generation photovoltaic technology
+due to their high power conversion efficiency (PCE) and low
+manufacturing cost.1−4 Recent advances have pushed the PCE
+of PSCs beyond 27%.5,6 Among interfacial materials, self-
+assembled monolayers (SAMs) have shown great potential as
+hole transport layers, especially in inverted architectures, owing
+to their minimal parasitic absorption, low material usage, and
+simple processing, which support the fabrication of large-area
+and stable devices.7 However, current SAM design still relies
+on conventional synthesis methods, such as reactions with
+conjugated aldehydes, pyridines, or amine derivatives.6 These
+approaches are not only time- and resource-intensive but also
+offer no guarantee of achieving high PCE. Thus, there remains
+a challenge to rapidly design and optimize SAMs for efficient
+perovskite solar cells.
+In PSCs, SAMs are ultrathin, ordered molecular layers that
+self-assemble on substrates.6 A typical SAM comprises three
+parts: an anchoring group, a spacer, and a functional group.7
+The anchoring group bonds chemically to the substrate,
+enabling film formation.8 The spacer connects the anchor to
+the functional group,7 which interfaces with the perovskite,
+enhances charge extraction, and modulates the substrate work
+function via its molecular dipole.9,10 Recently, many studies
+have exploited SAMs in PSCs. For example, Zhang et al.11 used
+SAMs with different anchors and spacers to tune perovskite
+interface properties in mixed Sn−Pb devices. Li et al.12 applied
+Me-4PACz to stabilize the perovskite structure and passivate
+interfaces. Zhou et al.13 synthesized benzothiadiazole-based
+SAMs with varied anchoring groups for interface modification.
+Despite these advances, SAM preparation remains largely trial-
+and-error, with no assurance of high device performance.
+Therefore, a method to rapidly screen high-PCE SAMs is
+urgently needed.
+In recent years, the integration of artificial intelligence (AI)
+and materials science has opened new avenues for accelerated
+material discovery. Machine learning (ML), a cornerstone of
+AI, has demonstrated remarkable capability in establishing
+quantitative structure−property relationships (QSPRs) and
+predicting key material characteristics.14 Within perovskite
+Received:
+January 14, 2026
+Revised:
+March 1, 2026
+Accepted:
+March 3, 2026
+Published: March 6, 2026
+Letter
+pubs.acs.org/JPCL
+© 2026 American Chemical Society
+3362
+https://doi.org/10.1021/acs.jpclett.6c00119
+J. Phys. Chem. Lett. 2026, 17, 3362−3373
+Downloaded via PEKING UNIV on May 7, 2026 at 09:22:18 (UTC).
+See https://pubs.acs.org/sharingguidelines for options on how to legitimately share published articles.
+Figure 1. Workflow of this research work.
+The Journal of Physical Chemistry Letters
+pubs.acs.org/JPCL
+Letter
+https://doi.org/10.1021/acs.jpclett.6c00119
+J. Phys. Chem. Lett. 2026, 17, 3362−3373
+3363
+Figure 2. Prediction results of the 12 trained models. (a) RDKit_XGBoost. (b) RDKit_RF. (c) RDKit_GBDT. (d) Morgan_256_XGBoost. (e)
+Morgan_256_RF. (f) Morgan_256_GBDT. (g) Morgan_512_XGBoost. (h) Morgan_512_RF. (i) Morgan_512_GBDT. (j) Morgan_1024_XG-
+Boost. (k) Morgan_1024_RF. (l) Morgan_1024_GBDT.
+The Journal of Physical Chemistry Letters
+pubs.acs.org/JPCL
+Letter
+https://doi.org/10.1021/acs.jpclett.6c00119
+J. Phys. Chem. Lett. 2026, 17, 3362−3373
+3364
+research, ML has been successfully applied to predict
+properties such as bandgap,15 conductivity,16 and stability,17
+among others. Our research team has also contributed to
+related ML-driven studies on perovskites.18−22 Beyond
+property prediction, ML aids in high-throughput fabrication
+optimization,23 thin-film analysis,24 and understanding the role
+of molecular additives.25 These successes underscore ML’s
+potential to transform the design cycle of functional materials
+like SAMs. By learning from existing experimental data, ML
+models can uncover hidden structure-performance correlations
+and rapidly screen vast chemical spaces, thereby drastically
+reducing the need for costly and time-consuming experimental
+iterations.
+In this work, we present a data-driven ML framework
+specifically tailored for the accelerated discovery and design of
+high-performance SAMs for inverted PSCs. We constructed a
+curated data set of SAM-based devices and systematically
+evaluated multiple ML algorithms combined with different
+molecular representations (RDKit descriptors and Morgan
+fingerprints). The optimal model was identified and rigorously
+interpreted using SHapley Additive exPlanations (SHAP) to
+elucidate critical structure−property relationships. The model’s
+predictive reliability was further validated against newly
+reported SAM molecules. Finally, we demonstrate its practical
+utility by designing new SAM candidates with predicted PCEs
+approaching 27%. This study provides an efficient computa-
+tional strategy to guide the experimental development of next-
+generation SAM-based photovoltaic devices.
+The workflow of this study is illustrated in Figure 1 and
+consists of the following steps. (1) Data Collection: Gathering
+relevant data to construct a database. (2) Feature Engineering:
+Selecting appropriate input features for the model. (3) Model
+Training: Selecting a combination of multiple machine
+learning algorithms and diverse input features, training various
+models and evaluating their performance. (4) Model
+Explanation: Using SHAP to interpret the model, analyzing
+Figure 3. Performance metrics of all models. (a) The RMSE of all models. (b) The R2 of all models. (c) The r of all models. (d) The MAE of all
+models.
+Table 1. Performance Metrics of the 12 Models
+RMSE
+R2
+r
+MAE
+XGBoost
+RDKit
+1.862
+0.5058
+0.8161
+1.528
+Morgan_256
+1.904
+0.4835
+0.7734
+1.467
+Morgan_512
+1.934
+0.4670
+0.7752
+1.416
+Morgan_1024
+1.909
+0.4804
+0.7046
+1.502
+RF
+RDKit
+2.047
+0.4031
+0.6535
+1.443
+Morgan_256
+2.016
+0.4208
+0.7004
+1.453
+Morgan_512
+2.002
+0.4290
+0.6999
+1.493
+Morgan_1024
+1.891
+0.4904
+0.7179
+1.378
+GBDT
+RDKit
+1.918
+0.4757
+0.6997
+1.199
+Morgan_256
+1.900
+0.4858
+0.7137
+1.274
+Morgan_512
+1.934
+0.4672
+0.6941
+1.363
+Morgan_1024
+1.876
+0.4985
+0.7412
+1.424
+The Journal of Physical Chemistry Letters
+pubs.acs.org/JPCL
+Letter
+https://doi.org/10.1021/acs.jpclett.6c00119
+J. Phys. Chem. Lett. 2026, 17, 3362−3373
+3365
+feature importance and their relationships with the target
+output. (5) Model Validation: Validating the models using
+recently synthesized and published SAM molecules and newly
+designed SAM molecules to further assess their predictive
+performance and application potential. To investigate the
+relationship between the molecular characteristics of SAM
+materials and the PCE of inverted PSCs, we collected data
+exclusively from inverted PSC devices based on SAMs. We
+systematically reviewed research papers on SAM materials
+published between 2019 and 2024, extracting a total of 108
+data points. For data cleaning, we excluded data points with
+PCE values below 10%. This threshold was chosen because
+such low-efficiency devices typically reflect nonoptimized
+fabrication conditions (e.g., incomplete layer formation, poor
+contact, or nonstandardized measurement protocols), rather
+than the inherent performance limit of the SAM material itself.
+Including these points would introduce noise and bias the
+model toward underestimating PCE, as the model would
+attempt to fit outliers that do not represent the true structure−
+performance relationship of well-functioning devices. After this
+exclusion, we retained 99 high-quality data points, covering
+more than 50 distinct SAM molecules. The excluded 9 entries
+are listed in Table S1 along with their PCE values. Figure S1
+shows the PCE distribution of the processed data set used for
+our model training. The complete set of SAM molecules
+involved in this study is provided in Table S2.
+Figure 4. Importance and contribution of the top 10 features to RDKit&XGBoost model decision. (a) Summary bar plot of RDKit&XGBoost. (b)
+Swarm summary plot of RDKit&XGBoost.
+The Journal of Physical Chemistry Letters
+pubs.acs.org/JPCL
+Letter
+https://doi.org/10.1021/acs.jpclett.6c00119
+J. Phys. Chem. Lett. 2026, 17, 3362−3373
+3366
+To accurately model the relationship between the molecular
+structure of SAM materials and PCE, appropriate input
+features must be selected. We obtained the SMILES
+(Simplified Molecular Input Line Entry System) representa-
+tions of all SAM molecules and converted them into Morgan
+fingerprints and RDKit descriptors using Python and the web-
+based tool http://www.scbdd.com/chemdes/. These were
+used as input features for the machine learning models.
+Morgan fingerprints encode the presence or absence of
+molecular substructures in a binary format, where “1” indicates
+the presence of a feature and “0” its absence. As a type of
+circular fingerprint, Morgan fingerprints capture localized
+structural fragments in a flexible and detailed manner, with
+adjustable lengths to balance information richness and
+computational efficiency.26 In this study, we tested Morgan
+fingerprints with hash sizes of 256, 512, and 1024 to evaluate
+their impact on model performance. Molecular descriptors, in
+contrast, represent molecular properties using real-valued
+numbers rather than structural encoding. They quantify
+physicochemical and topological characteristics (e.g., atom
+types, bond connectivity, etc.) to provide a numerical
+representation of molecular features.27 In addition to the
+SAM-derived features, we incorporated 26 additional input
+parameters related to device fabrication and composition.
+These parameters can be broadly categorized into: (1)
+perovskite composition (e.g., types of cations and halides),
+(2) solvent and additive information (e.g., solvent type,
+concentration), (3) electron transport layer components, and
+(4) processing conditions (e.g., whether NiO2 is used, whether
+cleaning is performed). A complete list of these 26 features,
+including their descriptions and categories, is provided in
+Table S3. Categorical variables (e.g., presence/absence of a
+specific component) were encoded using one-hot encoding to
+ensure they could be properly handled by the machine learning
+models. The RDKit descriptors-based final feature set for
+model training consisted of 222 features: 196 RDKit molecular
+descriptors and 26 device-specific parameters (Table S3).
+While this represents a high-dimensional space relative to our
+data set of 99 samples, we note that RDKit descriptors are
+curated chemical informatics features with well-defined
+physicochemical interpretations. Therefore, the RDKit de-
+scriptors were used directly without dimensionality reduction
+or explicit feature selection. To address potential overfitting
+concerns inherent in such a scenario, we relied on the built-in
+regularization capabilities of our chosen algorithms and
+rigorous validation protocols. By analyzing these features, we
+aim to elucidate their influence-both qualitatively and
+quantitatively on the PCE of SAM-based inverted perovskite
+solar cells. This approach will provide actionable insights to
+guide the experimental synthesis of SAM materials and the
+optimization of device fabrication processes.
+Decision trees represent a nonparametric supervised learning
+approach in machine learning that solves classification and
+regression problems by summarizing decision rules from
+feature data and representing these rules in a tree-like graph
+structure. This algorithm can readily handle irrelevant features
+while demonstrating robust performance with unknown
+samples.28 In this study, we employed three decision tree-
+based ML algorithms: Extreme Gradient Boosting (XGBoost),
+Figure 5. Effect of a single feature on the model decision. (a) The contribution of the EState_VSA5 to the model. (b) The contribution of the
+EState_VSA2 to the model. (c) The contribution of the SlogP_VSA1 to the model. (d) The contribution of the Chi0v to the model.
+The Journal of Physical Chemistry Letters
+pubs.acs.org/JPCL
+Letter
+https://doi.org/10.1021/acs.jpclett.6c00119
+J. Phys. Chem. Lett. 2026, 17, 3362−3373
+3367
+Random Forest (RF), and Gradient Boosting Decision Tree
+(GBDT).
+XGBoost is an efficient ensemble learning algorithm based
+on gradient boosting, whose core concept involves iteratively
+training decision trees to optimize predictive performance.
+Unlike conventional gradient boosting methods, XGBoost
+incorporates regularization terms in the objective function to
+control model complexity and employs second-order Taylor
+expansion for more precise loss function optimization. The
+Figure 6. Effect of dual feature interactions on the model decision. (a) EState_VSA5-associated SlogP_VSA1. (b) State_VSA5-associated
+State_VSA2. (c) SlogP_VSA1-associated EState_VSA5. (d) SlogP_VSA1-associated Chi0v. The x-axis denotes the values of the primary variables,
+with the corresponding SHAP values plotted on the y-axis. The intensity of the scatter points’ coloration corresponds to the magnitude of a
+secondary variable, as indicated by the color bar. A shifting red-to-blue background encodes the polarity of the SHAP values, where the neutral
+white baseline represents zero contribution (SHAP value = 0).
+Figure 7. Model validation results of RDKit-based XGBoost model:
+Comparison of the predicted PCE values from the model with the
+experimental PCE values for the validation data set and relative errors.
+Table 2. Results of the Model Validation
+SAM
+Experimental PCE
+(%)
+Predicted PCE
+(%)
+Relative Error
+(%)
+MPA-MBT-BA
+23.1334
+17.11
+26.03
+MPA-EBT-BA
+23.5434
+23.29
+1.06
+MPA-MEBT-
+BA
+22.1334
+22.47
+1.54
+BrNH3-4PACz
+2335
+24.45
+6.30
+o-PhPACz
+24.736
+25.47
+3.12
+p-PhPACz
+25.536
+25.64
+0.55
+m-PhPACz
+26.236
+25.64
+2.14
+TPA2P
+26.1137
+21.91
+16.09
+DMICPA
+25.437
+22.66
+10.79
+The Journal of Physical Chemistry Letters
+pubs.acs.org/JPCL
+Letter
+https://doi.org/10.1021/acs.jpclett.6c00119
+J. Phys. Chem. Lett. 2026, 17, 3362−3373
+3368
+algorithm selects optimal split points through a greedy strategy,
+supports parallel computing, and automatically handles missing
+values, making it particularly effective for classification,
+regression, and ranking tasks.
+RF is a bagging-based ensemble learning method that
+enhances model robustness by constructing multiple inde-
+pendent decision trees and combining their predictions.
+During training, each tree is trained on a randomly sampled
+subset of data (with replacement) and considers only a random
+selection of features at each node split to promote model
+diversity. The final prediction is determined through voting
+(for classification) or averaging (for regression), significantly
+reducing overfitting risks. Known for its simplicity, paralleliz-
+ability, and noise resistance, RF is widely applied to high-
+dimensional data and nonlinear problems.
+GBDT is a boosting-based ensemble algorithm that
+sequentially trains decision trees to correct errors from
+previous iterations. GBDT adopts a stepwise training strategy
+where each new tree fits the negative gradient (pseudor-
+esiduals) of the current model, progressively refining
+predictions. The algorithm supports various loss functions
+and balances bias-variance trade-offs by adjusting tree depth
+and learning rate.
+We then divided the entire data set into 80% for training and
+20% for testing. Given the limited number of unique SAM
+molecules (over 50) and the fact that some molecules appear
+in multiple data points (due to variations in device fabrication
+or measurement conditions), we adopted a point-level splitting
+strategy. This means that data points from the same SAM
+molecule could appear in both the training and test sets, which
+reflects real-world scenarios where the same material may be
+tested under different conditions. While this approach carries a
+risk of data leakage, it allows us to utilize the full data set for
+training and evaluation. To mitigate this risk, we employed
+rigorous cross-validation and external validation on entirely
+unseen SAM molecules. Given the feature-to-sample ratio,
+particular attention was paid to mitigating overfitting. The tree-
+based models were trained with their respective regularization
+mechanisms enabled. For XGBoost, this includes L1
+(reg_alpha) and L2 (reg_lambda) regularization terms within
+its objective function. Hyperparameter optimization via
+GridSearchCV explicitly tuned these parameters alongside
+others controlling tree depth (max_depth) and learning rate
+(learning_rate), ensuring a balance between model complexity
+and generalization ability. Subsequently training three ML
+algorithms (XGBoost, RF, and GBDT) using both RDKit
+descriptors and Morgan fingerprints of different lengths (256,
+512, and 1024 bits) as input features, resulting in a total of 12
+trained models. For each model, we optimized the hyper-
+parameters using GridSearchCV and evaluated their perform-
+ance based on four metrics: RMSE, R2, r and MAE, to ensure
+the highest possible model accuracy. Meanwhile, during the
+model construction process, standardization was applied to the
+features to eliminate the influence of unit and scale differences
+among variables and to ensure each feature dimension is
+treated equally. The standardization formula is shown in eq 1,
+where Dsta is the standardized feature data, D̅ is the mean value
+of the feature data, and σ(D) is the standard deviation of the
+feature data. Throughout the modeling process, the machine
+learning models were developed using the Python program-
+ming language. The performance on a held-out test set and,
+more importantly, on an entirely external validation set
+provides empirical evidence of the model’s robustness.
+=
+D
+D
+D
+D
+( )
+sta
+i
+(1)
+The performance of the established model was evaluated
+using the Root Mean Square Error (RMSE), the Coefficient of
+Determination (R2), the Pearson Correlation Coefficient (r)
+and the Mean Absolute Error (MAE). The calculation
+methods for each metric are shown in eqs 2−5, where n
+represents the number of data entries, xi denotes the PCE
+values reported in the database, x̅ represents the average of all
+PCE values in the database, yi indicates the PCE values
+predicted by the ML model, and y̅ denotes the average of the
+PCE values predicted by the ML model. The RMSE is an
+important metric for evaluating the performance of regression
+models. It measures the standard deviation between predicted
+and actual values, providing a quantification of the actual
+prediction error. R2 reflects the interpretability of the model.
+Its value ranges between 0 and 1, with values closer to 1
+indicating a better fit of the model to the data. R2 is a
+standardized measure of model interpretability, while RMSE
+quantifies the actual prediction error. These two metrics can be
+used together to comprehensively assess the performance of
+the model. The r is a statistical measure of the linear
+correlation between two variables. It ranges from −1 to 1,
+reflecting the strength and direction of the linear relationship
+between the two variables. MAE is a commonly used metric for
+evaluating regression models, which measures the average
+magnitude of absolute differences between predicted and
+actual values.
+=
+=
+RMSE
+n
+y
+x
+1
+(
+)
+i
+n
+i
+i
+1
+2
+(2)
+=
+=
+=
+R
+y
+x
+y
+x
+1
+(
+)
+(
+)
+i
+n
+i
+i
+i
+n
+i
+2
+1
+2
+1
+2
+(3)
+Figure 8. Three designed SAM molecules and their predicted results.
+The common anchoring group is a phosphonic acid. Key structural
+variations lie in the headgroup and the spacer/linker. SAM1 features a
+morpholine headgroup and a thio-cyanate side chain. SAM2 replaces
+the morpholine with a piperidine ring. SAM3 further modifies the
+headgroup to a piperidine and substitutes the thio-cyanate with a thio-
+amide group.
+The Journal of Physical Chemistry Letters
+pubs.acs.org/JPCL
+Letter
+https://doi.org/10.1021/acs.jpclett.6c00119
+J. Phys. Chem. Lett. 2026, 17, 3362−3373
+3369
+=
+=
+=
+=
+r
+x
+x
+y
+y
+x
+x
+y
+y
+(
+)(
+)
+(
+)
+(
+)
+i
+n
+i
+i
+i
+n
+i
+i
+n
+i
+1
+1
+2
+1
+2
+(4)
+=
+|
+|
+=
+MAE
+n
+y
+y
+1
+i
+n
+i
+1
+(5)
+After identifying the optimal model, we conducted model
+interpretation to examine the influence of individual features
+on the predictive outcomes and understand how these features
+affect the model’s performance. Machine learning models often
+function as “black boxes”while we can observe their output
+predictions, the underlying relationships between input
+features and model results remain obscure. Traditional feature
+importance methods can only indicate which features are more
+significant but fail to reveal their specific impact on model
+outputs. To address this limitation, we employed SHapley
+Additive exPlanations (SHAP), an interpretability framework
+rooted in game theory that provides comprehensive explan-
+ations for machine learning model outputs.29 The core of this
+approach lies in Shapley values, a concept originally developed
+by Lloyd Shapley in 1953 to fairly distribute payoffs among
+participants in cooperative games.30 SHAP quantifies each
+feature’s contribution to model predictions by calculating its
+marginal impact across all possible feature combinations,
+ensuring equitable attribution of influence among all variables.
+This method offers dual capabilities: it enables both local
+interpretation of individual predictions and global model
+interpretation through aggregation of multiple Shapley
+values.31
+Figure 2 presents the PCE prediction curves for all 12
+models, showing that most data points closely align with the
+predicted vs actual fitting curves, indicating good overall
+performance. All optimized hyperparameters obtained from
+the final model are presented in Table S4.
+Figure 3 displays the performance results (RMSE, MAE, R2,
+and r) for each model. The heatmaps reveal that XGBoost with
+RDKit achieved the lowest RMSE (1.862), followed by
+Morrgan_1024-based GBDT (1.876). For R2, XGBoost and
+GBDT significantly outperformed RF, with RDKit-based
+XGBoost showing the highest R2 (0.5058). Similarly, for the
+r metric, RF models consistently underperformed compared to
+XGBoost and GBDT, with the best XGBoost model (RDKit
+input) achieving r of 0.8161 and the top GBDT model
+(Morgan_1024 input) reaching r of 0.7412. In terms of MAE,
+the performance rankings of the three models were distinct.
+The GBDT model achieved the lowest MAE values across
+most feature sets, followed by the RF model, while the
+XGBoost model consistently exhibited the highest MAE.
+Overall, the RDKit-based XGBoost model demonstrated
+superior performance with RMSE of 1.862, R2 of 0.5058, r
+of 0.8161 and MAE of 1.528, while RF models performed
+significantly worse than both XGBoost and GBDT. The
+complete performance metrics for all models are summarized
+in Table 1. Meanwhile, Figure S5 further presents the
+performance metrics of the 12 models after 10-fold cross-
+validation. Collectively, the RDKit-based XGBoost model
+performed the best.
+Figure 4 presents the SHAP interpretation results for the
+optimal model in this study-the RDKit-based XGBoost model
+(Figures S2−S12 display the SHAP interpretation results for
+the other models). Figure 4a shows the importance ranking of
+each feature in the model, where the vertical axis represents
+each feature (ranked from top to bottom, with higher positions
+indicating greater importance to the model results). The
+horizontal axis shows the mean absolute value of Shapley
+values for each feature, representing their average influence on
+the model output. From the ranking, we can see that the top 5
+features are all RDKit descriptors, namely EState_VSA5,
+fr_benzene, EState_VSA2, SlogP_VSA1 and Chi0v, which
+have a significant impact on the model output, and the
+combined influence of these five features far exceeds that of
+other features. This indicates that changes in the model’s
+output are largely affected by these few features. Furthermore,
+among the top 10 important features, nearly all are RDKit
+descriptors, suggesting that molecular descriptors play a
+dominant role in determining the photovoltaic performance
+prediction in our model. Figure 4b further explains how each
+feature influences the model output by analyzing their positive
+or negative contributions to the predictions using the SHAP
+additive explanation algorithm. In this result plot, each row
+represents a feature, and each dot represents a data point. The
+features are again ranked in descending order of their
+importance to the model output. The horizontal axis displays
+both positive and negative SHAP values, with red portions
+indicating high feature values and blue portions indicating low
+feature values. The results show that for the top-ranked feature
+EState_VSA5, high values (red) cluster in the negative SHAP
+region, indicating a detrimental effect on PCE, while low values
+(blue) exert a positive effect. For EState_VSA2, the SHAP
+result shows an opposite trend. It can be observed from the
+SHAP analysis that when its feature value is low, it exerts a
+negative contribution to the model’s predicted PCE outcome,
+whereas a higher feature value results in a positive
+contribution. The relationships for Chi0v and SlogP_VSA1
+are more complex. For Chi0v, an intermediate range of values
+yields a positive contribution to the model’s output, while
+values that are either too low or too high exhibit a negative
+impact. Similarly, SlogP_VSA1, shows low feature values
+contributing negatively and high values contributing positively
+in SHAP analysis, suggesting that an appropriate level of
+hydrophobicity is beneficial for enhancing PCE.
+Expanding the physical interpretation, these SHAP-derived
+trends can be linked to plausible SAM-perovskite interface
+mechanisms. EState_VSA5, quantifying specific atomic electro-
+topological contributions to molecular surface area,32 corre-
+lates negatively with PCE when high. This suggests that
+excessive localized polarity may disrupt optimal interfacial
+dipole formation and energy level alignment, which iscritical
+for efficient charge extraction. SlogP_VSA1, a descriptor of
+hydrophobic surface area,33 shows a positive correlation
+beyond a threshold. Adequate hydrophobicity likely enhances
+interfacial moisture resistance and promotes denser SAM
+packing, both vital for device stability and uniform charge
+transport. Chi0v, a valence connectivity index related to
+molecular size and complexity,32 exhibits an optimal
+intermediate range for PCE. This implies a balance is needed:
+sufficient molecular size for effective interface modification, yet
+avoiding excessive bulk that could hinder monolayer order or
+introduce defects. While these descriptor-property links offer
+valuable design insights, they represent statistical correlations
+whose precise atomic-scale mechanisms warrant further
+experimental validation.
+Figure 5 further demonstrates the influence of individual
+features on the model’s output. As shown in Figure 5a, for the
+feature EState_VSA5, the model considers it to have a positive
+The Journal of Physical Chemistry Letters
+pubs.acs.org/JPCL
+Letter
+https://doi.org/10.1021/acs.jpclett.6c00119
+J. Phys. Chem. Lett. 2026, 17, 3362−3373
+3370
+contribution to predicting PCE when its value falls within the
+approximate range of 0 to 50. Furthermore, when its value is 0,
+the positive contribution to the model reaches its maximum.
+When the value exceeds 50, the feature’s contribution shifts
+from positive to negative. Regarding the feature EState_VSA2,
+the threshold is approximately 6. Values below 6 contribute
+negatively to the model output, whereas values above 6 exert a
+positive influence. Similarly, for the feature SlogP_VSA1, the
+SHAP dependence plot reveals a threshold around 5. Values
+below this threshold exert a negative contribution to the model
+output, while values above it contribute positively. For the
+feature Chi0v, its contribution to the model is positive when its
+value lies within the 15−25 range. This positive impact is
+maximized at values around 20. Conversely, values outside this
+range have a negative impact on the model’s performance.
+Through this SHAP interpretation of the model results, we
+have further demonstrated the degree of influence each feature
+has on the PCE output of our optimal model and how they
+affect the model’s predictions.
+The interaction plot can reveal the marginal effects of one or
+two features on a machine learning model’s prediction,
+illustrating both the relationships between features and the
+target variable, and the interactions between features
+themselves. To further elucidate the pairwise interactions
+between different descriptor features and their impact on the
+model output, we analyzed the SHAP interaction values for
+EState_VSA5, EState_VSA2, SlogP_VSA1, and Chi0v, as
+shown in Figure 6. Figures 6a and 6b present the interaction
+effects on the model output when EState_VSA5 is considered
+as the main feature, paired with SlogP_VSA1 and EState_V-
+SA2, respectively. From Figure 6a, it can be observed that a
+positive contribution to the PCE is achieved only when both
+EState_VSA5 and SlogP_VSA1 exhibit low values. When these
+two features take on medium or high values, their joint effect
+on the model output becomes negative. Conversely, Figures 6c
+and 6d display the interaction effects with SlogP_VSA1 as the
+main feature, paired with EState_VSA5 and Chi0v, respec-
+tively. From the results in Figure 6c, it can be seen that when
+SlogP_VSA1 takes a small value, the feature value of
+EState_VSA5 also needs to be small to have a positive
+contribution to the model. In contrast, the interaction between
+Chi0v and SlogP_VSA1 shows the opposite trend: as shown in
+Figure 6d, when SlogP_VSA1 takes a small value, the feature
+Chi0v needs to take a larger value to have a positive
+contribution to the model.
+After completing the training of all models and identifying
+the best-performing model, the RDKit-based XGBoost model,
+we further validated its reliability and explored its application
+in screening and designing high-PCE SAM materials. We
+collected several newly synthesized SAM molecules reported in
+2025 literature and input them into our optimal model for
+PCE prediction. The results are shown in Figure 7. We
+selected nine SAM molecules with reported PCEs between
+22% and 27% for testing. Figure S13 shows the molecular
+structures of these SAM molecules. As shown in Figure 7, the
+PCE values predicted by the model for most molecules align
+closely with their actual reported PCEs. Through calculation,
+the relative errors are largely within 10%, with a minimum
+error of only 0.55%. Table 2 summarizes the experimental
+PCEs, model-predicted PCEs, and relative errors for these
+molecules. These results further demonstrate the reliability of
+our trained model in predicting PCE for SAM-based inverted
+perovskite solar cells. Moreover, this work provides valuable
+guidance and strategies for machine learning-assisted screening
+and design of high-PCE SAM materials.
+Then, with the guidance of our model, three new SAM
+molecular structures were designed and designated as SAM1,
+SAM2 and SAM3, respectively. Their molecular structures are
+shown in Figure 8. Based on our previous SHAP analysis, the
+most important features influencing the model output are
+descriptors such as EState_VSA5. The EState_VSA5 values for
+the three newly designed SAM molecules are 0, 6.42 and 0,
+which not only falls within the optimal range of 0−50 as
+identified by the SHAP analysis but also corresponds to the
+condition that maximizes the feature’s positive contribution to
+the predicted PCE; their EState_VSA2 values are 12.58, 12.58
+and 17.61; Chi0v values are 17.93, 18.23 and 18.76,
+respectively. It can be observed that the values of these key
+descriptors for the SAM molecules all lie within the expected
+ranges indicated by the SHAP analysis. Subsequently, based on
+the SHAP results, appropriate values were also assigned to
+other features such as perovskite composition to achieve a
+predicted high PCE outcome. The predicted PCE values for
+these three SAM molecules are 26.94%, 26.73%, and 26.60%,
+respectively, suggesting their promising theoretical perform-
+ance. These results demonstrate that our model can effectively
+assist in the design and screening of high-performance SAM
+candidates for perovskite solar cells, thereby potentially
+accelerating the development of SAM-based photovoltaic
+devices. It should be noted, however, that these predictions
+await experimental validation.
+In this study, we compiled a data set of 99 self-assembled
+monolayer materials from published literature on inverted
+perovskite solar cells. We systematically constructed molecular
+representations using RDKit descriptors and three variants of
+Morgan fingerprints, and trained a total of 12 machine learning
+models by combining these features with three distinct
+algorithms to predict the PCE of SAM-based inverted
+perovskite solar cells. Our results demonstrate that the
+XGBoost model utilizing RDKit descriptors achieved optimal
+performance, with r of 0.8161, RMSE of 1.862, R2 of 0.5058
+and MAE of 1.528. The SHAP analysis revealed that the top
+five features most significantly influencing the model’s output
+results were all RDKit descriptors generated from SAM
+molecules, specifically EState_VSA5, fr_benzene, EState_V-
+SA2, SlogP_VSA1, and Chi0v. These critical descriptors
+provide valuable insights for rational SAM design and
+screening. External validation using newly synthesized SAM
+materials confirmed the model’s reliability. The relative errors
+between the predicted and experimental PCE values were
+mostly within 10%, with a minimum error of only 0.55%.
+Moreover, three new SAM molecules designed under the
+guidance of our model with the highest predicted PCE
+approaching 27%, demonstrating its significant application
+potential. This work establishes an efficient machine learning
+framework for accelerated self-assembled monolayer materials
+discovery and offers valuable guidance for developing high-
+performance organic photovoltaic materials and devices. It is
+worth noting that the current model is built upon a data set of
+99 SAM-based PSC devices. While this data set reflects some
+high-quality experimental data currently reported in the field,
+the performance and generalizability of machine learning
+models can typically be enhanced by larger and more
+structurally diverse data sets. Future efforts to expand this
+database, for instance, by including newly published SAM
+structures and additional experimental parameters, will be
+The Journal of Physical Chemistry Letters
+pubs.acs.org/JPCL
+Letter
+https://doi.org/10.1021/acs.jpclett.6c00119
+J. Phys. Chem. Lett. 2026, 17, 3362−3373
+3371
+valuable for further improving predictive accuracy and
+exploring a broader region of the chemical and processing
+space.
+■ASSOCIATED CONTENT
+Data Availability Statement
+The data and code can be downloaded at a GitHub repository
+(https://github.com/Haifeng-Li-ML/SAM-ML.git).
+*
+sı Supporting Information
+The Supporting Information is available free of charge at
+https://pubs.acs.org/doi/10.1021/acs.jpclett.6c00119.
+Nine low-PCE data points excluded from model
+training, the data distribution of the processed data set
+used for model training, molecular structures and
+SMILES strings of SAM molecules, 26 device fabrication
+and composition parameters used as input features,
+hyperparameter tuning results for all 12 ML models, 10-
+fold cross-validation performance metrics, SHAP anal-
+ysis results for 11 additional models, molecular
+structures of nine validation SAMs, and complete
+reference list for SAM data set (PDF)
+■AUTHOR INFORMATION
+Corresponding Authors
+Yue Zang −Institute of Carbon Neutrality and New Energy,
+School of Electronics and Information, Hangzhou Dianzi
+University, Hangzhou 310018, PR China;
+orcid.org/
+0000-0003-1053-5263; Email: zangyue@hdu.edu.cn
+Wensheng Yan −Institute of Carbon Neutrality and New
+Energy, School of Electronics and Information, Hangzhou
+Dianzi University, Hangzhou 310018, PR China;
+Email: wensheng.yan@hdu.edu.cn
+Authors
+Haifeng Li −Institute of Carbon Neutrality and New Energy,
+School of Electronics and Information, Hangzhou Dianzi
+University, Hangzhou 310018, PR China;
+orcid.org/
+0009-0003-9376-5351
+Zhikang Zhu −Institute of Carbon Neutrality and New
+Energy, School of Electronics and Information, Hangzhou
+Dianzi University, Hangzhou 310018, PR China
+Chenyang Zhu −Institute of Carbon Neutrality and New
+Energy, School of Electronics and Information, Hangzhou
+Dianzi University, Hangzhou 310018, PR China;
+orcid.org/0009-0005-0192-7793
+Weihong Liu −Institute of Carbon Neutrality and New
+Energy, School of Electronics and Information, Hangzhou
+Dianzi University, Hangzhou 310018, PR China
+Zihao Zhang −Institute of Carbon Neutrality and New
+Energy, School of Electronics and Information, Hangzhou
+Dianzi University, Hangzhou 310018, PR China
+Complete contact information is available at:
+https://pubs.acs.org/10.1021/acs.jpclett.6c00119
+Author Contributions
+Haifeng Li: Writing-original draft. Zhikang Zhu and Chenyang
+Zhu: Formal analysis. Weihong Liu and Zihao Zhang:
+Methodology. Yue Zang and Wensheng Yan: Supervision
+and paper revisions.
+Notes
+The authors declare no competing financial interest.
+■ACKNOWLEDGMENTS
+This work was partly supported by the National Key Research
+and Development Plan (Grant No. 2022YFB4200904), the
+Fundamental Research Funds for the Provincial Universities of
+Zhejiang (Grant No. GK239909299001-004), the China
+Postdoctoral
+Science
+Foundation
+(Grant
+No.
+2022M720707), the Zhejiang Provincial Natural Science
+Foundation
+of
+China
+(Grant
+No.
+LY21F050004,
+LQ23F040007) and the National Nature Science Foundation
+of China (NSFC) (Grant No. 61705054).
+■REFERENCES
+(1) Dai, Z.; Yadavalli, S. K.; Chen, M.; Abbaspourtamijani, A.; Qi,
+Y.; Padture, N. P. Interfacial toughening with self-assembled
+monolayers enhances perovskite solar cell reliability. Science 2021,
+372, 618−622.
+(2) Peng, J.; Kremer, F.; Walter, D.; Wu, Y.; Ji, Y.; Xiang, J.; Liu, W.;
+Duong, T.; Shen, H.; Lu, T.; Brink, F.; Zhong, D.; Li, L.; Lee Cheong
+Lem, O.; Liu, Y.; Weber, K. J.; White, T. P.; Catchpole, K. R.
+Centimetre-scale perovskite solar cells with fill factors of more than
+86%. Nature 2022, 601, 573−578.
+(3) Zhang, S.; Ye, F.; Wang, X.; Chen, R.; Zhang, H.; Zhan, L.; Jiang,
+X.; Li, Y.; Ji, X.; Liu, S.; Yu, M.; Yu, F.; Zhang, Y.; Wu, R.; Liu, Z.;
+Ning, Z.; Neher, D.; Han, L.; Lin, Y.; Tian, H.; Chen, W.; Stolterfoht,
+M.; Zhang, L.; Zhu, W.-H.; Wu, Y. Minimizing buriedinterfacial
+defects for efficient inverted perovskite solar cells. Science 2023, 380,
+404−409.
+(4) Tang, R.; Liu, H.; Xu, Y.; Chen, K.; Zhang, J.; Zhang, P.; Zhong,
+C.; Wu, F.; Zhu, L. Molecular configuration engineering in hole-
+transporting materials toward efficient and stable perovskite solar
+cells. Adv. Funct. Mater. 2023, 33, 2208859.
+(5) Zhou, J.; Tan, L.; Liu, Y.; Li, H.; Liu, X.; Li, M.; Wang, S.;
+Zhang, Y.; Jiang, C.; Hua, R.; Tress, W.; Meloni, S.; Yi, C. Highly
+efficient and stable perovskite solar cells via a multifunctional hole
+transporting material. Joule 2024, 8, 1691−1706.
+(6) Wu, T.; et al. Self-Assembled Monolayers for Perovskite Solar
+Cells: Molecular Design and Chemical Synthesis. ACS Nano 2025, 19
+(27), 24508−24535.
+(7) Li, W.; Martínez-Ferrero, E.; Palomares, E. Self-assembled
+molecules as selective contacts for efficient and stable perovskite solar
+cells. Mater. Chem. Front. 2024, 8 (3), 681−699.
+(8) Paniagua, S.; et al. Phosphonic Acids for Interfacial Engineering
+of Transparent Conductive Oxides. CHEMICAL REVIEWS 2016, 116
+(12), 7117−7158.
+(9) Jiang, W.; Li, F.; Li, M.; Qi, F.; Lin, F.; Jen, A. π-Expanded
+Carbazoles as Hole-Selective Self-Assembled Monolayers for High-
+Performance Perovskite Solar Cells. ANGEWANDTE CHEMIE-
+INTERNATIONAL EDITION 2022, 61 (51), e202213560.
+(10) Choi, K. A Short Review on Interface Engineering of Perovskite
+Solar Cells: A Self-Assembled Monolayer and Its Roles. SOLAR RRL
+2020, 4 (2), 1900251.
+(11) Zhang, Z. Anchoring Charge Selective Self-Assembled
+Monolayers for Tin-Lead Perovskite Solar Cells. ADVANCED
+MATERIALS 2024, 36 (18), 2312264.
+(12) Li, T. In Situ Dehydration Condensation of Self-Assembled
+Molecules Enables Stabilization of CsPbI3 Perovskites for Efficient
+Photovoltaics. ADVANCED FUNCTIONAL MATERIALS 2024, 34
+(51), 2409621.
+(13) Zhou, Y. Interfacial Modification of NiOx for Highly Efficient
+and Stable Inverted Perovskite Solar Cells. ADVANCED ENERGY
+MATERIALS 2024, 14 (25), 2400616.
+(14) Butler, K. T.; Davies, D. W.; Cartwright, H.; Isayev, O.; Walsh,
+A. Machine learning for molecular and materials science. Nature 2018,
+559, 547−555.
+The Journal of Physical Chemistry Letters
+pubs.acs.org/JPCL
+Letter
+https://doi.org/10.1021/acs.jpclett.6c00119
+J. Phys. Chem. Lett. 2026, 17, 3362−3373
+3372
+(15) Park, H.; Mall, R.; Ali, A.; Sanvito, S.; Bensmail, H.; El-
+Mellouhi, F. Importance of structural deformation features in the
+prediction of hybrid perovskite bandgaps. Comput. Mater. Sci. 2020,
+184, 109858.
+(16) Priya, P.; Aluru, N. R. Accelerated design and discovery of
+perovskites with high conductivity for energy applications through
+machine learning. npj Comput,Mater. 2021, 7, 90.
+(17) Li, W.; Jacobs, R.; Morgan, D. Predicting the thermodynamic
+stability of perovskite oxides using machine learning models. Comput.
+Mater. Sci. 2018, 150, 454−463.
+(18) Liu, Y.; Yan, W.; Zhu, H.; Tu, Y.; Guan, L.; Tan, X. Study on
+bandgap predications of ABX3-type perovskites by machine learning.
+Org. Electron. 2022, 101, 106426.
+(19) Liu, Y.; Yan, W.; Han, S.; Zhu, H.; Tu, Y.; Guan, L.; Tan, X.
+How Machine Learning Predicts and Explains the Performance of
+Perovskite Solar Cells. Sol. RRL 2022, 6, 2101100.
+(20) Yan, W.; Liu, Y.; Zang, Y.; Cheng, J.; Wang, Y.; Chu, L.; Tan,
+X.; Liu, L.; Zhou, P.; Li, W.; Zhong, Z. Machine learning enabled
+development of unexplored perovskite solar cells with high efficiency.
+Nano Energy 2022, 99, 107394.
+(21) Liu, Y.; Tan, X.; Liang, J.; Han, H.; Xiang, P.; Yan, W. Machine
+Learning for Perovskite Solar Cells and Component Materials: Key
+Technologies and Prospects. Adv. Funct. Mater. 2023, 33, 2214271.
+(22) Liu, Y.; Tan, X.; Xiang, P.; Tu, Y.; Shao, T.; Zang, Y.; Li, X.;
+Yan, W. Machine learning as a characterization method for analysis
+and design of perovskite solar cells. Mater. Today Phys. 2024, 42,
+101359.
+(23) Meftahi, N. Machine Learning Enhanced High-Throughput
+Fabrication and Optimization of Quasi-2D Ruddlesden-Popper
+Perovskite Solar Cells. ADVANCED ENERGY MATERIALS 2023,
+13 (38), 2370154.
+(24) Yu, Y.; Tan, X.; Ning, S.; Wu, Y. Machine learning for
+understanding compatibility of organic−inorganic hybrid perovskites
+with post-treatment amines. ACS Energy Lett. 2019, 4, 397−404.
+(25) Hartono, N. T. P.; Thapa, J.; Tiihonen, A.; Oviedo, F.; Batali,
+C.; Yoo, J. J.; Sun, S.; et al. How machine learning can help select
+capping layers to suppress perovskite degradation. Nat. Commun.
+2020, 11, 4172.
+(26) Zhu, Z.; et al. Machine-learning-assisted exploration of new
+non-fullerene acceptors for high-efficiency organic solar cells. Cell
+Reports Physical Science 2024, 5 (12), 102316.
+(27) Moriwaki, H.; Tian, Y. S.; Kawashita, N.; Takagi, T. Mordred: a
+molecular descriptor calculator. J. Cheminformatics 2018, 10 (1), 4.
+(28) Zhao, Q. M.; Shan, Y. Q.; Xiang, C. C.; Wang, J. L.; Zou, Y. P.;
+Zhang, G. J.; Liu, W. Q. Predicting power conversion efficiency of
+binary organic solar cells based on Y6 acceptor by machine learning. J.
+Energy Chem. 2023, 82, 139−147.
+(29) Lundberg, S. M.; Lee, S.-I. A unified approach to interpreting
+model predictions. Proceedings of the 31st International Conference on
+Neural Information Processing Systems. Curran Associates Inc.: 2017.
+(30) Shapley, L. S. 17. A Value for n-Person Games. In Contributions
+to the Theory of Games (AM-28); William, K. H., William, T. A., Eds.;
+Princeton University Press: 1953; Vol. I, pp 307−318.
+(31) Strumbelj, E.; Kononenko, I. An efficient explanation of
+individual classifications using game theory. Journal of Machine
+Learning Research 2010, 11, 1−18.
+(32) Waheeb, A. Exploring New Azobenzene Type Photoswitches
+by Machine Learning with Lowest Possible Fluorescence Excitons
+with Ease of Synthesis. J. Fluoresc. 2025, 35, 10701.
+(33) Jin, R.; Liang, Y.; Shi, Z. Machine learning prediction of DOC-
+water partitioning coefficients for organic pollutants from diverse
+DOM origins. ENVIRONMENTAL SCIENCE-PROCESSES IM-
+PACTS 2025, 27 (7), 1889−1901.
+(34) Zhu, J. Self-assembled hole-selective contact for efficient Sn-Pb
+perovskite solar cells and all-perovskite tandems. Nat. Commun. 2025,
+16 (1), 240.
+(35) Zhumagali, S. Efficient Narrow Bandgap Pb-Sn Perovskite Solar
+Cells Through Self-Assembled Hole Transport Layer with Ionic
+Head. Adv. Energy Mater. 2025, 15 (18), 2404617.
+(36) Wu, H.; et al. Tailored Lattice-Matched Carbazole Self-
+Assembled Molecule for Efficient and Stable Perovskite Solar Cells. J.
+Am. Chem. Soc. 2025, 147 (9), 8004−8011.
+(37) Yuan, S.; et al. Conjugated Bisphosphonic Acid Self-Assembled
+Monolayers for Efficient and Stable Inverted Perovskite Solar Cells.
+Journal of The American Chemical Society 2025, 147 (28), 24662−
+24671.
+The Journal of Physical Chemistry Letters
+pubs.acs.org/JPCL
+Letter
+https://doi.org/10.1021/acs.jpclett.6c00119
+J. Phys. Chem. Lett. 2026, 17, 3362−3373
+3373
