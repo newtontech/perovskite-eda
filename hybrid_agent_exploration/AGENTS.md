@@ -251,6 +251,35 @@ bash explorations/multi_agent_run.sh
 - `--max-workers`: 并行进程数；`--max-workers 1` 为顺序执行（适合调试，spawn 开销小）
 - `--checkpoint-every N`: 每 N 个 agent 保存一次中间结果
 
+### 顶刊 Plan Registry
+
+顶刊产出不再只依赖“随机探索 + 最后生成报告”，而是通过
+`configs/plan_registry.yaml` 声明并检查五类 plan：
+
+1. `science_story_plan`: 先定义科学问题、核心 claim 与设计规则
+2. `generalization_validation_plan`: 检查 scaffold split、预测数组、SHAP 等泛化与解释证据
+3. `claim_first_figure_plan`: 要求 5-8 张 claim-first 组合主图，并把 figure evidence 写入 claim ledger
+4. `journal_writing_plan`: 要求图文相邻、claim ledger、metric claims 与足够参考文献
+5. `reviewer_gate_plan`: 要求 reviewer report 和 claim audit 同时通过
+
+推荐运行方式：
+
+```bash
+python src/generate_research_story.py \
+  --skip-experiments \
+  --input results/research_stories/jpcl_sam_run_003/experiments \
+  --output results/research_stories/top_journal_plan_validation \
+  --quality-target top-journal \
+  --quality-gate strict \
+  --plan-registry configs/plan_registry.yaml \
+  --enforce-plan-gates \
+  --run-review
+```
+
+默认 artifact policy 为 `evidence-light`：提交可复现脚本、小型 manifest、
+claim ledger、review report 和关键 markdown；大型 PDF、raw 文献、harness logs
+和批量生成结果应作为外部 artifact 或本地验证证据保留，不默认进入 PR。
+
 ### 已实现的方法覆盖
 
 | Layer | 已实现方法 |

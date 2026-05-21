@@ -13,11 +13,17 @@ import numpy as np
 
 warnings.filterwarnings("ignore")
 
+from data.source_completeness import format_source_completeness_markdown
+
 from .figure_generator import FigureGenerator
 from .figure_selector import FigureSelector
 from .image_embedder import embed_markdown_images
 from .shap_analyzer import SHAPAnalyzer
 from .molecular_plots import MolecularPlotter
+from .verified_discovery_ingestion import (
+    format_verified_discovery_markdown,
+    load_verified_discovery_summary,
+)
 
 
 class SIGenerator:
@@ -37,12 +43,24 @@ class SIGenerator:
         self.fg = FigureGenerator(self.fig_dir, "si")
         self.shap = SHAPAnalyzer(self.fig_dir)
         self.mol = MolecularPlotter(self.fig_dir)
+        self.verified_discovery = load_verified_discovery_summary(self.artifacts)
+        self.source_completeness = self._source_completeness()
 
     def generate(self) -> Path:
         """Generate the complete SI document."""
         lines = []
         lines.append("# Supporting Information")
         lines.append("")
+        evidence_note = self._evidence_context_section()
+        if evidence_note:
+            lines.append("## S0. Evidence Context")
+            lines.append(evidence_note)
+            lines.append("")
+        if self.source_completeness:
+            lines.append("## S0b. Source Completeness Audit")
+            lines.append(format_source_completeness_markdown(self.source_completeness))
+            lines.append("")
+
         lines.append("## S1. Data Cleaning and Quality Control")
         lines.append(self._data_cleaning_section())
         lines.append("")
@@ -78,6 +96,11 @@ class SIGenerator:
             lines.append(f"**Figure S{i}**. {caption}")
             lines.append("")
             lines.append(f"![{rel}](figures/{rel})")
+            lines.append("")
+
+        if self.verified_discovery:
+            lines.append("## S9. Verified Discovery Provenance")
+            lines.append(format_verified_discovery_markdown(self.verified_discovery))
             lines.append("")
 
         lines.append("---")
@@ -271,7 +294,13 @@ class SIGenerator:
         successful = [r for r in self.results if r.get("status") == "success" and "r2" in r.get("metrics", {})]
         if not successful:
             return "No successful experiments."
-        lines = ["Performance metrics for all evaluated configurations:", ""]
+        if self._has_training_only_metrics():
+            lines = [
+                "Training-only fit metrics for verified-discovery model fits. These values are not cross-validation, scaffold-split, temporal-split, or independent external-validation metrics.",
+                "",
+            ]
+        else:
+            lines = ["Performance metrics for all evaluated configurations:", ""]
         lines.append("| Model | Feature | L1 | R² | RMSE | MAE | Pearson r | N | Features |")
         lines.append("|-------|---------|-----|-----|------|-----|-----------|---|----------|")
         for r in successful:
@@ -295,6 +324,26 @@ class SIGenerator:
         return "\n".join(lines)
 
     def _cv_section(self) -> str:
+        holdout = self.artifacts.get("model_validation_metrics")
+        if isinstance(holdout, dict) and holdout:
+            r2 = holdout.get("validation_r2")
+            rmse = holdout.get("validation_rmse")
+            mae = holdout.get("validation_mae")
+            r2_text = f"{r2:.4f}" if r2 is not None else "not defined for the validation sample size"
+            rmse_text = f"{rmse:.3f}" if rmse is not None else "N/A"
+            mae_text = f"{mae:.3f}" if mae is not None else "N/A"
+            return (
+                "Cross-validation was not supplied for this research-package run. "
+                "internal random holdout validation was performed on verified rows "
+                f"({holdout.get('train_rows')} train, {holdout.get('validation_rows')} validation; "
+                f"R² = {r2_text}, RMSE = {rmse_text}, MAE = {mae_text}). "
+                "This diagnostic is not independent external-validation and does not establish experimental performance."
+            )
+        if self._has_training_only_metrics():
+            return (
+                "Cross-validation was not supplied for this research-package run. "
+                "The reported model metrics are training-only diagnostics and cannot establish generalization."
+            )
         cv_results = self.artifacts.get("cv_detailed_results", [])
         if cv_results:
             lines = ["Cross-validation results:", ""]
@@ -374,3 +423,39 @@ class SIGenerator:
                 pass
             return "\n".join(lines)
         return "SHAP analysis was not performed for this experiment set."
+
+    def _evidence_context_section(self) -> str:
+        context = self._evidence_context()
+        if not context:
+            return ""
+        lines = [
+            f"Evidence mode: `{context.get('evidence_mode', 'unknown')}`.",
+            f"Verification level: `{context.get('verification_level', 'unknown')}`.",
+            f"Publication-grade flag: `{context.get('publication_grade', False)}`.",
+            f"Dataset publication-grade flag: `{context.get('dataset_publication_grade', False)}`.",
+            f"Candidate-library publication-grade flag: `{context.get('candidate_library_publication_grade', False)}`.",
+        ]
+        if context.get("source_columns_is_smoke_only"):
+            lines.append(
+                "This is a source-columns smoke-only package: DOI and molecule evidence were accepted from input columns rather than rechecked through external services."
+            )
+        if context.get("metric_scope") == "training_only":
+            lines.append("Model metrics in this package are training-only diagnostics.")
+        return "\n".join(lines)
+
+    def _evidence_context(self) -> dict[str, Any]:
+        value = self.artifacts.get("evidence_context")
+        return value if isinstance(value, dict) else {}
+
+    def _source_completeness(self) -> dict[str, Any]:
+        value = self.artifacts.get("source_completeness")
+        return value if isinstance(value, dict) else {}
+
+    def _has_training_only_metrics(self) -> bool:
+        context = self._evidence_context()
+        if context.get("metric_scope") == "training_only":
+            return True
+        return any(
+            row.get("metrics", {}).get("metric_scope") == "training_only"
+            for row in self.results
+        )

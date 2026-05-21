@@ -76,6 +76,87 @@ def _sample_artifacts() -> dict:
     }
 
 
+def _write_verified_discovery_artifact_dir(root: Path) -> Path:
+    artifact_dir = root / "verified_discovery"
+    (artifact_dir / "discovery").mkdir(parents=True)
+    (artifact_dir / "dataset").mkdir(parents=True)
+    (artifact_dir / "workflow_manifest.json").write_text(
+        json.dumps(
+            {
+                "dataset_id": "verified-fixture",
+                "artifact_policy": "verified-light-artifacts-in-git",
+                "verified_rows": 12,
+                "quarantine_rows": 3,
+                "ranked_candidates": 3,
+                "top_k": 3,
+                "outputs": {
+                    "ranked_candidates_csv": "discovery/ranked_candidates.csv",
+                    "doi_manifest_json": "dataset/doi_manifest.json",
+                    "quarantine_csv": "dataset/quarantine.csv",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (artifact_dir / "discovery" / "ranked_candidates.csv").write_text(
+        "\n".join(
+            [
+                (
+                    "rank,record_id,candidate_id,smiles,predicted_delta_pce,uncertainty,doi,"
+                    "source_name,source_url,availability_status,synthesis_status,safety_status,"
+                    "candidate_score,score_components,verification_status"
+                ),
+                (
+                    '1,row-004,cand-peai,CCCC,1.25,0.10,10.1021/acs.jpclett.6c00122,'
+                    'psc-passivator-seed,https://pubchem.ncbi.nlm.nih.gov/compound/91972166,'
+                    'pubchem_listed,literature_reported,not_assessed,1.75,'
+                    '"{""candidate_score"": 1.75, ""availability_bonus"": 0.0}",verified'
+                ),
+                (
+                    '2,row-003,cand-hai,CCC,0.75,0.20,10.1021/acs.jpclett.6c00121,'
+                    'psc-passivator-seed,https://pubchem.ncbi.nlm.nih.gov/compound/19353580,'
+                    'pubchem_listed,literature_reported,not_assessed,1.05,'
+                    '"{""candidate_score"": 1.05, ""synthesis_bonus"": 0.15}",verified'
+                ),
+                (
+                    '3,row-002,cand-gt,CC,0.50,0.30,10.1021/acs.jpclett.6c00120,'
+                    'psc-passivator-seed,https://pubchem.ncbi.nlm.nih.gov/compound/65046,'
+                    'pubchem_listed,literature_reported,not_assessed,0.85,'
+                    '"{""candidate_score"": 0.85}",verified'
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (artifact_dir / "dataset" / "doi_manifest.json").write_text(
+        json.dumps(
+            {
+                "dataset_id": "verified-fixture",
+                "reference_count": 2,
+                "references": [
+                    {"doi": "10.1021/acs.jpclett.6c00122", "title": "Verified source A"},
+                    {"doi": "10.1021/acs.jpclett.6c00121", "title": "Verified source B"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (artifact_dir / "dataset" / "quarantine.csv").write_text(
+        "\n".join(
+            [
+                "record_id,quarantine_reason",
+                "row-009,missing_doi",
+                "row-010,missing_doi;invalid_smiles",
+                "row-011,title_conflict",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return artifact_dir
+
+
 def test_top_journal_bundle_places_figures_in_context_and_records_claims(tmp_path):
     from reporting.report_bundle import ReportBundle
     from reporting.top_journal_report import TopJournalReport
@@ -110,6 +191,62 @@ def test_top_journal_bundle_places_figures_in_context_and_records_claims(tmp_pat
     review = json.loads((tmp_path / "review_report.json").read_text(encoding="utf-8"))
     assert review["review"]["passed"] is True
     assert review["claim_audit"]["passed"] is True
+
+
+def test_report_bundle_ingests_verified_discovery_provenance_without_manuscript_dependency(tmp_path):
+    from reporting.si_generator import SIGenerator
+    from reporting.top_journal_report import TopJournalReport
+
+    artifact_dir = _write_verified_discovery_artifact_dir(tmp_path)
+    artifacts = {
+        **_sample_artifacts(),
+        "verified_discovery_artifact_dir": artifact_dir,
+        "verified_discovery_top_n": 2,
+    }
+
+    bundle = TopJournalReport(
+        _sample_results(),
+        artifacts,
+        output_dir=tmp_path / "report",
+        quality_target="top-journal",
+    ).generate()
+    si_path = SIGenerator(
+        _sample_results(),
+        artifacts,
+        output_dir=tmp_path / "si",
+    ).generate()
+
+    manifest = json.loads(bundle.manifest_path.read_text(encoding="utf-8"))
+    discovery = manifest["verified_discovery"]
+    assert discovery["dataset_id"] == "verified-fixture"
+    assert discovery["source_dir"] == str(artifact_dir)
+    assert [row["record_id"] for row in discovery["top_candidates"]] == ["row-004", "row-003"]
+    first_candidate = discovery["top_candidates"][0]
+    assert first_candidate["candidate_id"] == "cand-peai"
+    assert first_candidate["source_name"] == "psc-passivator-seed"
+    assert first_candidate["source_url"] == "https://pubchem.ncbi.nlm.nih.gov/compound/91972166"
+    assert first_candidate["availability_status"] == "pubchem_listed"
+    assert first_candidate["synthesis_status"] == "literature_reported"
+    assert first_candidate["safety_status"] == "not_assessed"
+    assert first_candidate["candidate_score"] == 1.75
+    assert first_candidate["score_components"]["candidate_score"] == 1.75
+    assert "row-002" not in json.dumps(discovery)
+    assert discovery["quarantine_reason_summary"] == {
+        "invalid_smiles": 1,
+        "missing_doi": 2,
+        "title_conflict": 1,
+    }
+
+    evidence_ids = {entry["evidence_id"] for entry in bundle.claim_ledger}
+    assert "discovery:top_candidates.count" in evidence_ids
+    assert "provenance:quarantine_reason_summary" in evidence_ids
+
+    si_text = si_path.read_text(encoding="utf-8")
+    assert "## S9. Verified Discovery Provenance" in si_text
+    assert "| 1 | cand-peai | row-004 | `CCCC` | psc-passivator-seed | pubchem_listed | literature_reported | not_assessed | 1.250 | 1.750 | 0.100 | 10.1021/acs.jpclett.6c00122 |" in si_text
+    assert "https://pubchem.ncbi.nlm.nih.gov/compound/91972166" in si_text
+    assert "row-002" not in si_text
+    assert "- missing_doi: 2" in si_text
 
 
 def test_embed_markdown_images_replaces_local_figure_links(tmp_path):
@@ -161,6 +298,49 @@ def test_claim_auditor_flags_unsupported_performance_claims():
     assert findings["passed"] is False
 
 
+def test_claim_auditor_flags_candidate_discovery_claims_without_manifest_evidence():
+    from reporting.research_crew import ClaimAuditorAgent
+
+    text = (
+        "We screened 5,000 PubChem candidates and discovered SAM-1 "
+        "with a predicted PCE of 26.8%."
+    )
+    ledger = [{"claim": "R2 is modest", "evidence_id": "metric:best_model.r2"}]
+    findings = ClaimAuditorAgent(max_supported_r2=0.24).audit_text(text, ledger)
+
+    phrases = {item["phrase"] for item in findings["unsupported_claims"]}
+    assert "5,000 PubChem candidates" in phrases
+    assert "SAM-1 predicted PCE 26.8%" in phrases
+    assert findings["passed"] is False
+
+
+def test_claim_auditor_allows_candidate_discovery_claims_with_manifest_evidence():
+    from reporting.research_crew import ClaimAuditorAgent
+
+    text = (
+        "We screened 5,000 PubChem candidates and discovered SAM-1 "
+        "with a predicted PCE of 26.8%."
+    )
+    ledger = [
+        {
+            "claim": "Verified PubChem candidate pool size",
+            "evidence_id": "manifest:verified_discovery.pubchem_candidate_count",
+            "value": 5000,
+            "source": "PubChem verified discovery manifest",
+        },
+        {
+            "claim": "SAM-1 predicted PCE from verified discovery manifest",
+            "evidence_id": "manifest:verified_discovery.top_candidate.sam-1",
+            "candidate": "SAM-1",
+            "predicted_pce_percent": 26.8,
+        },
+    ]
+    findings = ClaimAuditorAgent(max_supported_r2=0.24).audit_text(text, ledger)
+
+    assert findings["unsupported_claims"] == []
+    assert findings["passed"] is True
+
+
 def test_quality_score_downgrades_failed_review_or_audit():
     from reporting.top_journal_report import TopJournalReport
 
@@ -172,3 +352,81 @@ def test_quality_score_downgrades_failed_review_or_audit():
     )
 
     assert score < 0.7
+
+
+def test_default_plan_registry_covers_top_journal_workflow():
+    from reporting.plan_registry import load_plan_registry
+
+    registry = load_plan_registry()
+
+    assert registry.artifact_policy == "evidence-light"
+    assert [plan.stage for plan in registry.plans] == [
+        "science",
+        "validation",
+        "figure",
+        "writing",
+        "review",
+    ]
+    assert {plan.id for plan in registry.plans} == {
+        "science_story_plan",
+        "generalization_validation_plan",
+        "claim_first_figure_plan",
+        "journal_writing_plan",
+        "reviewer_gate_plan",
+    }
+
+
+def test_plan_registry_manifest_is_written_with_report_bundle(tmp_path):
+    from reporting.plan_registry import load_plan_registry
+    from reporting.top_journal_report import TopJournalReport
+
+    registry = load_plan_registry()
+    bundle = TopJournalReport(
+        _sample_results(),
+        _sample_artifacts(),
+        output_dir=tmp_path,
+        quality_target="top-journal",
+        plan_registry=registry,
+    ).generate()
+
+    manifest = json.loads(bundle.manifest_path.read_text(encoding="utf-8"))
+    plan_manifest = manifest["plan_registry"]
+    assert plan_manifest["artifact_policy"] == "evidence-light"
+    assert [entry["stage"] for entry in plan_manifest["plans"]] == [
+        "science",
+        "validation",
+        "figure",
+        "writing",
+        "review",
+    ]
+    assert all(entry["status"] == "passed" for entry in plan_manifest["plans"])
+
+
+def test_plan_registry_strict_gate_fails_missing_scaffold_and_shap():
+    from reporting.plan_registry import PlanRegistryError, load_plan_registry
+
+    registry = load_plan_registry()
+    context = {
+        "successful_results": True,
+        "successful_runs": 4,
+        "prediction_arrays": True,
+        "main_figures": 5,
+        "figure_claims": 5,
+        "figures_in_context": True,
+        "claim_ledger": True,
+        "metric_claims": 3,
+        "references": 40,
+        "review_report": True,
+        "review_passed": True,
+        "audit_passed": True,
+    }
+    try:
+        registry.require_passed(context)
+    except PlanRegistryError as exc:
+        message = str(exc)
+    else:
+        message = ""
+
+    assert "generalization_validation_plan" in message
+    assert "scaffold_split" in message
+    assert "shap_diagnostics" in message
