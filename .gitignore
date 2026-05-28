@@ -4,6 +4,7 @@
 
 # Large data CSV files (not result tables)
 processed_data.csv
+data/processed/*.csv
 *.pickle
 *.h5
 *.hdf5
@@ -70,6 +71,12 @@ dashboard.html
 
 # ===== Fingerprints cache (regenerable) =====
 fingerprints/
+
+# ===== Legacy root generated artifacts =====
+figures/
+tables/
+reports/
+report/
 
 # ===== Exploration data caches =====
 hybrid_agent_exploration/.cache/

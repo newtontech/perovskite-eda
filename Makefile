@@ -1,6 +1,7 @@
 PYTHON ?= python
 
-SOURCE_TABLE ?= /share/yhm/test/20260216_with_chemical_merge_fast/merged_llm_crossref_data_streaming_with_chemical_data_fast.xlsx
+CANONICAL_SOURCE_TABLE ?= /share/yhm/test/20260216_with_chemical_merge_fast/merged_llm_crossref_data_streaming_with_chemical_data_fast.xlsx
+SOURCE_TABLE ?= $(CANONICAL_SOURCE_TABLE)
 DATASET_ID ?= canonical-research-package
 ARTIFACT_DIR ?= hybrid_agent_exploration/results/verified_discovery_runs/$(DATASET_ID)
 EVIDENCE_MODE ?= external-cached
@@ -81,7 +82,10 @@ VERIFY_EVIDENCE_CACHE_ARGS := $(if $(REQUIRE_EVIDENCE_CACHE),--require-evidence-
 VERIFY_CLOSURE_READINESS_ARGS := $(if $(REQUIRE_CLOSURE_READINESS),--require-closure-readiness,)
 VERIFY_EXPERIMENTAL_FEEDBACK_ARGS := $(if $(REQUIRE_EXPERIMENTAL_FEEDBACK),--require-experimental-feedback,)
 
-.PHONY: research-package research-package-smoke research-package-feedback-ingest research-package-cache-preflight research-package-cache-preflight-smoke research-package-cache-collect research-package-cache-collect-dry-run research-package-cache-merge research-package-psc-candidate-closure research-package-pdf research-package-verify test-research-package
+.PHONY: audit-source-of-truth research-package research-package-smoke research-package-feedback-ingest research-package-cache-preflight research-package-cache-preflight-smoke research-package-cache-collect research-package-cache-collect-dry-run research-package-cache-merge research-package-psc-candidate-closure research-package-pdf research-package-verify test-research-package
+
+audit-source-of-truth:
+	$(PYTHON) scripts/audit_source_of_truth.py
 
 research-package:
 	$(PYTHON) $(RUN_RESEARCH_PACKAGE) \
@@ -219,6 +223,7 @@ research-package-verify:
 
 test-research-package:
 	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 $(PYTHON) -m pytest -q \
+		tests/test_source_of_truth_audit.py \
 		tests/test_candidate_library_builder.py \
 		tests/test_candidate_source_contract.py \
 		tests/test_closed_loop_iteration_packet.py \

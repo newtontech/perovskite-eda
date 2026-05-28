@@ -27,6 +27,7 @@ def test_canonical_research_package_targets_are_declared():
     text = MAKEFILE.read_text(encoding="utf-8")
 
     for target in (
+        "audit-source-of-truth",
         "research-package",
         "research-package-smoke",
         "research-package-cache-preflight",
@@ -146,6 +147,12 @@ def test_smoke_target_dry_run_caps_rows_in_ignored_artifact_dir():
     assert "hybrid_agent_exploration/src/run_research_package.py" in output
     assert "--max-rows" in output
     assert "hybrid_agent_exploration/results/verified_discovery_runs/" in output
+
+
+def test_source_of_truth_audit_target_runs_repo_guardrail():
+    output = _make_dry_run("audit-source-of-truth")
+
+    assert "scripts/audit_source_of_truth.py" in output
 
 
 def test_cache_preflight_target_dry_run_scans_full_table_by_default():

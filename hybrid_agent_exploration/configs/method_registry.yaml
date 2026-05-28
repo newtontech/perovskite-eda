@@ -18,6 +18,7 @@ methods:
     psc_verified: true
     loader: "primary_excel"
     params:
+      canonical_source_table_ref: "Makefile:CANONICAL_SOURCE_TABLE"
       path: "/share/yhm/test/20260216_with_chemical_merge_fast/merged_llm_crossref_data_streaming_with_chemical_data_fast.xlsx"
       target: "delta_pce"
       smiles_col: "smiles"

@@ -6,6 +6,7 @@ layer1_data_sources:
     name: "文献与人工整理数据"
     available: true
     primary: true
+    canonical_source_table_ref: "Makefile:CANONICAL_SOURCE_TABLE"
     path: "/share/yhm/test/20260216_with_chemical_merge_fast/merged_llm_crossref_data_streaming_with_chemical_data_fast.xlsx"
     samples: 5354
     target: "delta_pce"
