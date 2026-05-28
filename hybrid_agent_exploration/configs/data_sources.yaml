@@ -3,6 +3,7 @@
 primary:
   name: "Literature Extraction (本项目)"
   id: "S11_literature_data"
+  canonical_source_table_ref: "Makefile:CANONICAL_SOURCE_TABLE"
   path: "/share/yhm/test/20260216_with_chemical_merge_fast/merged_llm_crossref_data_streaming_with_chemical_data_fast.xlsx"
   format: "xlsx"
   target_column: "delta_pce"
