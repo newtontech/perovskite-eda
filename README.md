@@ -34,6 +34,29 @@
 
 ## 🚀 快速开始
 
+## 可复现研究入口
+
+本仓库的推荐产物是一份“钙钛矿数据库 EDA 报告 + 可复现 notebook/脚本”。每次公开结果前，请确认：
+
+- 数据源版本写入 `data/data_version.txt`。
+- 输入表路径、筛选条件、目标指标和缺失值处理策略写入报告。
+- 图表来自脚本或 notebook 的可重复运行结果。
+- 模型指标包含训练/验证/测试划分和随机种子。
+- 最终报告、补充信息和关键图表保存到同一个运行目录。
+
+### Canonical report path
+
+```bash
+make research-package
+make test-research-package
+```
+
+需要 PDF 时再运行：
+
+```bash
+make research-package-pdf
+```
+
 ### 安装依赖
 
 ```bash
